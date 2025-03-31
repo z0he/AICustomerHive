@@ -4,6 +4,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 
 import Dashboard from "@/pages/Dashboard";
+import Campaigns from "@/pages/Campaigns";
+import Customers from "@/pages/Customers";
+import Analytics from "@/pages/Analytics";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
@@ -26,14 +29,16 @@ function Router() {
       <Route path="/" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
       
-      {/* Add routes for sidebar navigation */}
-      <Route path="/customers" component={() => <UnderDevelopment title="Customers" />} />
-      <Route path="/campaigns" component={() => <UnderDevelopment title="Campaigns" />} />
+      {/* Implemented routes */}
+      <Route path="/customers" component={Customers} />
+      <Route path="/campaigns" component={Campaigns} />
+      <Route path="/analytics" component={Analytics} />
+      
+      {/* Routes still under development */}
       <Route path="/campaigns/:id">
         {(params) => <UnderDevelopment title={`Campaign #${params.id}`} />}
       </Route>
       <Route path="/messages" component={() => <UnderDevelopment title="Messages" />} />
-      <Route path="/analytics" component={() => <UnderDevelopment title="Analytics" />} />
       <Route path="/settings" component={() => <UnderDevelopment title="Settings" />} />
       
       <Route component={NotFound} />
