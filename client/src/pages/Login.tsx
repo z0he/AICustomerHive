@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CustomerService } from "lucide-react";
+import { Users } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -83,7 +83,7 @@ const Login: FC = () => {
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
             <div className="text-accent-600 text-2xl font-bold mr-1">
-              <CustomerService size={28} />
+              <Users size={28} />
             </div>
             <h1 className="text-2xl font-bold text-primary-700">AI CRM</h1>
           </div>

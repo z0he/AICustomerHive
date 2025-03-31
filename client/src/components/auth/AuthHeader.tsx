@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { Link } from "wouter";
 import { 
-  CustomerService,
+  Users,
   Bell,
   ChevronDown
 } from "lucide-react";
@@ -41,7 +41,7 @@ const AuthHeader: FC<AuthHeaderProps> = ({ user, notifications, onLogout }) => {
       <div className="flex items-center">
         <div className="flex items-center">
           <div className="text-accent-600 text-2xl font-bold mr-1">
-            <CustomerService size={24} />
+            <Users size={24} />
           </div>
           <h1 className="text-xl font-bold text-primary-700">AI CRM</h1>
         </div>
