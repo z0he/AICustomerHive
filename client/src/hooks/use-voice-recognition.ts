@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -11,6 +11,36 @@ interface InterpretedCommand {
   action: string;
 }
 
+// Add type for SpeechRecognition events
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: {
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+// Define the SpeechRecognition interface
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onstart: (event: Event) => void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onend: (event: Event) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+}
+
 export const useVoiceRecognition = ({ onTranscriptFinalized }: UseVoiceRecognitionProps = {}) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -18,15 +48,17 @@ export const useVoiceRecognition = ({ onTranscriptFinalized }: UseVoiceRecogniti
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   
-  let recognition: SpeechRecognition | null = null;
+  // Use useRef to maintain the recognition instance across renders
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   
   // Initialize speech recognition
   useEffect(() => {
     // Check if browser supports speech recognition
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
+      recognitionRef.current = new SpeechRecognition();
       
+      const recognition = recognitionRef.current;
       recognition.continuous = false;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
@@ -35,7 +67,7 @@ export const useVoiceRecognition = ({ onTranscriptFinalized }: UseVoiceRecogniti
         setIsListening(true);
       };
       
-      recognition.onresult = (event) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         const current = event.resultIndex;
         const currentTranscript = event.results[current][0].transcript;
         setTranscript(currentTranscript);
@@ -51,7 +83,7 @@ export const useVoiceRecognition = ({ onTranscriptFinalized }: UseVoiceRecogniti
         }
       };
       
-      recognition.onerror = (event) => {
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         setIsListening(false);
         console.error('Speech recognition error', event.error);
         toast({
@@ -69,32 +101,44 @@ export const useVoiceRecognition = ({ onTranscriptFinalized }: UseVoiceRecogniti
     }
     
     return () => {
-      if (recognition) {
-        recognition.abort();
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
       }
     };
   }, []);
   
   const toggleListening = useCallback(() => {
     if (isListening) {
-      if (recognition) {
-        recognition.stop();
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
       }
     } else {
       setTranscript('');
       setInterpretedCommand(null);
-      if (recognition) {
-        recognition.start();
-      } else {
+      
+      // If already listening, don't try to start again
+      if (!isListening && recognitionRef.current) {
+        try {
+          recognitionRef.current.start();
+        } catch (error) {
+          console.error('Error starting recognition:', error);
+          // Create a new instance if there was an error
+          if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognitionRef.current = new SpeechRecognition();
+            recognitionRef.current.start();
+          }
+        }
+      } else if (!recognitionRef.current) {
         // Create a new instance if needed
         if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
           const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-          recognition = new SpeechRecognition();
-          recognition.start();
+          recognitionRef.current = new SpeechRecognition();
+          recognitionRef.current.start();
         }
       }
     }
-  }, [isListening, recognition]);
+  }, [isListening]);
   
   const interpretCommand = async (text: string) => {
     if (!text) return;
@@ -144,7 +188,13 @@ export const useVoiceRecognition = ({ onTranscriptFinalized }: UseVoiceRecogniti
 // Add TypeScript declaration for WebkitSpeechRecognition
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    SpeechRecognition: {
+      new(): SpeechRecognition;
+      prototype: SpeechRecognition;
+    };
+    webkitSpeechRecognition: {
+      new(): SpeechRecognition;
+      prototype: SpeechRecognition;
+    };
   }
 }
