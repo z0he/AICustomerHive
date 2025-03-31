@@ -130,7 +130,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customers/activity", async (req: Request, res: Response) => {
     try {
       const activities = await storage.getCustomerActivities();
-      return res.json(activities);
+      const customers = await storage.getCustomers();
+      
+      // Map customer data to activities
+      const activitiesWithCustomers = activities.map(activity => {
+        const customer = customers.find(c => c.id === activity.customerId);
+        return {
+          ...activity,
+          customer: customer ? {
+            id: customer.id,
+            name: customer.name,
+            email: customer.email,
+            initials: customer.initials
+          } : undefined
+        };
+      });
+      
+      return res.json(activitiesWithCustomers);
     } catch (error) {
       console.error("Get customer activities error:", error);
       return res.status(500).json({ message: "Failed to fetch customer activities" });
