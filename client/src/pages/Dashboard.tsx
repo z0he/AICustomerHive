@@ -29,13 +29,19 @@ const Dashboard = () => {
   const queryClient = useQueryClient();
   
   // Voice recognition hook
+  // We need a local state for interpretedCommand to make our suggestion system work
+  const [localInterpretedCommand, setLocalInterpretedCommand] = useState<{intent: string, action: string} | null>(null);
+  
   const {
     isListening,
     transcript,
-    interpretedCommand,
+    interpretedCommand: hookInterpretedCommand,
     toggleListening,
     resetRecognition
   } = useVoiceRecognition();
+  
+  // Use either the hook's interpretedCommand or our local one
+  const interpretedCommand = localInterpretedCommand || hookInterpretedCommand;
   
   // Data fetching
   const { data: userData } = useQuery({
@@ -188,40 +194,88 @@ const Dashboard = () => {
   ];
   
   // Handle executing voice commands
-  const executeVoiceCommand = () => {
-    if (interpretedCommand) {
+  const executeVoiceCommand = async () => {
+    console.log("Executing voice command:", interpretedCommand);
+    
+    if (!interpretedCommand) {
+      toast({
+        title: "No command to execute",
+        description: "Please try speaking a command again.",
+        variant: "destructive"
+      });
+      closeVoiceModal();
+      return;
+    }
+    
+    try {
       switch (interpretedCommand.intent) {
         case "create_campaign":
+          // Set campaign data from voice command and open modal
           setCampaignVoiceData({ command: interpretedCommand.action });
-          setIsCampaignModalOpen(true);
+          closeVoiceModal(); // Close voice modal first
+          setTimeout(() => {
+            setIsCampaignModalOpen(true); // Then open campaign modal
+          }, 100);
           break;
+          
         case "show_campaign_performance":
         case "show_campaign_status":
           toast({
             title: "Showing campaign data",
             description: "Displaying the requested campaign information.",
           });
+          // Scroll to campaign section
+          document.querySelector('.campaign-performance')?.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          });
+          closeVoiceModal();
           break;
+          
         case "send_email":
           toast({
             title: "Email scheduled",
             description: "Your email campaign has been scheduled for delivery.",
           });
+          closeVoiceModal();
           break;
+          
+        case "show_leads":
+          toast({
+            title: "Showing top leads",
+            description: "Here are your highest-scoring leads.",
+          });
+          // Scroll to leads section
+          document.querySelector('.lead-scoring')?.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          });
+          closeVoiceModal();
+          break;
+          
         default:
           toast({
             title: "Command recognized",
             description: "Working on implementing this feature.",
           });
+          closeVoiceModal();
       }
+    } catch (error) {
+      console.error("Error executing command:", error);
+      toast({
+        title: "Command execution failed",
+        description: "There was an error executing your command. Please try again.",
+        variant: "destructive"
+      });
+      closeVoiceModal();
     }
-    
-    closeVoiceModal();
   };
   
   // Handle voice command selection
   const handleSelectSuggestion = async (command: string) => {
     try {
+      console.log("Processing suggestion:", command);
+      
       // Manually interpret the command since we're not using the microphone
       const response = await fetch('/api/voice/interpret', {
         method: 'POST',
@@ -237,10 +291,21 @@ const Dashboard = () => {
       }
       
       const data = await response.json();
+      console.log("Interpreted command:", data);
       
-      // Set the transcript and then open the modal
+      // Set the transcript
       setTranscript(command);
-      // Use direct call to API to simulate voice recognition
+      
+      // We need to update the interpreted command state
+      const { intent, action } = data;
+      
+      // Set the local interpreted command state
+      setLocalInterpretedCommand({ intent, action });
+      
+      // Reset the hook state to avoid conflicts
+      resetRecognition();
+      
+      // Open the voice modal to display the interpreted command
       setTimeout(() => {
         setIsVoiceModalOpen(true);
       }, 300);
@@ -275,6 +340,7 @@ const Dashboard = () => {
   const closeVoiceModal = () => {
     setIsVoiceModalOpen(false);
     resetRecognition();
+    setLocalInterpretedCommand(null); // Reset local state
   };
   
   const closeCampaignModal = () => {
@@ -343,16 +409,20 @@ const Dashboard = () => {
             {/* Left Column (2/3) */}
             <div className="col-span-2 space-y-6">
               {/* Campaign Performance */}
-              <CampaignPerformance 
-                campaigns={campaigns || []}
-                selectedPeriod={selectedPeriod}
-                onPeriodChange={setSelectedPeriod}
-              />
+              <div className="campaign-performance">
+                <CampaignPerformance 
+                  campaigns={campaigns || []}
+                  selectedPeriod={selectedPeriod}
+                  onPeriodChange={setSelectedPeriod}
+                />
+              </div>
               
               {/* Customer Activity */}
-              <CustomerActivity 
-                recentActivity={recentActivity || []}
-              />
+              <div className="customer-activity">
+                <CustomerActivity 
+                  recentActivity={recentActivity || []}
+                />
+              </div>
             </div>
             
             {/* Right Column (1/3) */}
@@ -363,9 +433,11 @@ const Dashboard = () => {
               />
               
               {/* Lead Scoring */}
-              <LeadScoring 
-                topLeads={topLeads || []}
-              />
+              <div className="lead-scoring">
+                <LeadScoring 
+                  topLeads={topLeads || []}
+                />
+              </div>
               
               {/* Next Actions */}
               <NextActions 
