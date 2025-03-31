@@ -16,6 +16,7 @@ interface SpeechRecognitionEvent extends Event {
   resultIndex: number;
   results: {
     [index: number]: {
+      isFinal?: boolean;
       [index: number]: {
         transcript: string;
       };
@@ -68,18 +69,46 @@ export const useVoiceRecognition = ({ onTranscriptFinalized }: UseVoiceRecogniti
       };
       
       recognition.onresult = (event: SpeechRecognitionEvent) => {
-        const current = event.resultIndex;
-        const currentTranscript = event.results[current][0].transcript;
-        setTranscript(currentTranscript);
+        try {
+          const current = event.resultIndex;
+          const transcript = event.results[current][0].transcript;
+          console.log("Speech recognition result:", transcript);
+          setTranscript(transcript);
+          
+          // Check if this is a final result (not interim), and process it if it is
+          const result = event.results[current] as any;
+          if (result && result.isFinal === true) {
+            console.log("Processing final result from onresult:", transcript);
+            // Process after a small delay to ensure UI updates
+            setTimeout(() => {
+              interpretCommand(transcript);
+            }, 100);
+          }
+        } catch (error) {
+          console.error("Error processing speech result:", error);
+        }
       };
       
       recognition.onend = () => {
+        console.log("Speech recognition ended, transcript:", transcript);
         setIsListening(false);
-        if (transcript && !isProcessing) {
+        
+        // Capture the current transcript value to a local variable
+        const currentTranscript = transcript;
+        
+        if (currentTranscript && !isProcessing) {
+          console.log("Processing final transcript:", currentTranscript);
+          
           if (onTranscriptFinalized) {
-            onTranscriptFinalized(transcript);
+            onTranscriptFinalized(currentTranscript);
           }
-          interpretCommand(transcript);
+          
+          // Small delay to ensure UI updates before processing
+          setTimeout(() => {
+            interpretCommand(currentTranscript);
+          }, 100);
+        } else {
+          console.log("No transcript to process or already processing");
         }
       };
       
@@ -146,8 +175,23 @@ export const useVoiceRecognition = ({ onTranscriptFinalized }: UseVoiceRecogniti
     setIsProcessing(true);
     
     try {
-      const response = await apiRequest('POST', '/api/voice/interpret', { transcript: text });
+      console.log("Interpreting voice input:", text);
+      
+      const response = await fetch('/api/voice/interpret', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ transcript: text }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to interpret command');
+      }
+      
       const data = await response.json();
+      console.log("Voice interpretation result:", data);
       
       if (data && data.intent) {
         setInterpretedCommand(data);

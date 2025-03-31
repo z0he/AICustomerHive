@@ -38,8 +38,20 @@ const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
     } else if (interpretedCommand) {
       setStatusText("I understood your command");
       setShowResults(true);
+      console.log("Ready to execute command:", interpretedCommand);
     }
   }, [isListening, transcript, interpretedCommand]);
+  
+  // Debug when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log("Modal opened with:", { 
+        isListening, 
+        transcript, 
+        interpretedCommand 
+      });
+    }
+  }, [isOpen]);
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
