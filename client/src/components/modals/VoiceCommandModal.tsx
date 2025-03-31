@@ -1,0 +1,94 @@
+import { FC, useEffect, useState } from "react";
+import { X, Mic } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
+interface VoiceCommandModalProps {
+  isOpen: boolean;
+  isListening: boolean;
+  transcript: string;
+  interpretedCommand?: {
+    intent: string;
+    action: string;
+  };
+  onClose: () => void;
+  onCancel: () => void;
+  onExecute: () => void;
+}
+
+const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
+  isOpen,
+  isListening,
+  transcript,
+  interpretedCommand,
+  onClose,
+  onCancel,
+  onExecute
+}) => {
+  const [statusText, setStatusText] = useState("Listening...");
+  const [showResults, setShowResults] = useState(false);
+  
+  useEffect(() => {
+    if (isListening) {
+      setStatusText("Listening...");
+      setShowResults(false);
+    } else if (transcript && !interpretedCommand) {
+      setStatusText("Processing...");
+      setShowResults(false);
+    } else if (interpretedCommand) {
+      setStatusText("I understood your command");
+      setShowResults(true);
+    }
+  }, [isListening, transcript, interpretedCommand]);
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center">
+            <Mic className="text-accent-500 mr-2" size={18} />
+            <span>Voice Command</span>
+          </DialogTitle>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute right-4 top-4" 
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </DialogHeader>
+        
+        <div className="flex flex-col items-center justify-center py-6">
+          <div className={`h-20 w-20 rounded-full ${isListening ? 'bg-red-500 animate-pulse' : 'bg-accent-500'} flex items-center justify-center mb-4`}>
+            <Mic className="text-white" size={36} />
+          </div>
+          <p className="text-lg font-medium text-slate-800">{statusText}</p>
+          <p className="text-slate-500 text-center mt-2">
+            {transcript || "Say a command like \"Create a new campaign\" or \"Show me my top leads\""}
+          </p>
+        </div>
+        
+        {showResults && interpretedCommand && (
+          <div className="border-t border-slate-200 pt-4 mt-4">
+            <h4 className="font-medium text-slate-800">I understood you want to:</h4>
+            <div className="bg-slate-50 p-3 rounded-lg mt-2">
+              <p className="text-slate-700">{interpretedCommand.action}</p>
+            </div>
+            
+            <div className="mt-4 flex justify-end space-x-3">
+              <Button variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
+              <Button onClick={onExecute}>
+                Execute Command
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default VoiceCommandModal;

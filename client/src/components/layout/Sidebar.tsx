@@ -1,0 +1,82 @@
+import { FC } from "react";
+import { Link, useLocation } from "wouter";
+import { 
+  LayoutDashboard, 
+  Users, 
+  Megaphone, 
+  Mail, 
+  BarChart2, 
+  Settings,
+  Tag
+} from "lucide-react";
+
+interface SidebarItem {
+  icon: React.ReactNode;
+  label: string;
+  path: string;
+}
+
+interface RecentCampaign {
+  id: number;
+  name: string;
+  path: string;
+}
+
+interface SidebarProps {
+  activeItem?: string;
+  recentCampaigns: RecentCampaign[];
+}
+
+const Sidebar: FC<SidebarProps> = ({ recentCampaigns }) => {
+  const [location] = useLocation();
+  
+  const mainNavItems: SidebarItem[] = [
+    { icon: <LayoutDashboard size={20} />, label: "Dashboard", path: "/dashboard" },
+    { icon: <Users size={20} />, label: "Customers", path: "/customers" },
+    { icon: <Megaphone size={20} />, label: "Campaigns", path: "/campaigns" },
+    { icon: <Mail size={20} />, label: "Messages", path: "/messages" },
+    { icon: <BarChart2 size={20} />, label: "Analytics", path: "/analytics" },
+  ];
+
+  return (
+    <aside className="w-16 md:w-64 bg-white border-r border-slate-200 flex flex-col">
+      <div className="p-4 overflow-y-auto flex-1">
+        <div className="space-y-1">
+          {mainNavItems.map((item) => (
+            <Link key={item.path} href={item.path}>
+              <a className={`flex items-center space-x-3 px-3 py-2 rounded-lg ${location === item.path ? 'text-primary-600 bg-primary-50' : 'text-slate-600 hover:bg-slate-50'}`}>
+                {item.icon}
+                <span className="font-medium text-sm hidden md:inline-block">{item.label}</span>
+              </a>
+            </Link>
+          ))}
+        </div>
+        
+        <div className="mt-8">
+          <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:block">Recent Campaigns</h3>
+          <div className="mt-2 space-y-1">
+            {recentCampaigns.map((campaign) => (
+              <Link key={campaign.id} href={campaign.path}>
+                <a className="flex items-center space-x-3 text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-lg">
+                  <Tag size={18} />
+                  <span className="text-sm hidden md:inline-block truncate">{campaign.name}</span>
+                </a>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-4 border-t border-slate-200">
+        <Link href="/settings">
+          <a className="flex items-center space-x-3 text-slate-600 hover:bg-slate-50 px-3 py-2 rounded-lg">
+            <Settings size={20} />
+            <span className="font-medium text-sm hidden md:inline-block">Settings</span>
+          </a>
+        </Link>
+      </div>
+    </aside>
+  );
+};
+
+export default Sidebar;
