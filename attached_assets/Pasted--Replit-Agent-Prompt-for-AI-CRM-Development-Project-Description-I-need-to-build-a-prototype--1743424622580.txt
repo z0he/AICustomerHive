@@ -1,0 +1,51 @@
+# Replit Agent Prompt for AI CRM Development
+
+## Project Description
+I need to build a prototype of an AI-powered CRM system called "AI CRM" that uses voice commands and natural language processing to help businesses manage customer relationships and create marketing campaigns. This system should demonstrate how AI can simplify CRM tasks through voice interaction and intelligent automation.
+
+## Core Features to Implement
+1. Voice-activated interface for entering commands and retrieving information
+2. Natural language processing for understanding user intent
+3. Simple database for storing customer and campaign information
+4. AI-driven campaign creation from voice commands
+5. Basic lead scoring and prioritization
+6. Visualization of customer data and campaign performance
+
+## Technical Requirements
+- Create a web application with a responsive frontend
+- Implement voice recognition and processing
+- Integrate with a language model API for natural language understanding
+- Create a simple database schema for storing customer and campaign data
+- Implement basic authentication and user management
+- Create visualizations for customer data and campaign performance
+
+## Sample Voice Commands to Support
+- "Create a new campaign targeting customers who haven't purchased in 3 months"
+- "Send a promotional email to my top 100 customers"
+- "Show me the performance of my latest campaign"
+- "Create a leads list of companies in the financial sector"
+- "What's the status of my nurture campaign?"
+
+## Implementation Approach
+1. Use React for the frontend UI
+2. Implement Web Speech API for voice recognition
+3. Connect to OpenAI's API for natural language processing
+4. Use a simple database (SQL or NoSQL) for data storage
+5. Create REST APIs for data access and manipulation
+6. Implement basic authentication using JWT
+
+## Deliverables
+- A working prototype of the AI CRM system with voice command capabilities
+- Sample customer and campaign data for demonstration purposes
+- Documentation on how to use the system and supported voice commands
+- API documentation for future integration
+- A simple dashboard for visualizing customer data and campaign performance
+
+## Future Considerations
+- Integration with popular marketing platforms
+- Advanced analytics and reporting
+- Mobile application development
+- Enhanced security features
+- Multi-language support
+
+Please leverage your expertise to build a prototype that demonstrates the core functionality of AI CRM. Focus on creating a smooth voice interaction experience and intelligent processing of commands to showcase how AI can revolutionize CRM systems.
