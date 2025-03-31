@@ -338,71 +338,71 @@ const Customers = () => {
                   <TabsTrigger value="grid">Grid View</TabsTrigger>
                   <TabsTrigger value="activity">Activity View</TabsTrigger>
                 </TabsList>
+                
+                {/* Customer Grid View */}
+                <TabsContent value="grid" className="mt-0">
+                  {isLoadingCustomers ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                      {[1, 2, 3, 4, 5, 6].map((_, idx) => (
+                        <Card key={idx} className="h-[200px] animate-pulse">
+                          <CardHeader className="bg-slate-100 p-4 h-[70px]" />
+                          <CardContent className="p-4 space-y-3">
+                            <div className="h-4 bg-slate-100 rounded w-3/4" />
+                            <div className="h-4 bg-slate-100 rounded w-1/2" />
+                            <div className="h-6 bg-slate-100 rounded w-full" />
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : filteredCustomers && filteredCustomers.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                      {filteredCustomers.map((customer) => (
+                        <CustomerCard key={customer.id} customer={customer} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Users className="mx-auto h-12 w-12 text-slate-300" />
+                      <h3 className="mt-3 text-lg font-medium text-slate-800">No customers found</h3>
+                      <p className="mt-2 text-sm text-slate-500">
+                        {searchQuery || statusFilter !== "all" 
+                          ? "Try changing your search or filters" 
+                          : "Get started by adding your first customer"}
+                      </p>
+                      <Button 
+                        onClick={openAddCustomerDialog}
+                        className="mt-4"
+                      >
+                        Add Customer
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                {/* Customer Activity View */}
+                <TabsContent value="activity" className="mt-0">
+                  {isLoadingActivities ? (
+                    <div className="rounded-md border">
+                      <div className="p-4 space-y-3">
+                        {[1, 2, 3, 4, 5].map((_, idx) => (
+                          <div key={idx} className="h-12 bg-slate-100 rounded animate-pulse" />
+                        ))}
+                      </div>
+                    </div>
+                  ) : activities && activities.length > 0 ? (
+                    <CustomerActivityTable activities={activities} />
+                  ) : (
+                    <div className="text-center py-12">
+                      <Clock className="mx-auto h-12 w-12 text-slate-300" />
+                      <h3 className="mt-3 text-lg font-medium text-slate-800">No activity found</h3>
+                      <p className="mt-2 text-sm text-slate-500">
+                        Customer activity will appear here as your customers interact with your campaigns.
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
               </Tabs>
             </div>
-            
-            {/* Customer Grid View */}
-            <TabsContent value="grid" className="mt-0">
-              {isLoadingCustomers ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-                  {[1, 2, 3, 4, 5, 6].map((_, idx) => (
-                    <Card key={idx} className="h-[200px] animate-pulse">
-                      <CardHeader className="bg-slate-100 p-4 h-[70px]" />
-                      <CardContent className="p-4 space-y-3">
-                        <div className="h-4 bg-slate-100 rounded w-3/4" />
-                        <div className="h-4 bg-slate-100 rounded w-1/2" />
-                        <div className="h-6 bg-slate-100 rounded w-full" />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : filteredCustomers && filteredCustomers.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-                  {filteredCustomers.map((customer) => (
-                    <CustomerCard key={customer.id} customer={customer} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Users className="mx-auto h-12 w-12 text-slate-300" />
-                  <h3 className="mt-3 text-lg font-medium text-slate-800">No customers found</h3>
-                  <p className="mt-2 text-sm text-slate-500">
-                    {searchQuery || statusFilter !== "all" 
-                      ? "Try changing your search or filters" 
-                      : "Get started by adding your first customer"}
-                  </p>
-                  <Button 
-                    onClick={openAddCustomerDialog}
-                    className="mt-4"
-                  >
-                    Add Customer
-                  </Button>
-                </div>
-              )}
-            </TabsContent>
-            
-            {/* Customer Activity View */}
-            <TabsContent value="activity" className="mt-0">
-              {isLoadingActivities ? (
-                <div className="rounded-md border">
-                  <div className="p-4 space-y-3">
-                    {[1, 2, 3, 4, 5].map((_, idx) => (
-                      <div key={idx} className="h-12 bg-slate-100 rounded animate-pulse" />
-                    ))}
-                  </div>
-                </div>
-              ) : activities && activities.length > 0 ? (
-                <CustomerActivityTable activities={activities} />
-              ) : (
-                <div className="text-center py-12">
-                  <Clock className="mx-auto h-12 w-12 text-slate-300" />
-                  <h3 className="mt-3 text-lg font-medium text-slate-800">No activity found</h3>
-                  <p className="mt-2 text-sm text-slate-500">
-                    Customer activity will appear here as your customers interact with your campaigns.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
           </div>
         </main>
       </div>

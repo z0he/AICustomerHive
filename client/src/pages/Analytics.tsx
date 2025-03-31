@@ -458,11 +458,10 @@ const Analytics = () => {
                   <span>AI Insights</span>
                 </TabsTrigger>
               </TabsList>
-            </Tabs>
             
-            {/* Performance Analytics */}
-            <TabsContent value="performance" className="mt-0 space-y-6">
-              {/* Campaign Performance */}
+              {/* Performance Analytics */}
+              <TabsContent value="performance" className="mt-0 space-y-6">
+                {/* Campaign Performance */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card className="md:col-span-4">
                   <CardHeader className="pb-2">
@@ -755,6 +754,7 @@ const Analytics = () => {
                 </CardContent>
               </Card>
             </TabsContent>
+          </Tabs>
           </div>
         </main>
       </div>
