@@ -126,12 +126,12 @@ const CustomerActivityTable = ({ activities }: { activities: CustomerActivity[] 
                 <div className="flex items-center space-x-2">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="text-xs">
-                      {activity.customer?.initials || "NA"}
+                      {"NA"}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="text-sm font-medium leading-none">{activity.customer?.name || "Unknown"}</p>
-                    <p className="text-xs text-slate-500">{activity.customer?.email || "Unknown"}</p>
+                    <p className="text-sm font-medium leading-none">Customer #{activity.customerId}</p>
+                    <p className="text-xs text-slate-500">Action ID: {activity.id}</p>
                   </div>
                 </div>
               </TableCell>
