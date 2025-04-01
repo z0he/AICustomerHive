@@ -648,7 +648,7 @@ const Customers = () => {
                                 case 'jobTitle':
                                   return (
                                     <div key={columnId} className={`col-span-${width} flex items-center`}>
-                                      <User className="h-4 w-4 text-slate-400 mr-2" />
+                                      <FileText className="h-4 w-4 text-slate-400 mr-2" />
                                       <span className="text-slate-600 text-sm">{customer.jobTitle || '—'}</span>
                                     </div>
                                   );
@@ -681,7 +681,7 @@ const Customers = () => {
                                 case 'contactOwner':
                                   return (
                                     <div key={columnId} className={`col-span-${width} flex items-center`}>
-                                      <User className="h-4 w-4 text-slate-400 mr-2" />
+                                      <Users className="h-4 w-4 text-slate-400 mr-2" />
                                       <span className="text-slate-600 text-sm">{customer.contactOwner || userData?.name || '—'}</span>
                                     </div>
                                   );
