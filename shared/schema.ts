@@ -55,20 +55,43 @@ export type Campaign = typeof campaigns.$inferSelect;
 // Customers table
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
   email: text("email").notNull().unique(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  name: text("name").notNull(),
   initials: text("initials").notNull(),
   phone: text("phone"),
   company: text("company"),
+  jobTitle: text("job_title"),
+  linkedinUrl: text("linkedin_url"),
+  lifecycleStage: text("lifecycle_stage").default("lead"),
+  leadStatus: text("lead_status"),
+  contactIndustry: text("contact_industry"),
+  contactOwner: text("contact_owner"),
+  contactSource: text("contact_source"),
+  contactType: text("contact_type"),
+  country: text("country"),
+  legalBasis: text("legal_basis"),
   createdAt: timestamp("created_at").notNull(),
   status: text("status").default("active"),
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).pick({
-  name: true,
   email: true,
+  firstName: true,
+  lastName: true,
   phone: true,
+  jobTitle: true,
   company: true,
+  linkedinUrl: true,
+  lifecycleStage: true,
+  leadStatus: true,
+  contactIndustry: true,
+  contactOwner: true,
+  country: true,
+  contactSource: true,
+  contactType: true,
+  legalBasis: true,
 });
 
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;

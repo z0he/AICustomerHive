@@ -25,7 +25,11 @@ import {
   Calendar,
   Clock,
   Filter,
-  X
+  X,
+  Columns,
+  Linkedin,
+  Globe,
+  Settings
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -37,6 +41,9 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Form utilities
 import { useForm } from "react-hook-form";
@@ -68,10 +75,21 @@ interface RecentCampaign {
 
 // Form schemas
 const customerFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
-  phone: z.string().min(1, "Phone number is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  contactOwner: z.string().optional(),
+  jobTitle: z.string().optional(),
+  phone: z.string().optional(),
+  lifecycleStage: z.string().default("lead"),
+  leadStatus: z.string().optional(),
+  contactIndustry: z.string().optional(),
   company: z.string().optional(),
+  country: z.string().optional(),
+  contactSource: z.string().optional(),
+  contactType: z.string().optional(),
+  linkedinUrl: z.string().optional(),
+  legalBasis: z.string().optional(),
   status: z.string().default("active")
 });
 
@@ -168,6 +186,81 @@ const CustomerActivityTable = ({ activities }: { activities: CustomerActivity[] 
   );
 };
 
+// Define available columns
+interface ColumnOption {
+  id: string;
+  label: string;
+  icon?: React.ReactNode;
+  width?: number;
+}
+
+const availableColumns: ColumnOption[] = [
+  { id: "name", label: "Name", width: 3 },
+  { id: "email", label: "Email", width: 3 },
+  { id: "phone", label: "Phone", width: 2 },
+  { id: "company", label: "Company", width: 2 },
+  { id: "jobTitle", label: "Job Title", width: 2 },
+  { id: "lifecycleStage", label: "Lifecycle Stage", width: 2 },
+  { id: "leadStatus", label: "Lead Status", width: 2 },
+  { id: "contactIndustry", label: "Industry", width: 2 },
+  { id: "contactOwner", label: "Contact Owner", width: 2 },
+  { id: "country", label: "Country", width: 2 },
+  { id: "contactSource", label: "Source", width: 2 },
+  { id: "linkedinUrl", label: "LinkedIn", width: 2 },
+  { id: "createdAt", label: "Created Date", width: 2 },
+];
+
+// Column customization component
+const ColumnCustomizer = ({ 
+  columns, 
+  onColumnsChange 
+}: { 
+  columns: string[]; 
+  onColumnsChange: (columns: string[]) => void;
+}) => {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 gap-1">
+          <Columns size={14} />
+          <span>Columns</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0" align="end">
+        <div className="p-3 border-b">
+          <h4 className="font-medium">Customize Columns</h4>
+          <p className="text-sm text-slate-500">Select which columns to display in the table.</p>
+        </div>
+        <ScrollArea className="h-72">
+          <div className="p-3 space-y-1">
+            {availableColumns.map((column) => (
+              <div key={column.id} className="flex items-center space-x-2">
+                <Checkbox 
+                  id={`column-${column.id}`} 
+                  checked={columns.includes(column.id)}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      onColumnsChange([...columns, column.id]);
+                    } else {
+                      onColumnsChange(columns.filter(c => c !== column.id));
+                    }
+                  }}
+                />
+                <label 
+                  htmlFor={`column-${column.id}`}
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  {column.label}
+                </label>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 // Main component
 const Customers = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -176,26 +269,40 @@ const Customers = () => {
   const [activeTab, setActiveTab] = useState("grid");
   const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
   const [isAllSelected, setIsAllSelected] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([
+    "name", "email", "phone", "company"
+  ]);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Fetch data
+  const { data: userData } = useQuery<User>({
+    queryKey: ['/api/user/current'],
+    staleTime: 300000 // 5 minutes
+  });
   
   // Customer form
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerFormSchema),
     defaultValues: {
-      name: "",
       email: "",
+      firstName: "",
+      lastName: "",
+      contactOwner: userData?.name || "",
+      jobTitle: "",
       phone: "",
+      lifecycleStage: "lead",
+      leadStatus: "",
+      contactIndustry: "",
       company: "",
+      country: "",
+      contactSource: "",
+      contactType: "",
+      linkedinUrl: "",
+      legalBasis: "",
       status: "active"
     }
-  });
-  
-  // Fetch data
-  const { data: userData } = useQuery<User>({
-    queryKey: ['/api/user/current'],
-    staleTime: 300000 // 5 minutes
   });
   
   const { data: notifications = [] } = useQuery<Notification[]>({
@@ -350,6 +457,10 @@ const Customers = () => {
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
+                <ColumnCustomizer 
+                  columns={visibleColumns}
+                  onColumnsChange={setVisibleColumns}
+                />
               </div>
             </div>
             
@@ -454,10 +565,14 @@ const Customers = () => {
                             }}
                           />
                         </div>
-                        <div className="col-span-3">Name</div>
-                        <div className="col-span-3">Email</div>
-                        <div className="col-span-2">Phone</div>
-                        <div className="col-span-2">Company</div>
+                        {visibleColumns.map(columnId => {
+                          const column = availableColumns.find(c => c.id === columnId);
+                          return column ? (
+                            <div key={column.id} className={`col-span-${column.width || 2}`}>
+                              {column.label}
+                            </div>
+                          ) : null;
+                        })}
                         <div className="col-span-1 text-right">Actions</div>
                       </div>
                       
@@ -489,27 +604,138 @@ const Customers = () => {
                               />
                               <div className={`w-2 h-2 rounded-full ${customer.status === 'active' ? 'bg-green-500' : 'bg-slate-300'}`}></div>
                             </div>
-                            <div className="col-span-3 flex items-center">
-                              <Avatar className="h-8 w-8 mr-2 bg-primary-100 text-primary-700">
-                                <AvatarFallback>{customer.initials}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="font-medium text-slate-900">{customer.name}</div>
-                                <div className="text-xs text-slate-500">Customer since {new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                              </div>
-                            </div>
-                            <div className="col-span-3 flex items-center">
-                              <Mail className="h-4 w-4 text-slate-400 mr-2" />
-                              <span className="text-slate-600 text-sm">{customer.email}</span>
-                            </div>
-                            <div className="col-span-2 flex items-center">
-                              <Phone className="h-4 w-4 text-slate-400 mr-2" />
-                              <span className="text-slate-600 text-sm">{customer.phone}</span>
-                            </div>
-                            <div className="col-span-2 flex items-center">
-                              <Building className="h-4 w-4 text-slate-400 mr-2" />
-                              <span className="text-slate-600 text-sm">{customer.company || '—'}</span>
-                            </div>
+                            
+                            {visibleColumns.map(columnId => {
+                              const column = availableColumns.find(c => c.id === columnId);
+                              if (!column) return null;
+                              
+                              const width = column.width || 2;
+                              
+                              switch (columnId) {
+                                case 'name':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Avatar className="h-8 w-8 mr-2 bg-primary-100 text-primary-700">
+                                        <AvatarFallback>{customer.initials}</AvatarFallback>
+                                      </Avatar>
+                                      <div>
+                                        <div className="font-medium text-slate-900">{customer.name}</div>
+                                        <div className="text-xs text-slate-500">Customer since {new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                      </div>
+                                    </div>
+                                  );
+                                case 'email':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Mail className="h-4 w-4 text-slate-400 mr-2" />
+                                      <span className="text-slate-600 text-sm">{customer.email}</span>
+                                    </div>
+                                  );
+                                case 'phone':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Phone className="h-4 w-4 text-slate-400 mr-2" />
+                                      <span className="text-slate-600 text-sm">{customer.phone}</span>
+                                    </div>
+                                  );
+                                case 'company':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Building className="h-4 w-4 text-slate-400 mr-2" />
+                                      <span className="text-slate-600 text-sm">{customer.company || '—'}</span>
+                                    </div>
+                                  );
+                                case 'jobTitle':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <User className="h-4 w-4 text-slate-400 mr-2" />
+                                      <span className="text-slate-600 text-sm">{customer.jobTitle || '—'}</span>
+                                    </div>
+                                  );
+                                case 'lifecycleStage':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Badge variant="outline" className="capitalize">
+                                        {customer.lifecycleStage || 'Not set'}
+                                      </Badge>
+                                    </div>
+                                  );
+                                case 'leadStatus':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Badge
+                                        variant={customer.leadStatus === 'qualified' ? 'default' : 'secondary'}
+                                        className="capitalize"
+                                      >
+                                        {customer.leadStatus || 'Not set'}
+                                      </Badge>
+                                    </div>
+                                  );
+                                case 'contactIndustry':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Settings className="h-4 w-4 text-slate-400 mr-2" />
+                                      <span className="text-slate-600 text-sm capitalize">{customer.contactIndustry || '—'}</span>
+                                    </div>
+                                  );
+                                case 'contactOwner':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <User className="h-4 w-4 text-slate-400 mr-2" />
+                                      <span className="text-slate-600 text-sm">{customer.contactOwner || userData?.name || '—'}</span>
+                                    </div>
+                                  );
+                                case 'country':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Globe className="h-4 w-4 text-slate-400 mr-2" />
+                                      <span className="text-slate-600 text-sm">{customer.country || '—'}</span>
+                                    </div>
+                                  );
+                                case 'contactSource':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Badge variant="outline" className="capitalize">
+                                        {customer.contactSource || 'Not set'}
+                                      </Badge>
+                                    </div>
+                                  );
+                                case 'linkedinUrl':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Linkedin className="h-4 w-4 text-slate-400 mr-2" />
+                                      {customer.linkedinUrl ? (
+                                        <a 
+                                          href={customer.linkedinUrl} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="text-slate-600 text-sm hover:text-primary truncate max-w-[180px]"
+                                        >
+                                          {customer.linkedinUrl.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '')}
+                                        </a>
+                                      ) : (
+                                        <span className="text-slate-400 text-sm">—</span>
+                                      )}
+                                    </div>
+                                  );
+                                case 'createdAt':
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <Calendar className="h-4 w-4 text-slate-400 mr-2" />
+                                      <span className="text-slate-600 text-sm">
+                                        {new Date(customer.createdAt).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  );
+                                default:
+                                  return (
+                                    <div key={columnId} className={`col-span-${width} flex items-center`}>
+                                      <span className="text-slate-600 text-sm">—</span>
+                                    </div>
+                                  );
+                              }
+                            })}
+                            
                             <div className="col-span-1 flex items-center justify-end space-x-2">
                               <Button 
                                 variant="ghost" 
@@ -608,30 +834,72 @@ const Customers = () => {
           </DialogHeader>
           
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-2">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 pt-2 max-h-[70vh] overflow-y-auto pr-2">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Address</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="john@example.com" type="email" {...field} />
+                      <Input placeholder="zohe@xyxz.com" type="email" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Zohe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Mustafa" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="contactOwner"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact owner</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select contact owner" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={userData?.name || "Zohe Mustafa"}>
+                          {userData?.name || "Zohe Mustafa"}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -639,10 +907,24 @@ const Customers = () => {
               
               <FormField
                 control={form.control}
+                name="jobTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Job title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Marketing Manager" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
+                    <FormLabel>Phone number</FormLabel>
                     <FormControl>
                       <Input placeholder="+1 (555) 123-4567" {...field} />
                     </FormControl>
@@ -653,13 +935,219 @@ const Customers = () => {
               
               <FormField
                 control={form.control}
+                name="lifecycleStage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lifecycle stage</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select lifecycle stage" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="lead">Lead</SelectItem>
+                        <SelectItem value="customer">Customer</SelectItem>
+                        <SelectItem value="opportunity">Opportunity</SelectItem>
+                        <SelectItem value="subscriber">Subscriber</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="leadStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Lead status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select lead status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="new">New</SelectItem>
+                        <SelectItem value="open">Open</SelectItem>
+                        <SelectItem value="in-progress">In Progress</SelectItem>
+                        <SelectItem value="qualified">Qualified</SelectItem>
+                        <SelectItem value="unqualified">Unqualified</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="contactIndustry"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact Industry</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select industry" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="technology">Technology</SelectItem>
+                        <SelectItem value="healthcare">Healthcare</SelectItem>
+                        <SelectItem value="finance">Finance</SelectItem>
+                        <SelectItem value="education">Education</SelectItem>
+                        <SelectItem value="retail">Retail</SelectItem>
+                        <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
                 name="company"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Company (Optional)</FormLabel>
+                    <FormLabel>Company name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Company name" {...field} />
+                      <Input placeholder="Acme Inc." {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="country"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Country/Region</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select country" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="us">United States</SelectItem>
+                        <SelectItem value="ca">Canada</SelectItem>
+                        <SelectItem value="uk">United Kingdom</SelectItem>
+                        <SelectItem value="au">Australia</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="contactSource"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contact Source</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select source" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="website">Website</SelectItem>
+                        <SelectItem value="referral">Referral</SelectItem>
+                        <SelectItem value="social-media">Social Media</SelectItem>
+                        <SelectItem value="email">Email Campaign</SelectItem>
+                        <SelectItem value="event">Event</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="contactType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Type of Contact</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select contact type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="business">Business</SelectItem>
+                        <SelectItem value="partner">Partner</SelectItem>
+                        <SelectItem value="vendor">Vendor</SelectItem>
+                        <SelectItem value="individual">Individual</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="linkedinUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>LinkedIn Profile URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://linkedin.com/in/username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="legalBasis"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Legal basis for processing contact's data *</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select legal basis" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="consent">Consent</SelectItem>
+                        <SelectItem value="contract">Contract</SelectItem>
+                        <SelectItem value="legitimate-interest">Legitimate Interest</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -690,19 +1178,27 @@ const Customers = () => {
                 )}
               />
               
-              <div className="flex justify-end space-x-3 pt-3">
+              <div className="flex justify-start space-x-3 pt-3 border-t mt-8">
+                <Button 
+                  type="submit" 
+                  className="bg-blue-500 hover:bg-blue-600"
+                  disabled={createCustomerMutation.isPending}
+                >
+                  {createCustomerMutation.isPending ? "Creating..." : "Create"}
+                </Button>
+                <Button 
+                  type="submit" 
+                  variant="outline"
+                  disabled={createCustomerMutation.isPending}
+                >
+                  Create and add another
+                </Button>
                 <Button 
                   type="button" 
                   variant="outline" 
                   onClick={closeAddCustomerDialog}
                 >
                   Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={createCustomerMutation.isPending}
-                >
-                  {createCustomerMutation.isPending ? "Adding..." : "Add Customer"}
                 </Button>
               </div>
             </form>
