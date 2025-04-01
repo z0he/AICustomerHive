@@ -46,6 +46,26 @@ import { z } from "zod";
 // Types
 import { Customer, CustomerActivity } from "@shared/schema";
 
+// Types for auth and UI components
+interface User {
+  id: number;
+  name: string;
+  initials: string;
+}
+
+interface Notification {
+  id: number;
+  message: string;
+  date: string;
+  read: boolean;
+}
+
+interface RecentCampaign {
+  id: number;
+  name: string;
+  path: string;
+}
+
 // Form schemas
 const customerFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -154,6 +174,8 @@ const Customers = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("grid");
+  const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
+  const [isAllSelected, setIsAllSelected] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -171,17 +193,17 @@ const Customers = () => {
   });
   
   // Fetch data
-  const { data: userData } = useQuery({
+  const { data: userData } = useQuery<User>({
     queryKey: ['/api/user/current'],
     staleTime: 300000 // 5 minutes
   });
   
-  const { data: notifications } = useQuery({
+  const { data: notifications = [] } = useQuery<Notification[]>({
     queryKey: ['/api/notifications'],
     staleTime: 300000 // 5 minutes
   });
   
-  const { data: recentCampaigns } = useQuery({
+  const { data: recentCampaigns = [] } = useQuery<RecentCampaign[]>({
     queryKey: ['/api/campaigns/recent'],
     staleTime: 300000 // 5 minutes
   });
@@ -335,30 +357,190 @@ const Customers = () => {
             <div className="mb-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
-                  <TabsTrigger value="grid">Grid View</TabsTrigger>
-                  <TabsTrigger value="activity">Activity View</TabsTrigger>
+                  <TabsTrigger value="grid">All Customers</TabsTrigger>
+                  <TabsTrigger value="activity">Recent Activity</TabsTrigger>
                 </TabsList>
                 
                 {/* Customer Grid View */}
                 <TabsContent value="grid" className="mt-0">
                   {isLoadingCustomers ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-                      {[1, 2, 3, 4, 5, 6].map((_, idx) => (
-                        <Card key={idx} className="h-[200px] animate-pulse">
-                          <CardHeader className="bg-slate-100 p-4 h-[70px]" />
-                          <CardContent className="p-4 space-y-3">
-                            <div className="h-4 bg-slate-100 rounded w-3/4" />
-                            <div className="h-4 bg-slate-100 rounded w-1/2" />
-                            <div className="h-6 bg-slate-100 rounded w-full" />
-                          </CardContent>
-                        </Card>
-                      ))}
+                    <div className="mt-6 rounded-lg border border-slate-200 overflow-hidden">
+                      <div className="animate-pulse">
+                        <div className="h-10 bg-slate-100"></div>
+                        {[1, 2, 3, 4, 5].map((_, idx) => (
+                          <div key={idx} className="h-16 border-t border-slate-200 bg-white flex items-center px-4">
+                            <div className="h-8 w-8 bg-slate-200 rounded-full mr-3"></div>
+                            <div className="space-y-2 flex-1">
+                              <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+                              <div className="h-3 bg-slate-200 rounded w-1/3"></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ) : filteredCustomers && filteredCustomers.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-                      {filteredCustomers.map((customer) => (
-                        <CustomerCard key={customer.id} customer={customer} />
-                      ))}
+                    <div className="mt-4 rounded-lg border border-slate-200 overflow-hidden bg-white">
+                      {/* Bulk selection toolbar */}
+                      {selectedCustomers.length > 0 && (
+                        <div className="bg-primary-50 border-b border-primary-100 px-4 py-2 flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium text-primary-700">
+                              {selectedCustomers.length} {selectedCustomers.length === 1 ? 'customer' : 'customers'} selected
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-xs h-8"
+                              onClick={() => {
+                                toast({
+                                  title: "Bulk action",
+                                  description: "This would email the selected customers",
+                                });
+                              }}
+                            >
+                              <Mail className="h-3.5 w-3.5 mr-1" />
+                              Email
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-xs h-8"
+                              onClick={() => {
+                                toast({
+                                  title: "Bulk action",
+                                  description: "This would add selected customers to a campaign",
+                                });
+                              }}
+                            >
+                              <Users className="h-3.5 w-3.5 mr-1" />
+                              Add to Campaign
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="text-xs h-8 border-red-200 text-red-600 hover:bg-red-50"
+                              onClick={() => {
+                                toast({
+                                  title: "Selection cleared",
+                                  description: "All customers have been deselected",
+                                });
+                                setSelectedCustomers([]);
+                                setIsAllSelected(false);
+                              }}
+                            >
+                              <X className="h-3.5 w-3.5 mr-1" />
+                              Clear Selection
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Table header */}
+                      <div className="grid grid-cols-12 gap-1 bg-slate-50 px-4 py-3 border-b border-slate-200 text-xs font-medium text-slate-500 uppercase tracking-wider">
+                        <div className="col-span-1 flex items-center">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary-500"
+                            checked={isAllSelected}
+                            onChange={() => {
+                              if (isAllSelected) {
+                                setSelectedCustomers([]);
+                              } else {
+                                setSelectedCustomers(filteredCustomers?.map(c => c.id) || []);
+                              }
+                              setIsAllSelected(!isAllSelected);
+                            }}
+                          />
+                        </div>
+                        <div className="col-span-3">Name</div>
+                        <div className="col-span-3">Email</div>
+                        <div className="col-span-2">Phone</div>
+                        <div className="col-span-2">Company</div>
+                        <div className="col-span-1 text-right">Actions</div>
+                      </div>
+                      
+                      {/* Table rows */}
+                      <div className="divide-y divide-slate-200">
+                        {filteredCustomers.map((customer) => (
+                          <div 
+                            key={customer.id} 
+                            className={`grid grid-cols-12 gap-1 px-4 py-3 hover:bg-slate-50 transition-colors ${
+                              selectedCustomers.includes(customer.id) ? 'bg-primary-50' : ''
+                            }`}
+                          >
+                            <div className="col-span-1 flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary-500"
+                                checked={selectedCustomers.includes(customer.id)}
+                                onChange={() => {
+                                  if (selectedCustomers.includes(customer.id)) {
+                                    setSelectedCustomers(selectedCustomers.filter(id => id !== customer.id));
+                                    setIsAllSelected(false);
+                                  } else {
+                                    setSelectedCustomers([...selectedCustomers, customer.id]);
+                                    if (selectedCustomers.length + 1 === filteredCustomers?.length) {
+                                      setIsAllSelected(true);
+                                    }
+                                  }
+                                }}
+                              />
+                              <div className={`w-2 h-2 rounded-full ${customer.status === 'active' ? 'bg-green-500' : 'bg-slate-300'}`}></div>
+                            </div>
+                            <div className="col-span-3 flex items-center">
+                              <Avatar className="h-8 w-8 mr-2 bg-primary-100 text-primary-700">
+                                <AvatarFallback>{customer.initials}</AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium text-slate-900">{customer.name}</div>
+                                <div className="text-xs text-slate-500">Customer since {new Date(customer.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                              </div>
+                            </div>
+                            <div className="col-span-3 flex items-center">
+                              <Mail className="h-4 w-4 text-slate-400 mr-2" />
+                              <span className="text-slate-600 text-sm">{customer.email}</span>
+                            </div>
+                            <div className="col-span-2 flex items-center">
+                              <Phone className="h-4 w-4 text-slate-400 mr-2" />
+                              <span className="text-slate-600 text-sm">{customer.phone}</span>
+                            </div>
+                            <div className="col-span-2 flex items-center">
+                              <Building className="h-4 w-4 text-slate-400 mr-2" />
+                              <span className="text-slate-600 text-sm">{customer.company || '—'}</span>
+                            </div>
+                            <div className="col-span-1 flex items-center justify-end space-x-2">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  toast({
+                                    title: "Customer Data",
+                                    description: `Showing details for ${customer.name}`,
+                                  });
+                                }}
+                              >
+                                <FileText className="h-4 w-4 text-slate-500" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                onClick={() => {
+                                  toast({
+                                    title: "Edit Customer",
+                                    description: `Now editing ${customer.name}`,
+                                  });
+                                }}
+                              >
+                                <ChevronRight className="h-4 w-4 text-slate-500" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-12">
