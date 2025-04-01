@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from "react";
+import { FC, useState, useEffect, useMemo } from "react";
 import { X, Megaphone } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -20,9 +20,16 @@ const campaignFormSchema = z.object({
     inactive: z.boolean().default(false),
     top: z.boolean().default(false),
     new: z.boolean().default(false),
+    recurring: z.boolean().default(false),
     industry: z.boolean().default(false),
+    location: z.boolean().default(false),
+    seasonal: z.boolean().default(false),
+    highSpenders: z.boolean().default(false),
+    recentActivity: z.boolean().default(false),
   }),
   industryValue: z.string().optional(),
+  locationValue: z.string().optional(),
+  seasonalValue: z.string().optional(),
   message: z.string().min(10, "Message must be at least 10 characters"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
@@ -47,6 +54,8 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
   onClose
 }) => {
   const [showIndustrySelector, setShowIndustrySelector] = useState(false);
+  const [showLocationSelector, setShowLocationSelector] = useState(false);
+  const [showSeasonalSelector, setShowSeasonalSelector] = useState(false);
   
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignFormSchema),
@@ -57,9 +66,16 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
         inactive: false,
         top: false,
         new: false,
+        recurring: false,
         industry: false,
+        location: false,
+        seasonal: false,
+        highSpenders: false,
+        recentActivity: false,
       },
       industryValue: "",
+      locationValue: "",
+      seasonalValue: "",
       message: "",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -67,9 +83,21 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
   });
 
   const aiGeneratedMessages = [
+    // General Messages
     "Join us for our limited-time Summer Sale with exclusive discounts up to 30% on all products. Don't miss out!",
     "We miss you! It's been a while since your last purchase. Come back and enjoy a special 15% discount on your next order.",
-    "Thank you for being one of our valued customers! Here's an exclusive offer just for our top clients."
+    "Thank you for being one of our valued customers! Here's an exclusive offer just for our top clients.",
+    
+    // For Specific Audiences
+    "Welcome to our family! As a new customer, enjoy 20% off your next purchase. Explore our full catalog and discover what makes us special.",
+    "We value your loyalty! As a recurring customer, you've been upgraded to our Premium tier with exclusive benefits and early access to new products.",
+    "Based on your purchase history, we think you'll love our latest collection. Premium customers like you get first access!",
+    "Our seasonal collection is here! Get ready for [season] with our specially curated products and limited-time offers.",
+    "We're expanding in your area! Visit our new location in [region] and enjoy special grand opening discounts this month only.",
+    
+    // Industry-Specific Messages
+    "As leaders in the [industry] sector, we understand your unique challenges. Our tailored solutions can help you achieve your goals faster.",
+    "Our latest software update includes features specifically designed for healthcare professionals. Schedule a demo to see how it can streamline your practice."
   ];
 
   // Apply voice command data if provided
@@ -81,18 +109,42 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       let targetInactive = false;
       let targetTop = false;
       let targetNew = false;
+      let targetRecurring = false;
+      let targetIndustry = false;
+      let targetLocation = false;
+      let targetSeasonal = false;
+      let targetHighSpenders = false;
+      let targetRecentActivity = false;
       
       const command = voiceData.command.toLowerCase();
       
       if (command.includes("inactive") || command.includes("haven't purchased")) {
         targetInactive = true;
         campaignName = "Re-engagement Campaign";
-      } else if (command.includes("top") || command.includes("best")) {
+      } else if (command.includes("top") || command.includes("best") || command.includes("vip")) {
         targetTop = true;
         campaignName = "VIP Customer Campaign";
       } else if (command.includes("new")) {
         targetNew = true;
         campaignName = "New Customer Welcome";
+      } else if (command.includes("recurring") || command.includes("regular")) {
+        targetRecurring = true;
+        campaignName = "Recurring Customer Appreciation";
+      } else if (command.includes("industry") || command.includes("business") || command.includes("sector")) {
+        targetIndustry = true;
+        campaignName = "Industry-Specific Campaign";
+      } else if (command.includes("location") || command.includes("region") || command.includes("area")) {
+        targetLocation = true;
+        campaignName = "Regional Campaign";
+      } else if (command.includes("seasonal") || command.includes("holiday") || command.includes("summer") || command.includes("winter")) {
+        targetSeasonal = true;
+        campaignName = "Seasonal Promotion";
+      } else if (command.includes("high spend") || command.includes("big purchase")) {
+        targetHighSpenders = true;
+        campaignName = "High-Value Purchase Campaign";
+      } else if (command.includes("recent activity") || command.includes("engaged")) {
+        targetRecentActivity = true;
+        campaignName = "Recent Activity Follow-up";
       }
       
       if (command.includes("email")) {
@@ -105,14 +157,32 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
         campaignType = "promotional";
       }
       
+      // Use enhanced AI-generated messages based on the target audience
       let message = "";
+      
+      // Select appropriate message based on the audience type
       if (targetInactive) {
-        message = aiGeneratedMessages[1];
+        message = aiGeneratedMessages[1]; // Inactive customer re-engagement message
       } else if (targetTop) {
-        message = aiGeneratedMessages[2];
+        message = aiGeneratedMessages[2]; // VIP customer message
+      } else if (targetNew) {
+        message = aiGeneratedMessages[3]; // New customer message
+      } else if (targetRecurring) {
+        message = aiGeneratedMessages[4]; // Recurring customer message
+      } else if (targetHighSpenders) {
+        message = aiGeneratedMessages[5]; // High-value customers message
+      } else if (targetSeasonal) {
+        message = aiGeneratedMessages[6]; // Seasonal message
+      } else if (targetLocation) {
+        message = aiGeneratedMessages[7]; // Location-specific message
+      } else if (targetIndustry) {
+        message = aiGeneratedMessages[8]; // Industry-specific message
       } else {
-        message = aiGeneratedMessages[0];
+        message = aiGeneratedMessages[0]; // Default general message
       }
+      
+      // In a real implementation, we would call the OpenAI API to generate customized messages
+      // based on customer data and campaign type
       
       form.reset({
         ...form.getValues(),
@@ -122,18 +192,35 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
           inactive: targetInactive,
           top: targetTop,
           new: targetNew,
-          industry: false,
+          recurring: targetRecurring,
+          industry: targetIndustry,
+          location: targetLocation,
+          seasonal: targetSeasonal,
+          highSpenders: targetHighSpenders,
+          recentActivity: targetRecentActivity,
         },
         message
       });
     }
   }, [voiceData, isOpen, form]);
   
-  // Toggle industry selector based on checkbox
+  // useState to track when to refresh message suggestions
+  const [refreshSuggestions, setRefreshSuggestions] = useState(0);
+
+  // Toggle selectors based on checkboxes and trigger message refresh
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       if (name === 'targetAudience.industry') {
         setShowIndustrySelector(!!value.targetAudience?.industry);
+      } else if (name === 'targetAudience.location') {
+        setShowLocationSelector(!!value.targetAudience?.location);
+      } else if (name === 'targetAudience.seasonal') {
+        setShowSeasonalSelector(!!value.targetAudience?.seasonal);
+      }
+      
+      // If any target audience checkbox changes, trigger a refresh of message suggestions
+      if (name && name.startsWith('targetAudience.')) {
+        setRefreshSuggestions(prev => prev + 1);
       }
     });
     
@@ -145,6 +232,49 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
     form.reset();
     onClose();
   };
+  
+  // Filter AI messages based on selected target audience (memoized for performance)
+  const filteredMessages = useMemo(() => {
+    const audiences = form.getValues().targetAudience;
+    
+    // If no specific audiences are selected, return all messages
+    if (!Object.values(audiences).some(v => v)) {
+      return aiGeneratedMessages;
+    }
+    
+    let relevantMessages = [];
+    
+    // Add general messages
+    relevantMessages.push(aiGeneratedMessages[0]);
+    
+    // Add audience-specific messages
+    if (audiences.inactive) {
+      relevantMessages.push(aiGeneratedMessages[1]);
+    }
+    if (audiences.top) {
+      relevantMessages.push(aiGeneratedMessages[2]);
+    }
+    if (audiences.new) {
+      relevantMessages.push(aiGeneratedMessages[3]);
+    }
+    if (audiences.recurring) {
+      relevantMessages.push(aiGeneratedMessages[4]);
+    }
+    if (audiences.highSpenders) {
+      relevantMessages.push(aiGeneratedMessages[5]);
+    }
+    if (audiences.seasonal) {
+      relevantMessages.push(aiGeneratedMessages[6]);
+    }
+    if (audiences.location) {
+      relevantMessages.push(aiGeneratedMessages[7]);
+    }
+    if (audiences.industry) {
+      relevantMessages.push(aiGeneratedMessages[8], aiGeneratedMessages[9]);
+    }
+    
+    return relevantMessages;
+  }, [refreshSuggestions, form]);
   
   const selectAIMessage = (message: string) => {
     form.setValue('message', message, { shouldValidate: true });
@@ -286,6 +416,116 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                   
                   <FormField
                     control={form.control}
+                    name="targetAudience.recurring"
+                    render={({ field }) => (
+                      <div className="flex items-center">
+                        <FormControl>
+                          <Checkbox 
+                            checked={field.value} 
+                            onCheckedChange={field.onChange}
+                            id="target-recurring" 
+                          />
+                        </FormControl>
+                        <Label 
+                          htmlFor="target-recurring" 
+                          className="ml-2 text-sm text-slate-700"
+                        >
+                          Recurring customers (2+ purchases)
+                        </Label>
+                      </div>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="targetAudience.highSpenders"
+                    render={({ field }) => (
+                      <div className="flex items-center">
+                        <FormControl>
+                          <Checkbox 
+                            checked={field.value} 
+                            onCheckedChange={field.onChange}
+                            id="target-high-spenders" 
+                          />
+                        </FormControl>
+                        <Label 
+                          htmlFor="target-high-spenders" 
+                          className="ml-2 text-sm text-slate-700"
+                        >
+                          High-value purchases (over $500)
+                        </Label>
+                      </div>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="targetAudience.recentActivity"
+                    render={({ field }) => (
+                      <div className="flex items-center">
+                        <FormControl>
+                          <Checkbox 
+                            checked={field.value} 
+                            onCheckedChange={field.onChange}
+                            id="target-recent-activity" 
+                          />
+                        </FormControl>
+                        <Label 
+                          htmlFor="target-recent-activity" 
+                          className="ml-2 text-sm text-slate-700"
+                        >
+                          Recent activity (active in last 7 days)
+                        </Label>
+                      </div>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="targetAudience.seasonal"
+                    render={({ field }) => (
+                      <div className="flex items-center">
+                        <FormControl>
+                          <Checkbox 
+                            checked={field.value} 
+                            onCheckedChange={field.onChange}
+                            id="target-seasonal" 
+                          />
+                        </FormControl>
+                        <Label 
+                          htmlFor="target-seasonal" 
+                          className="ml-2 text-sm text-slate-700"
+                        >
+                          Seasonal shoppers
+                        </Label>
+                      </div>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="targetAudience.location"
+                    render={({ field }) => (
+                      <div className="flex items-center">
+                        <FormControl>
+                          <Checkbox 
+                            checked={field.value} 
+                            onCheckedChange={field.onChange}
+                            id="target-location" 
+                          />
+                        </FormControl>
+                        <Label 
+                          htmlFor="target-location" 
+                          className="ml-2 text-sm text-slate-700"
+                        >
+                          Specific location
+                        </Label>
+                      </div>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
                     name="targetAudience.industry"
                     render={({ field }) => (
                       <div className="flex items-center">
@@ -329,6 +569,73 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                               <SelectItem value="healthcare">Healthcare</SelectItem>
                               <SelectItem value="retail">Retail</SelectItem>
                               <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                              <SelectItem value="education">Education</SelectItem>
+                              <SelectItem value="hospitality">Hospitality</SelectItem>
+                              <SelectItem value="transportation">Transportation</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+                
+                {showLocationSelector && (
+                  <div className="mt-3">
+                    <FormField
+                      control={form.control}
+                      name="locationValue"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select location" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="northeast">Northeast</SelectItem>
+                              <SelectItem value="southeast">Southeast</SelectItem>
+                              <SelectItem value="midwest">Midwest</SelectItem>
+                              <SelectItem value="southwest">Southwest</SelectItem>
+                              <SelectItem value="west">West Coast</SelectItem>
+                              <SelectItem value="international">International</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+                
+                {showSeasonalSelector && (
+                  <div className="mt-3">
+                    <FormField
+                      control={form.control}
+                      name="seasonalValue"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select season" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="spring">Spring</SelectItem>
+                              <SelectItem value="summer">Summer</SelectItem>
+                              <SelectItem value="fall">Fall</SelectItem>
+                              <SelectItem value="winter">Winter</SelectItem>
+                              <SelectItem value="holiday">Holiday Season</SelectItem>
+                              <SelectItem value="backToSchool">Back to School</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -361,7 +668,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
             <div>
               <p className="text-sm font-medium text-slate-700 mb-2">AI-Generated Messages:</p>
               <div className="space-y-2">
-                {aiGeneratedMessages.map((message, idx) => (
+                {filteredMessages.map((message: string, idx: number) => (
                   <Card 
                     key={idx} 
                     className="cursor-pointer hover:bg-slate-50 transition-colors"

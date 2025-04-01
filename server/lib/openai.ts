@@ -127,8 +127,11 @@ export async function generateCampaignSuggestions(
           {
             role: "system",
             content: 
-              "You are a marketing expert assistant for a CRM system. Generate 3 campaign message suggestions " +
-              "based on the campaign goal and target audience. Return the results as JSON array of strings."
+              "You are a marketing expert assistant for a CRM system. Generate 5 campaign message suggestions " +
+              "based on the campaign goal and target audience. Make sure these are diverse in tone, approach, and call-to-action. " +
+              "Consider seasonal relevance, industry trends, and specific pain points or desires of the audience segment. " +
+              "Each message should be compelling, personalized, and include a clear value proposition. " +
+              "Return the results as JSON with the key 'suggestions' containing an array of strings."
           },
           {
             role: "user",
@@ -141,34 +144,66 @@ export async function generateCampaignSuggestions(
       const result = safeJsonParse(response.choices[0].message.content);
       return result?.suggestions || [];
     } else {
-      // Fallback suggestions for demo without API key
+      // Enhanced fallback suggestions for demo without API key
       if (targetAudience.toLowerCase().includes("new")) {
         return [
-          "Welcome to our service! Enjoy 15% off your first purchase",
-          "New customer special: Sign up today and receive exclusive benefits",
-          "Join our community of satisfied customers with this special welcome offer"
+          "Welcome to our community! Enjoy 15% off your first purchase and start your journey with us",
+          "New customer special: Sign up today and receive exclusive benefits plus a personalized onboarding consultation",
+          "As a new member, unlock premium features free for 30 days – no commitment required",
+          "First-time customer? We've prepared a special welcome package just for you with customized recommendations",
+          "Start your experience with a complimentary strategy session and 20% off your first order"
         ];
-      } else if (targetAudience.toLowerCase().includes("loyal") || targetAudience.toLowerCase().includes("returning")) {
+      } else if (targetAudience.toLowerCase().includes("inactive") || targetAudience.toLowerCase().includes("haven't purchased")) {
         return [
-          "Thank you for your continued support! Here's 20% off your next purchase",
-          "Valued customer special: Unlock premium features with your loyalty reward",
-          "We appreciate your business! Enjoy this exclusive offer just for our loyal customers"
+          "We miss you! Come back and enjoy a special 25% discount on your next purchase – valid for 7 days only",
+          "It's been a while! See what you've been missing with our latest product innovations and exclusive returning customer perks",
+          "We noticed you've been away – how about a personalized consultation to discover what's new since your last visit?",
+          "Reconnect with us today and receive a loyalty bonus plus free shipping on your next order",
+          "Welcome back special: Reactivate your account and receive double rewards points on your next three purchases"
+        ];
+      } else if (targetAudience.toLowerCase().includes("loyal") || targetAudience.toLowerCase().includes("top") || targetAudience.toLowerCase().includes("vip")) {
+        return [
+          "As one of our most valued customers, enjoy early access to our upcoming premium collection and 30% off your selection",
+          "VIP exclusive: Thank you for your continued support! Here's a personalized offer based on your preferences",
+          "You're part of our inner circle! Join our invitation-only event this month with special guests and exclusive previews",
+          "We appreciate your loyalty! Enjoy complimentary premium upgrades on all services this month as our way of saying thanks",
+          "Elite customer appreciation: Unlock your custom rewards package with perks tailored specifically to your interests"
+        ];
+      } else if (targetAudience.toLowerCase().includes("seasonal") || targetAudience.toLowerCase().includes("holiday")) {
+        return [
+          "Celebrate the season with our limited-time collection – perfect for gifting or treating yourself",
+          "Holiday special: Enjoy 20% off sitewide plus complimentary gift wrapping and personalized messages",
+          "Summer is here! Discover our seasonal essentials with free expedited shipping on orders over $50",
+          "Get ready for the new season with our curated collection – early access for subscribers with code EARLYBIRD",
+          "End-of-season clearance with up to 60% off – perfect time to stock up on favorites before they're gone"
+        ];
+      } else if (targetAudience.toLowerCase().includes("industry") || targetAudience.toLowerCase().includes("professional")) {
+        return [
+          "Industry professionals: Access our specialized toolkit designed to streamline your specific workflows",
+          "Exclusive for business customers: Schedule a complimentary efficiency audit and receive a customized solution package",
+          "For industry leaders like you: Join our upcoming webinar on emerging trends with actionable implementation strategies",
+          "Professional-grade solutions at special corporate rates – volume discounts now available for teams of all sizes",
+          "Industry-specific training and resources now available with a 30-day free trial for qualified professional accounts"
         ];
       } else {
         return [
-          "Limited time offer: 10% discount on all purchases this week",
-          "Discover our new features designed to help you succeed",
-          "Take advantage of our special seasonal promotion before it ends"
+          "Limited time offer: 15% discount on all purchases this week with code SPECIAL15",
+          "Discover our new features designed to help you succeed – book a demo for a personalized tour",
+          "Take advantage of our seasonal promotion before it ends – plus free shipping on orders over $40",
+          "Join thousands of satisfied customers and experience the difference with a risk-free trial",
+          "This month only: Bundle any three services and save 25% plus receive a complimentary strategy session"
         ];
       }
     }
   } catch (error) {
     console.error("Error generating campaign suggestions:", error);
-    // Provide fallback so the feature works even without API key
+    // Enhanced fallback suggestions for when there's an error
     return [
-      "Special offer: 15% discount on selected items",
-      "Introducing our new premium service package",
-      "Last chance: End of season sale with up to 40% off"
+      "Special offer: 20% discount on selected items in our curated collection",
+      "Introducing our new premium service package with exclusive member benefits",
+      "Last chance: End of season sale with up to 40% off bestsellers",
+      "Join our community and receive personalized recommendations plus a welcome gift",
+      "Limited time offer: Try our most popular service risk-free for 30 days"
     ];
   }
 }
