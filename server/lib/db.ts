@@ -4,4 +4,5 @@ import * as schema from '@shared/schema';
 
 // Create the database connection
 const sql = neon(process.env.DATABASE_URL!);
-export const db = drizzle(sql, { schema });
+// Type assertion to make TypeScript happy with this connection
+export const db = drizzle(sql as any, { schema });

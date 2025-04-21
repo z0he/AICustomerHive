@@ -6,6 +6,7 @@ import {
   tasks, type Task, type InsertTask,
   customerActivities, type CustomerActivity
 } from "@shared/schema";
+import { DbStorage } from "./storage/db-storage";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -344,4 +345,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Use MemStorage for development and DbStorage for production
+export const storage = process.env.NODE_ENV === 'production' 
+  ? new DbStorage() 
+  : new MemStorage();
