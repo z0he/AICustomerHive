@@ -122,11 +122,14 @@ export class DbStorage implements IStorage {
   async createLead(insertLead: InsertLead): Promise<Lead> {
     const initials = this.getInitials(insertLead.name);
     
-    const result = await db.insert(leads).values({
+    const leadData = {
       ...insertLead,
       initials,
       createdAt: new Date()
-    }).returning();
+    };
+    
+    // Use type assertion for the insert
+    const result = await db.insert(leads).values(leadData as any).returning();
     
     return result[0];
   }
@@ -152,10 +155,13 @@ export class DbStorage implements IStorage {
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
-    const result = await db.insert(tasks).values({
+    const taskData = {
       ...insertTask,
       createdAt: new Date()
-    }).returning();
+    };
+    
+    // Use type assertion for the insert
+    const result = await db.insert(tasks).values(taskData as any).returning();
     
     return result[0];
   }

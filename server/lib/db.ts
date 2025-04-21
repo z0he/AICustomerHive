@@ -1,8 +1,7 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import * as schema from '@shared/schema';
 
-// Create the database connection
+// Create Neon database client - using neon with HTTP connection
 const sql = neon(process.env.DATABASE_URL!);
-// Type assertion to make TypeScript happy with this connection
-export const db = drizzle(sql as any, { schema });
+export const db = drizzle(sql, { schema });
