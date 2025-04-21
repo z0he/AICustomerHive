@@ -345,7 +345,8 @@ export class MemStorage implements IStorage {
   }
 }
 
-// Use MemStorage for development and DbStorage for production
-export const storage = process.env.NODE_ENV === 'production' 
-  ? new DbStorage() 
-  : new MemStorage();
+// Use DbStorage to connect to a real PostgreSQL database
+// Only fall back to MemStorage if explicitly requested with NO_DB=true environment variable
+export const storage = process.env.NO_DB === 'true' 
+  ? new MemStorage() 
+  : new DbStorage();
