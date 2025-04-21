@@ -115,13 +115,29 @@ export class MemStorage implements IStorage {
   
   async createCampaign(insertCampaign: InsertCampaign): Promise<Campaign> {
     const id = this.campaignCurrentId++;
+    
+    // Handle targetAudience which could be a complex object or a string
+    let targetAudienceStr: string;
+    if (typeof insertCampaign.targetAudience === 'string') {
+      targetAudienceStr = insertCampaign.targetAudience;
+    } else {
+      // Convert object to string representation
+      targetAudienceStr = JSON.stringify(insertCampaign.targetAudience);
+    }
+    
     const campaign: Campaign = { 
-      ...insertCampaign, 
       id,
-      createdAt: new Date().toISOString(),
+      name: insertCampaign.name,
+      type: insertCampaign.type,
+      targetAudience: targetAudienceStr,
+      message: insertCampaign.message,
+      startDate: insertCampaign.startDate,
+      endDate: insertCampaign.endDate,
+      createdAt: new Date(),
       conversions: 0,
       percentage: 0
     };
+    
     this.campaigns.set(id, campaign);
     return campaign;
   }
@@ -144,11 +160,15 @@ export class MemStorage implements IStorage {
   
   async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
     const id = this.customerCurrentId++;
+    // Create full name from first and last name
+    const fullName = `${insertCustomer.firstName} ${insertCustomer.lastName}`;
+    
     const customer: Customer = { 
-      ...insertCustomer, 
+      ...insertCustomer,
       id,
-      initials: this.getInitials(insertCustomer.name),
-      createdAt: new Date().toISOString(),
+      name: fullName,
+      initials: this.getInitials(fullName),
+      createdAt: new Date(),
       status: 'active'
     };
     this.customers.set(id, customer);
@@ -175,7 +195,7 @@ export class MemStorage implements IStorage {
       ...insertLead, 
       id,
       initials: this.getInitials(insertLead.name),
-      createdAt: new Date().toISOString()
+      createdAt: new Date()
     };
     this.leads.set(id, lead);
     return lead;
@@ -183,7 +203,12 @@ export class MemStorage implements IStorage {
   
   async getTopLeads(limit: number = 5): Promise<Lead[]> {
     return Array.from(this.leads.values())
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => {
+        // Safely handle null/undefined scores
+        const scoreA = a.score ?? 0;
+        const scoreB = b.score ?? 0;
+        return scoreB - scoreA;
+      })
       .slice(0, limit);
   }
   
@@ -202,7 +227,7 @@ export class MemStorage implements IStorage {
     const task: Task = { 
       ...insertTask, 
       id,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
       completed: false
     };
     this.tasks.set(id, task);
@@ -270,6 +295,10 @@ export class MemStorage implements IStorage {
   // ----- Seed data -----
   
   private seedData() {
+    // NOTE: This seed data is only used when NO_DB=true and we're using in-memory storage
+    // The types here might not perfectly match, but this is fallback code only
+    // Our primary database implementation is DbStorage
+    
     // Seed users
     this.users.set(1, {
       id: 1,
