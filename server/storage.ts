@@ -4,7 +4,8 @@ import {
   customers, type Customer, type InsertCustomer,
   leads, type Lead, type InsertLead,
   tasks, type Task, type InsertTask,
-  customerActivities, type CustomerActivity
+  customerActivities, type CustomerActivity,
+  messageVariants, type MessageVariant, type InsertMessageVariant
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
 
@@ -22,6 +23,11 @@ export interface IStorage {
   getCampaign(id: number): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
   getRecentCampaigns(limit?: number): Promise<Campaign[]>;
+  
+  // Message Variant methods (for A/B testing)
+  getMessageVariants(campaignId: number): Promise<MessageVariant[]>;
+  createMessageVariant(variant: InsertMessageVariant): Promise<MessageVariant>;
+  updateMessageVariantStats(variantId: number, impressions?: number, conversions?: number): Promise<MessageVariant>;
   
   // Customer methods
   getCustomers(): Promise<Customer[]>;
@@ -52,6 +58,7 @@ export class MemStorage implements IStorage {
   private leads: Map<number, Lead>;
   private tasks: Map<number, Task>;
   private customerActivities: CustomerActivity[];
+  private messageVariants: Map<number, MessageVariant>;
   
   private userCurrentId: number;
   private campaignCurrentId: number;
@@ -59,6 +66,7 @@ export class MemStorage implements IStorage {
   private leadCurrentId: number;
   private taskCurrentId: number;
   private activityCurrentId: number;
+  private messageVariantCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -67,6 +75,7 @@ export class MemStorage implements IStorage {
     this.leads = new Map();
     this.tasks = new Map();
     this.customerActivities = [];
+    this.messageVariants = new Map();
     
     this.userCurrentId = 1;
     this.campaignCurrentId = 1;
@@ -74,6 +83,7 @@ export class MemStorage implements IStorage {
     this.leadCurrentId = 1;
     this.taskCurrentId = 1;
     this.activityCurrentId = 1;
+    this.messageVariantCurrentId = 1;
     
     this.seedData();
   }
@@ -146,6 +156,53 @@ export class MemStorage implements IStorage {
     return Array.from(this.campaigns.values())
       .sort((a, b) => b.id - a.id)
       .slice(0, limit);
+  }
+  
+  // ----- Message Variant methods (for A/B testing) -----
+  
+  async getMessageVariants(campaignId: number): Promise<MessageVariant[]> {
+    return Array.from(this.messageVariants.values())
+      .filter(variant => variant.campaignId === campaignId);
+  }
+  
+  async createMessageVariant(variant: InsertMessageVariant): Promise<MessageVariant> {
+    const id = this.messageVariantCurrentId++;
+    const messageVariant: MessageVariant = {
+      ...variant,
+      id,
+      impressions: 0,
+      conversions: 0,
+      conversionRate: 0,
+      createdAt: new Date()
+    };
+    
+    this.messageVariants.set(id, messageVariant);
+    return messageVariant;
+  }
+  
+  async updateMessageVariantStats(
+    variantId: number, 
+    impressions?: number, 
+    conversions?: number
+  ): Promise<MessageVariant> {
+    const variant = this.messageVariants.get(variantId);
+    if (!variant) {
+      throw new Error(`Message variant with ID ${variantId} not found`);
+    }
+    
+    const updatedVariant = { 
+      ...variant,
+      impressions: impressions !== undefined ? variant.impressions + impressions : variant.impressions,
+      conversions: conversions !== undefined ? variant.conversions + conversions : variant.conversions
+    };
+    
+    // Calculate conversion rate
+    if (updatedVariant.impressions > 0) {
+      updatedVariant.conversionRate = Math.round((updatedVariant.conversions / updatedVariant.impressions) * 100);
+    }
+    
+    this.messageVariants.set(variantId, updatedVariant);
+    return updatedVariant;
   }
   
   // ----- Customer methods -----

@@ -29,13 +29,37 @@ export const campaigns = pgTable("campaigns", {
   name: text("name").notNull(),
   type: text("type").notNull(),
   targetAudience: text("target_audience").notNull(),
-  message: text("message").notNull(),
+  message: text("message").notNull(), // Default message for backward compatibility
   startDate: text("start_date").notNull(),
   endDate: text("end_date").notNull(),
   createdAt: timestamp("created_at").notNull(),
   conversions: integer("conversions").default(0),
   percentage: integer("percentage").default(0),
+  isABTestActive: boolean("is_ab_test_active").default(false),
 });
+
+// Message Variants for A/B testing
+export const messageVariants = pgTable("message_variants", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id").notNull(),
+  variantName: text("variant_name").notNull(), // e.g., "A", "B"
+  message: text("message").notNull(),
+  impressions: integer("impressions").default(0),
+  conversions: integer("conversions").default(0),
+  conversionRate: integer("conversion_rate").default(0),
+  isControl: boolean("is_control").default(false),
+  createdAt: timestamp("created_at").notNull(),
+});
+
+export const insertMessageVariantSchema = createInsertSchema(messageVariants).pick({
+  campaignId: true,
+  variantName: true,
+  message: true,
+  isControl: true,
+});
+
+export type InsertMessageVariant = z.infer<typeof insertMessageVariantSchema>;
+export type MessageVariant = typeof messageVariants.$inferSelect;
 
 export const insertCampaignSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
@@ -50,6 +74,14 @@ export const insertCampaignSchema = z.object({
   message: z.string().min(10, "Message must be at least 10 characters"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
+  isABTestActive: z.boolean().optional().default(false),
+  messageVariants: z.array(
+    z.object({
+      variantName: z.string(),
+      message: z.string().min(10, "Variant message must be at least 10 characters"),
+      isControl: z.boolean().default(false),
+    })
+  ).optional(),
 });
 
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
