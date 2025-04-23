@@ -165,7 +165,7 @@ const Campaigns = () => {
     const formattedData = {
       name: data.name,
       type: data.type,
-      targetAudience: getTargetAudienceString(data.targetAudience, data.industryValue),
+      targetAudience: data.targetAudience,
       message: data.message,
       startDate: data.startDate,
       endDate: data.endDate,
@@ -178,19 +178,7 @@ const Campaigns = () => {
     closeCampaignModal();
   };
   
-  // Helper function to format target audience
-  const getTargetAudienceString = (
-    targetAudience: { inactive: boolean; top: boolean; new: boolean; industry: boolean; },
-    industryValue?: string
-  ) => {
-    const segments = [];
-    if (targetAudience.inactive) segments.push("Inactive Customers");
-    if (targetAudience.top) segments.push("Top Customers");
-    if (targetAudience.new) segments.push("New Customers");
-    if (targetAudience.industry && industryValue) segments.push(`${industryValue} Industry`);
-    
-    return segments.length ? segments.join(", ") : "All Customers";
-  };
+
   
   // Filter campaigns based on active tab
   const filteredCampaigns = campaigns?.filter(campaign => {

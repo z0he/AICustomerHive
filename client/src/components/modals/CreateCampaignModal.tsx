@@ -227,19 +227,11 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
     return () => clearTimeout(timeoutId);
   }, [refreshSuggestions]);
 
-  // Toggle selectors based on checkboxes and trigger message refresh
+  // Trigger message refresh when target audience or type changes
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name === 'targetAudience.industry') {
-        setShowIndustrySelector(!!value.targetAudience?.industry);
-      } else if (name === 'targetAudience.location') {
-        setShowLocationSelector(!!value.targetAudience?.location);
-      } else if (name === 'targetAudience.seasonal') {
-        setShowSeasonalSelector(!!value.targetAudience?.seasonal);
-      }
-      
-      // If any target audience checkbox or campaign type changes, trigger a refresh of message suggestions
-      if ((name && name.startsWith('targetAudience.')) || name === 'type') {
+      // When audience selection changes, trigger a refresh of message suggestions
+      if (name === 'targetAudience' || name === 'type') {
         setRefreshSuggestions(prev => prev + 1);
       }
     });
