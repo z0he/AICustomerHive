@@ -1,5 +1,6 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import type { DrizzlePostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '@shared/schema';
 
@@ -27,19 +28,19 @@ export class TransactionManager {
   /**
    * Executes a function within a transaction
    * 
-   * @param fn Function that receives the database client and returns a promise
+   * @param fn Function that receives a database instance and returns a promise
    * @returns The result of the function
    * 
    * Example usage:
    * ```typescript
-   * const result = await TransactionManager.execute(async (db) => {
-   *   const user = await db.insert(users).values({ name: 'New User' }).returning();
-   *   const profile = await db.insert(profiles).values({ userId: user[0].id }).returning();
+   * const result = await TransactionManager.execute(async (transactionDb) => {
+   *   const user = await transactionDb.insert(users).values({ name: 'New User' }).returning();
+   *   const profile = await transactionDb.insert(profiles).values({ userId: user[0].id }).returning();
    *   return { user: user[0], profile: profile[0] };
    * });
    * ```
    */
-  public static async execute<T>(fn: (db: typeof db) => Promise<T>): Promise<T> {
+  public static async execute<T>(fn: (db: PostgresJsDatabase<typeof schema>) => Promise<T>): Promise<T> {
     // Create a dedicated connection for this transaction
     const client = postgres(connectionString, { max: 1 });
     

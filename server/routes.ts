@@ -1,54 +1,23 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { interpretVoiceCommand, generateCampaignSuggestions } from "./lib/openai";
 import { z } from "zod";
 import { insertCampaignSchema, insertCustomerSchema, insertLeadSchema, insertTaskSchema } from "@shared/schema";
+import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // User authentication routes
-  app.post("/api/auth/login", async (req: Request, res: Response) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-      
-      const user = await storage.getUserByUsername(username);
-      
-      if (!user || user.password !== password) { // In real app, use proper password hashing
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-      
-      // Set user session or return token in a real app
-      return res.status(200).json({ 
-        id: user.id, 
-        username: user.username,
-        name: user.name,
-        initials: user.initials
-      });
-    } catch (error) {
-      console.error("Login error:", error);
-      return res.status(500).json({ message: "Internal server error" });
-    }
+  // Set up authentication
+  setupAuth(app);
+  
+  // Legacy compatibility routes that redirect to new auth routes
+  app.post("/api/auth/login", (req, res) => {
+    return res.redirect(307, "/api/auth/login");
   });
   
-  app.get("/api/user/current", async (req: Request, res: Response) => {
-    try {
-      // In a real app, get user from session or token
-      // For demo, return a mock user
-      return res.json({
-        id: 1,
-        name: "John Doe",
-        initials: "JD",
-        email: "john@example.com"
-      });
-    } catch (error) {
-      console.error("Get current user error:", error);
-      return res.status(500).json({ message: "Internal server error" });
-    }
+  app.get("/api/user/current", (req, res) => {
+    return res.redirect("/api/auth/user");
   });
   
   // Voice command routes
