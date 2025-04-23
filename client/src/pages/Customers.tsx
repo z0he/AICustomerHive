@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
 import Sidebar from "@/components/layout/Sidebar";
+import CustomerSegments from "@/components/customers/CustomerSegments";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -474,6 +475,31 @@ const Customers = () => {
                 </TabsList>
                 
                 {/* Customer Grid View */}
+                {/* Segments Tab */}
+                <TabsContent value="segments" className="mt-0">
+                  {isLoadingCustomers ? (
+                    <div className="mt-6 rounded-lg border border-slate-200 overflow-hidden">
+                      <div className="animate-pulse">
+                        <div className="h-10 bg-slate-100"></div>
+                        {[1, 2, 3].map((_, idx) => (
+                          <div key={idx} className="h-24 border-t border-slate-200 bg-white flex items-center p-4">
+                            <div className="space-y-2 flex-1">
+                              <div className="h-5 bg-slate-200 rounded w-1/4"></div>
+                              <div className="h-4 bg-slate-200 rounded w-1/3"></div>
+                              <div className="h-4 bg-slate-200 rounded w-1/2"></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-4">
+                      <CustomerSegments customers={customers || []} />
+                    </div>
+                  )}
+                </TabsContent>
+                
+                {/* Grid Tab */}
                 <TabsContent value="grid" className="mt-0">
                   {isLoadingCustomers ? (
                     <div className="mt-6 rounded-lg border border-slate-200 overflow-hidden">
