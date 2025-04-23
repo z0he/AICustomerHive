@@ -317,6 +317,14 @@ const Analytics = () => {
     staleTime: 300000 // 5 minutes
   });
   
+  const { data: funnelData, isLoading: isLoadingFunnel } = useQuery<{
+    name: string;
+    value: number;
+  }[]>({
+    queryKey: ['/api/customers/funnel'],
+    staleTime: 300000 // 5 minutes
+  });
+  
   const { data: campaigns, isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
     queryKey: ['/api/campaigns', timePeriod],
     queryFn: async () => {
@@ -567,7 +575,11 @@ const Analytics = () => {
                     <CardTitle className="text-lg">Customer Growth Trend</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <CustomerTrendChart data={mockCustomerGrowth} />
+                    {isLoadingCustomerTrend ? (
+                      <div className="h-[300px] bg-slate-100 animate-pulse rounded-md" />
+                    ) : (
+                      <CustomerTrendChart data={customerTrendData || mockCustomerGrowth} />
+                    )}
                   </CardContent>
                 </Card>
                 
@@ -577,7 +589,11 @@ const Analytics = () => {
                     <CardTitle className="text-lg">Conversion Funnel</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ConversionFunnelChart data={mockFunnelData} />
+                    {isLoadingFunnel ? (
+                      <div className="h-[300px] bg-slate-100 animate-pulse rounded-md" />
+                    ) : (
+                      <ConversionFunnelChart data={funnelData || mockFunnelData} />
+                    )}
                   </CardContent>
                 </Card>
               </div>
