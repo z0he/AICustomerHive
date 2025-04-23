@@ -71,10 +71,7 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
   // Mutation for creating a new variant
   const createVariantMutation = useMutation({
     mutationFn: async (newVariant: { variantName: string, message: string, isControl: boolean }) => {
-      return apiRequest(`/api/campaigns/${campaignId}/variants`, {
-        method: "POST",
-        body: JSON.stringify(newVariant),
-      });
+      return apiRequest('POST', `/api/campaigns/${campaignId}/variants`, newVariant);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'variants'] });
@@ -104,10 +101,7 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
       impressions?: number; 
       conversions?: number;
     }) => {
-      return apiRequest(`/api/variants/${variantId}/stats`, {
-        method: "POST",
-        body: JSON.stringify({ impressions, conversions }),
-      });
+      return apiRequest('POST', `/api/variants/${variantId}/stats`, { impressions, conversions });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'variants'] });

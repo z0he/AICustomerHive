@@ -7,6 +7,7 @@ import { ProtectedRoute } from "@/lib/protected-route";
 
 import Dashboard from "@/pages/Dashboard";
 import Campaigns from "@/pages/Campaigns";
+import CampaignDetail from "@/pages/CampaignDetail";
 import Customers from "@/pages/Customers";
 import Analytics from "@/pages/Analytics";
 import AuthPage from "@/pages/auth-page";
@@ -35,11 +36,10 @@ function Router() {
       <ProtectedRoute path="/campaigns" component={Campaigns} />
       <ProtectedRoute path="/analytics" component={Analytics} />
       
+      {/* Campaign detail route */}
+      <ProtectedRoute path="/campaigns/:id" component={CampaignDetail} />
+      
       {/* Protected routes still under development */}
-      <ProtectedRoute path="/campaigns/:id" component={
-        ({ params }: { params: { id: string } }) => 
-          <UnderDevelopment title={`Campaign #${params.id}`} />
-      } />
       <ProtectedRoute path="/messages" component={() => <UnderDevelopment title="Messages" />} />
       <ProtectedRoute path="/settings" component={() => <UnderDevelopment title="Settings" />} />
       
