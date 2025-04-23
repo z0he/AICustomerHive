@@ -14,6 +14,8 @@ interface VoiceCommandModalProps {
   onClose: () => void;
   onCancel: () => void;
   onExecute: () => void;
+  isBrowserSupported?: boolean;
+  hasOpenAIKey?: boolean;
 }
 
 const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
@@ -23,7 +25,9 @@ const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
   interpretedCommand,
   onClose,
   onCancel,
-  onExecute
+  onExecute,
+  isBrowserSupported = true,
+  hasOpenAIKey = false
 }) => {
   const [statusText, setStatusText] = useState("Listening...");
   const [showResults, setShowResults] = useState(false);
@@ -82,6 +86,24 @@ const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
         </DialogHeader>
         
         <div className="flex flex-col items-center justify-center py-6">
+          {!isBrowserSupported && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md w-full">
+              <p className="text-red-600 text-sm flex items-center">
+                <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                Voice recognition is not supported in your browser. Please use Chrome, Edge, or Safari.
+              </p>
+            </div>
+          )}
+          
+          {!hasOpenAIKey && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md w-full">
+              <p className="text-amber-700 text-sm flex items-center">
+                <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+                Using simplified voice recognition. For better results, configure the OpenAI API key.
+              </p>
+            </div>
+          )}
+          
           <div className={`h-20 w-20 rounded-full 
             ${processingStage === "listening" ? 'bg-red-500 animate-pulse' : 
               processingStage === "processing" ? 'bg-amber-500 animate-pulse' : 
