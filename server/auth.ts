@@ -71,7 +71,9 @@ export function setupAuth(app: Express) {
     resave: false,
     saveUninitialized: false,
     store: new PostgresStore({
-      pool: queryClient,
+      conObject: {
+        connectionString: process.env.DATABASE_URL
+      },
       tableName: 'user_sessions', // Table name for sessions
       createTableIfMissing: true
     }),
@@ -116,7 +118,7 @@ export function setupAuth(app: Express) {
         jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
         secretOrKey: JWT_SECRET
       },
-      async (payload, done) => {
+      async (payload: { id: number; username: string }, done: any) => {
         try {
           const user = await storage.getUser(payload.id);
           
@@ -256,7 +258,7 @@ export function setupAuth(app: Express) {
   app.use("/api/secured/*", (req: Request, res: Response, next: NextFunction) => {
     if (!req.isAuthenticated()) {
       // Try JWT auth
-      passport.authenticate('jwt', { session: false })(req, res, (err) => {
+      passport.authenticate('jwt', { session: false })(req, res, (err: any) => {
         if (err || !req.user) {
           return res.status(401).json({ message: "Unauthorized" });
         }

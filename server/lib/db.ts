@@ -1,6 +1,5 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import type { DrizzlePostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '@shared/schema';
 
@@ -40,7 +39,7 @@ export class TransactionManager {
    * });
    * ```
    */
-  public static async execute<T>(fn: (db: PostgresJsDatabase<typeof schema>) => Promise<T>): Promise<T> {
+  public static async execute<T>(fn: (db: any) => Promise<T>): Promise<T> {
     // Create a dedicated connection for this transaction
     const client = postgres(connectionString, { max: 1 });
     
