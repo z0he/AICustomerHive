@@ -51,20 +51,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
     defaultValues: {
       name: "",
       type: "",
-      targetAudience: {
-        inactive: false,
-        top: false,
-        new: false,
-        recurring: false,
-        industry: false,
-        location: false,
-        seasonal: false,
-        highSpenders: false,
-        recentActivity: false,
-      },
-      industryValue: "",
-      locationValue: "",
-      seasonalValue: "",
+      targetAudience: "",
       message: "",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -95,44 +82,36 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       // Extract campaign name from command
       let campaignName = "New Campaign";
       let campaignType = "email";
-      let targetInactive = false;
-      let targetTop = false;
-      let targetNew = false;
-      let targetRecurring = false;
-      let targetIndustry = false;
-      let targetLocation = false;
-      let targetSeasonal = false;
-      let targetHighSpenders = false;
-      let targetRecentActivity = false;
+      let targetAudience = "All Customers";
       
       const command = voiceData.command.toLowerCase();
       
       if (command.includes("inactive") || command.includes("haven't purchased")) {
-        targetInactive = true;
+        targetAudience = "Inactive Customers";
         campaignName = "Re-engagement Campaign";
       } else if (command.includes("top") || command.includes("best") || command.includes("vip")) {
-        targetTop = true;
+        targetAudience = "Top Customers";
         campaignName = "VIP Customer Campaign";
       } else if (command.includes("new")) {
-        targetNew = true;
+        targetAudience = "New Customers";
         campaignName = "New Customer Welcome";
       } else if (command.includes("recurring") || command.includes("regular")) {
-        targetRecurring = true;
+        targetAudience = "Recurring Customers";
         campaignName = "Recurring Customer Appreciation";
       } else if (command.includes("industry") || command.includes("business") || command.includes("sector")) {
-        targetIndustry = true;
+        targetAudience = "Industry-Specific Customers";
         campaignName = "Industry-Specific Campaign";
       } else if (command.includes("location") || command.includes("region") || command.includes("area")) {
-        targetLocation = true;
+        targetAudience = "Specific Location Customers";
         campaignName = "Regional Campaign";
       } else if (command.includes("seasonal") || command.includes("holiday") || command.includes("summer") || command.includes("winter")) {
-        targetSeasonal = true;
+        targetAudience = "Seasonal Campaign";
         campaignName = "Seasonal Promotion";
       } else if (command.includes("high spend") || command.includes("big purchase")) {
-        targetHighSpenders = true;
+        targetAudience = "High-Spending Customers";
         campaignName = "High-Value Purchase Campaign";
       } else if (command.includes("recent activity") || command.includes("engaged")) {
-        targetRecentActivity = true;
+        targetAudience = "Recently Active Customers";
         campaignName = "Recent Activity Follow-up";
       }
       
@@ -147,27 +126,25 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       }
       
       // Use enhanced AI-generated messages based on the target audience
-      let message = "";
+      let message = aiGeneratedMessages[0]; // Default general message
       
       // Select appropriate message based on the audience type
-      if (targetInactive) {
-        message = aiGeneratedMessages[1]; // Inactive customer re-engagement message
-      } else if (targetTop) {
-        message = aiGeneratedMessages[2]; // VIP customer message
-      } else if (targetNew) {
-        message = aiGeneratedMessages[3]; // New customer message
-      } else if (targetRecurring) {
-        message = aiGeneratedMessages[4]; // Recurring customer message
-      } else if (targetHighSpenders) {
-        message = aiGeneratedMessages[5]; // High-value customers message
-      } else if (targetSeasonal) {
-        message = aiGeneratedMessages[6]; // Seasonal message
-      } else if (targetLocation) {
-        message = aiGeneratedMessages[7]; // Location-specific message
-      } else if (targetIndustry) {
-        message = aiGeneratedMessages[8]; // Industry-specific message
-      } else {
-        message = aiGeneratedMessages[0]; // Default general message
+      if (targetAudience === "Inactive Customers") {
+        message = aiGeneratedMessages[1];
+      } else if (targetAudience === "Top Customers") {
+        message = aiGeneratedMessages[2];
+      } else if (targetAudience === "New Customers") {
+        message = aiGeneratedMessages[3];
+      } else if (targetAudience === "Recurring Customers") {
+        message = aiGeneratedMessages[4];
+      } else if (targetAudience === "High-Spending Customers") {
+        message = aiGeneratedMessages[5];
+      } else if (targetAudience === "Seasonal Campaign") {
+        message = aiGeneratedMessages[6];
+      } else if (targetAudience === "Specific Location Customers") {
+        message = aiGeneratedMessages[7];
+      } else if (targetAudience === "Industry-Specific Customers") {
+        message = aiGeneratedMessages[8];
       }
       
       // In a real implementation, we would call the OpenAI API to generate customized messages
@@ -177,17 +154,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
         ...form.getValues(),
         name: campaignName,
         type: campaignType,
-        targetAudience: {
-          inactive: targetInactive,
-          top: targetTop,
-          new: targetNew,
-          recurring: targetRecurring,
-          industry: targetIndustry,
-          location: targetLocation,
-          seasonal: targetSeasonal,
-          highSpenders: targetHighSpenders,
-          recentActivity: targetRecentActivity,
-        },
+        targetAudience: targetAudience,
         message
       });
     }
@@ -241,32 +208,13 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
   // Fetch AI suggestions when target audience changes
   useEffect(() => {
     const fetchSuggestions = () => {
-      const audiences = form.getValues().targetAudience;
-      if (!Object.values(audiences).some(v => v)) {
+      const targetAudience = form.getValues().targetAudience;
+      if (!targetAudience) {
         // No audience selected, use default messages
         setAiGeneratedSuggestions(aiGeneratedMessages);
         return;
       }
 
-      // Create audience description for AI
-      let audienceDescriptions = [];
-      if (audiences.inactive) audienceDescriptions.push("inactive customers who haven't made a purchase recently");
-      if (audiences.top) audienceDescriptions.push("top VIP customers with high lifetime value");
-      if (audiences.new) audienceDescriptions.push("new customers who joined in the last 30 days");
-      if (audiences.recurring) audienceDescriptions.push("recurring customers with 2+ purchases");
-      if (audiences.highSpenders) audienceDescriptions.push("high-spending customers");
-      if (audiences.seasonal) audienceDescriptions.push("customers interested in seasonal offers");
-      if (audiences.location) {
-        const location = form.getValues().locationValue || "specific regions";
-        audienceDescriptions.push(`customers in ${location}`);
-      }
-      if (audiences.industry) {
-        const industry = form.getValues().industryValue || "specific industries";
-        audienceDescriptions.push(`customers in the ${industry} industry`);
-      }
-      if (audiences.recentActivity) audienceDescriptions.push("customers with recent activity");
-
-      const targetAudience = audienceDescriptions.join(", ");
       const campaignType = form.getValues().type || "email";
       const campaignGoal = `Create a ${campaignType} campaign to engage ${targetAudience}`;
 
@@ -378,308 +326,39 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
               )}
             />
             
-            <div>
-              <Label className="block text-sm font-medium text-slate-700 mb-1">Target Audience</Label>
-              <div className="border border-slate-300 rounded-lg p-4">
-                <div className="space-y-3">
-                  <FormField
-                    control={form.control}
-                    name="targetAudience.inactive"
-                    render={({ field }) => (
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Checkbox 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                            id="target-inactive" 
-                          />
-                        </FormControl>
-                        <Label 
-                          htmlFor="target-inactive" 
-                          className="ml-2 text-sm text-slate-700"
-                        >
-                          Inactive customers (no purchase in last 3 months)
-                        </Label>
-                      </div>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="targetAudience.top"
-                    render={({ field }) => (
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Checkbox 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                            id="target-top" 
-                          />
-                        </FormControl>
-                        <Label 
-                          htmlFor="target-top" 
-                          className="ml-2 text-sm text-slate-700"
-                        >
-                          Top 100 customers by revenue
-                        </Label>
-                      </div>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="targetAudience.new"
-                    render={({ field }) => (
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Checkbox 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                            id="target-new" 
-                          />
-                        </FormControl>
-                        <Label 
-                          htmlFor="target-new" 
-                          className="ml-2 text-sm text-slate-700"
-                        >
-                          New customers (joined in last 30 days)
-                        </Label>
-                      </div>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="targetAudience.recurring"
-                    render={({ field }) => (
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Checkbox 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                            id="target-recurring" 
-                          />
-                        </FormControl>
-                        <Label 
-                          htmlFor="target-recurring" 
-                          className="ml-2 text-sm text-slate-700"
-                        >
-                          Recurring customers (2+ purchases)
-                        </Label>
-                      </div>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="targetAudience.highSpenders"
-                    render={({ field }) => (
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Checkbox 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                            id="target-high-spenders" 
-                          />
-                        </FormControl>
-                        <Label 
-                          htmlFor="target-high-spenders" 
-                          className="ml-2 text-sm text-slate-700"
-                        >
-                          High-value purchases (over $500)
-                        </Label>
-                      </div>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="targetAudience.recentActivity"
-                    render={({ field }) => (
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Checkbox 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                            id="target-recent-activity" 
-                          />
-                        </FormControl>
-                        <Label 
-                          htmlFor="target-recent-activity" 
-                          className="ml-2 text-sm text-slate-700"
-                        >
-                          Recent activity (active in last 7 days)
-                        </Label>
-                      </div>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="targetAudience.seasonal"
-                    render={({ field }) => (
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Checkbox 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                            id="target-seasonal" 
-                          />
-                        </FormControl>
-                        <Label 
-                          htmlFor="target-seasonal" 
-                          className="ml-2 text-sm text-slate-700"
-                        >
-                          Seasonal shoppers
-                        </Label>
-                      </div>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="targetAudience.location"
-                    render={({ field }) => (
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Checkbox 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                            id="target-location" 
-                          />
-                        </FormControl>
-                        <Label 
-                          htmlFor="target-location" 
-                          className="ml-2 text-sm text-slate-700"
-                        >
-                          Specific location
-                        </Label>
-                      </div>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="targetAudience.industry"
-                    render={({ field }) => (
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Checkbox 
-                            checked={field.value} 
-                            onCheckedChange={field.onChange}
-                            id="target-industry" 
-                          />
-                        </FormControl>
-                        <Label 
-                          htmlFor="target-industry" 
-                          className="ml-2 text-sm text-slate-700"
-                        >
-                          Specific industry
-                        </Label>
-                      </div>
-                    )}
-                  />
-                </div>
-                
-                {showIndustrySelector && (
-                  <div className="mt-3">
-                    <FormField
-                      control={form.control}
-                      name="industryValue"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select industry" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="finance">Finance</SelectItem>
-                              <SelectItem value="technology">Technology</SelectItem>
-                              <SelectItem value="healthcare">Healthcare</SelectItem>
-                              <SelectItem value="retail">Retail</SelectItem>
-                              <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                              <SelectItem value="education">Education</SelectItem>
-                              <SelectItem value="hospitality">Hospitality</SelectItem>
-                              <SelectItem value="transportation">Transportation</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-                
-                {showLocationSelector && (
-                  <div className="mt-3">
-                    <FormField
-                      control={form.control}
-                      name="locationValue"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select location" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="northeast">Northeast</SelectItem>
-                              <SelectItem value="southeast">Southeast</SelectItem>
-                              <SelectItem value="midwest">Midwest</SelectItem>
-                              <SelectItem value="southwest">Southwest</SelectItem>
-                              <SelectItem value="west">West Coast</SelectItem>
-                              <SelectItem value="international">International</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-                
-                {showSeasonalSelector && (
-                  <div className="mt-3">
-                    <FormField
-                      control={form.control}
-                      name="seasonalValue"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select season" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="spring">Spring</SelectItem>
-                              <SelectItem value="summer">Summer</SelectItem>
-                              <SelectItem value="fall">Fall</SelectItem>
-                              <SelectItem value="winter">Winter</SelectItem>
-                              <SelectItem value="holiday">Holiday Season</SelectItem>
-                              <SelectItem value="backToSchool">Back to School</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
+            <FormField
+              control={form.control}
+              name="targetAudience"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Audience</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select target audience" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="All Customers">All Customers</SelectItem>
+                      <SelectItem value="Inactive Customers">Inactive Customers</SelectItem>
+                      <SelectItem value="Top Customers">Top Customers (VIP)</SelectItem>
+                      <SelectItem value="New Customers">New Customers</SelectItem>
+                      <SelectItem value="Recurring Customers">Recurring Customers</SelectItem>
+                      <SelectItem value="High-Spending Customers">High-Spending Customers</SelectItem>
+                      <SelectItem value="Recently Active Customers">Recently Active Customers</SelectItem>
+                      <SelectItem value="Seasonal Campaign">Seasonal Campaign</SelectItem>
+                      <SelectItem value="Specific Location Customers">Specific Location</SelectItem>
+                      <SelectItem value="Industry-Specific Customers">Specific Industry</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             
             <FormField
               control={form.control}
