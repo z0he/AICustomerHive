@@ -11,11 +11,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
   
-  // Legacy compatibility routes that redirect to new auth routes
-  app.post("/api/auth/login", (req, res) => {
-    return res.redirect(307, "/api/auth/login");
-  });
-  
+  // Legacy compatibility redirect for user current route
   app.get("/api/user/current", (req, res) => {
     return res.redirect("/api/auth/user");
   });
