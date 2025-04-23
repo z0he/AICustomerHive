@@ -1,11 +1,16 @@
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+// Initialize OpenAI client
+// The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "demo_key" 
-    ? process.env.OPENAI_API_KEY 
-    : "sk-demo-key-placeholder" 
+  apiKey: process.env.OPENAI_API_KEY || undefined
 });
+
+// Function to check if we have a valid API key (not undefined, empty or a placeholder)
+export function hasValidApiKey(): boolean {
+  const key = process.env.OPENAI_API_KEY;
+  return key !== undefined && key.trim() !== '' && !key.includes('demo') && !key.includes('placeholder');
+}
 
 // Helper function to safely parse JSON from OpenAI response
 function safeJsonParse(content: string | null): any {
@@ -32,7 +37,7 @@ export async function interpretVoiceCommand(text: string): Promise<{
   
   try {
     // Check if we have a valid API key before making OpenAI call
-    if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "demo_key") {
+    if (hasValidApiKey()) {
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -120,7 +125,7 @@ export async function generateCampaignSuggestions(
 ): Promise<string[]> {
   try {
     // Check if we have a valid API key before making OpenAI call
-    if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "demo_key") {
+    if (hasValidApiKey()) {
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -217,7 +222,7 @@ export async function analyzeCustomerData(customerData: any[]): Promise<{
 }> {
   try {
     // Check if we have a valid API key before making OpenAI call
-    if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "demo_key") {
+    if (hasValidApiKey()) {
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [

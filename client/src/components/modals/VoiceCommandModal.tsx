@@ -43,11 +43,13 @@ const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
       setShowResults(false);
       setProcessingStage("processing");
     } else if (interpretedCommand) {
-      setStatusText(interpretedCommand.intent === "unknown" 
+      const isUnknownIntent = interpretedCommand.intent === "unknown";
+      setStatusText(isUnknownIntent 
         ? "I couldn't understand that command" 
         : "I understood your command");
-      setShowResults(true);
-      setProcessingStage(interpretedCommand.intent === "unknown" ? "error" : "ready");
+      // Only show the results section for recognized commands, not for unknown commands
+      setShowResults(!isUnknownIntent);
+      setProcessingStage(isUnknownIntent ? "error" : "ready");
       console.log("Ready to execute command:", interpretedCommand);
     }
   }, [isListening, transcript, interpretedCommand]);
@@ -163,22 +165,40 @@ const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
           </p>
         </div>
         
-        {showResults && interpretedCommand && (
-          <div className="border-t border-slate-200 pt-4 mt-4">
-            <h4 className="font-medium text-slate-800">I understood you want to:</h4>
-            <div className="bg-slate-50 p-3 rounded-lg mt-2">
-              <p className="text-slate-700">{interpretedCommand.action}</p>
-            </div>
-            
-            <div className="mt-4 flex justify-end space-x-3">
-              <Button variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-              <Button onClick={onExecute}>
-                Execute Command
-              </Button>
-            </div>
-          </div>
+        {interpretedCommand && (
+          <>
+            {showResults ? (
+              // For recognized commands, show the interpreted action and execute button
+              <div className="border-t border-slate-200 pt-4 mt-4">
+                <h4 className="font-medium text-slate-800">I understood you want to:</h4>
+                <div className="bg-slate-50 p-3 rounded-lg mt-2">
+                  <p className="text-slate-700">{interpretedCommand.action}</p>
+                </div>
+                
+                <div className="mt-4 flex justify-end space-x-3">
+                  <Button variant="outline" onClick={onCancel}>
+                    Cancel
+                  </Button>
+                  <Button onClick={onExecute}>
+                    Execute Command
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              // For unrecognized commands (when intent is "unknown"), show a helpful fallback message
+              <div className="border-t border-slate-200 pt-4 mt-4">
+                <div className="bg-slate-50 p-3 rounded-lg mt-2">
+                  <p className="text-slate-700">Try a different command like "Show me my customers" or "Create a new campaign"</p>
+                </div>
+                
+                <div className="mt-4 flex justify-end">
+                  <Button variant="outline" onClick={onCancel}>
+                    Try Again
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>
