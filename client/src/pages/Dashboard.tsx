@@ -17,6 +17,7 @@ import LeadScoring from "@/components/dashboard/LeadScoring";
 import NextActions from "@/components/dashboard/NextActions";
 import CampaignPerformanceChart from "@/components/dashboard/CampaignPerformanceChart";
 import PerformanceMetricsChart from "@/components/dashboard/PerformanceMetricsChart";
+import ConversionFunnelChart from "@/components/dashboard/ConversionFunnelChart";
 
 // Types
 import { Campaign, Customer, Lead, Task } from "@shared/schema";
@@ -176,6 +177,27 @@ const Dashboard = () => {
         return await res.json();
       } catch (error) {
         console.error("Error fetching performance metrics:", error);
+        return [];
+      }
+    }
+  });
+  
+  // Funnel data for conversion visualization
+  const { data: funnelData, isLoading: isFunnelLoading } = useQuery({
+    queryKey: ['/api/customers/funnel'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/customers/funnel', {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to fetch funnel data');
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error fetching funnel data:", error);
         return [];
       }
     }
@@ -472,6 +494,28 @@ const Dashboard = () => {
                 />
               </div>
               
+              {/* Interactive Performance Charts */}
+              <div className="space-y-6">
+                <PerformanceMetricsChart 
+                  data={performanceData || []}
+                  title="Sales & Conversion Performance"
+                  description="Interactive view of sales and conversion metrics over time"
+                  chartType="area"
+                />
+                
+                {campaigns && campaigns.length > 0 && (
+                  <CampaignPerformanceChart 
+                    campaigns={campaigns}
+                    onCampaignSelect={(campaign) => {
+                      toast({
+                        title: `Campaign: ${campaign.name}`,
+                        description: `${campaign.conversions || 0} conversions (${campaign.percentage || 0}% of target)`
+                      });
+                    }}
+                  />
+                )}
+              </div>
+              
               {/* Customer Activity */}
               <div className="customer-activity">
                 <CustomerActivity 
@@ -486,6 +530,15 @@ const Dashboard = () => {
               <SummaryMetrics 
                 metrics={metrics || []}
               />
+              
+              {/* Conversion Funnel */}
+              <div className="conversion-funnel">
+                <ConversionFunnelChart 
+                  data={funnelData || []}
+                  title="Customer Journey"
+                  description="Conversion funnel from leads to customers"
+                />
+              </div>
               
               {/* Lead Scoring */}
               <div className="lead-scoring">
