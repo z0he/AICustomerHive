@@ -15,6 +15,7 @@ type AuthContextType = {
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  googleAuthMutation: UseMutationResult<SelectUser, Error, {idToken: string}>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
@@ -152,6 +153,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     },
   });
+  
+  const googleAuthMutation = useMutation({
+    mutationFn: async ({ idToken }: { idToken: string }) => {
+      try {
+        const res = await fetch("/api/auth/google", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken }),
+          credentials: "include"
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.text();
+          throw new Error(errorData || `Google authentication failed with status: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        
+        // Store the JWT token in localStorage
+        if (data.token) {
+          localStorage.setItem("auth_token", data.token);
+        }
+        
+        return data.user;
+      } catch (error) {
+        console.error("Google auth error:", error);
+        throw error;
+      }
+    },
+    onSuccess: (user: SelectUser) => {
+      queryClient.setQueryData(["/api/auth/user"], { user });
+      console.log("Google authentication successful, user data:", user);
+    },
+    onError: (error: Error) => {
+      console.error("Google auth error details:", error);
+      toast({
+        title: "Google authentication failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   return (
     <AuthContext.Provider
@@ -162,6 +205,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         loginMutation,
         logoutMutation,
         registerMutation,
+        googleAuthMutation,
       }}
     >
       {children}
