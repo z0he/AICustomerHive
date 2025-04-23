@@ -1,6 +1,6 @@
 import { FC, useEffect, useState } from "react";
-import { X, Mic } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { X, Mic, CheckIcon, AlertCircle, Loader } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 interface VoiceCommandModalProps {
@@ -27,17 +27,23 @@ const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
 }) => {
   const [statusText, setStatusText] = useState("Listening...");
   const [showResults, setShowResults] = useState(false);
+  const [processingStage, setProcessingStage] = useState<"listening" | "processing" | "ready" | "error">("listening");
   
   useEffect(() => {
     if (isListening) {
-      setStatusText("Listening...");
+      setStatusText("Listening to your command...");
       setShowResults(false);
+      setProcessingStage("listening");
     } else if (transcript && !interpretedCommand) {
-      setStatusText("Processing...");
+      setStatusText("Processing your request...");
       setShowResults(false);
+      setProcessingStage("processing");
     } else if (interpretedCommand) {
-      setStatusText("I understood your command");
+      setStatusText(interpretedCommand.intent === "unknown" 
+        ? "I couldn't understand that command" 
+        : "I understood your command");
       setShowResults(true);
+      setProcessingStage(interpretedCommand.intent === "unknown" ? "error" : "ready");
       console.log("Ready to execute command:", interpretedCommand);
     }
   }, [isListening, transcript, interpretedCommand]);
@@ -61,19 +67,30 @@ const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
             <Mic className="text-accent-500 mr-2" size={18} />
             <span>Voice Command</span>
           </DialogTitle>
+          <DialogDescription>
+            Use your voice to control the CRM. Speak commands clearly for best results.
+          </DialogDescription>
           <Button 
             variant="ghost" 
             size="icon" 
             className="absolute right-4 top-4" 
             onClick={onClose}
+            aria-label="Close dialog"
           >
             <X className="h-4 w-4" />
           </Button>
         </DialogHeader>
         
         <div className="flex flex-col items-center justify-center py-6">
-          <div className={`h-20 w-20 rounded-full ${isListening ? 'bg-red-500 animate-pulse' : 'bg-accent-500'} flex items-center justify-center mb-4`}>
-            <Mic className="text-white" size={36} />
+          <div className={`h-20 w-20 rounded-full 
+            ${processingStage === "listening" ? 'bg-red-500 animate-pulse' : 
+              processingStage === "processing" ? 'bg-amber-500 animate-pulse' : 
+              processingStage === "error" ? 'bg-slate-400' : 'bg-green-500'} 
+            flex items-center justify-center mb-4 transition-colors`}>
+            {processingStage === "listening" && <Mic className="text-white" size={36} />}
+            {processingStage === "processing" && <Loader className="text-white animate-spin" size={36} />}
+            {processingStage === "ready" && <CheckIcon className="text-white" size={36} />}
+            {processingStage === "error" && <AlertCircle className="text-white" size={36} />}
           </div>
           <p className="text-lg font-medium text-slate-800">{statusText}</p>
           <p className="text-slate-500 text-center mt-2">
