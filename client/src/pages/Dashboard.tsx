@@ -36,6 +36,7 @@ const Dashboard = () => {
     isListening,
     transcript,
     interpretedCommand: hookInterpretedCommand,
+    isBrowserSupported,
     toggleListening,
     resetRecognition
   } = useVoiceRecognition();
@@ -402,6 +403,7 @@ const Dashboard = () => {
             onSelectSuggestion={handleSelectSuggestion}
             onShowHelp={showHelpModal}
             userName={userData?.name.split(' ')[0] || 'User'}
+            isBrowserSupported={isBrowserSupported}
           />
           
           {/* Dashboard Content */}
