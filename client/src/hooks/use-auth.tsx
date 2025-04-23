@@ -32,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/auth/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    retry: 1,
   });
 
   const loginMutation = useMutation({
@@ -63,9 +64,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/auth/user"], user);
+      queryClient.setQueryData(["/api/auth/user"], { user });
+      console.log("Login successful, user data:", user);
     },
     onError: (error: Error) => {
+      console.error("Login error details:", error);
       toast({
         title: "Login failed",
         description: error.message,
@@ -103,9 +106,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     },
     onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/auth/user"], user);
+      queryClient.setQueryData(["/api/auth/user"], { user });
+      console.log("Registration successful, user data:", user);
     },
     onError: (error: Error) => {
+      console.error("Registration error details:", error);
       toast({
         title: "Registration failed",
         description: error.message,
@@ -136,8 +141,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/user"], null);
+      console.log("Logout successful");
     },
     onError: (error: Error) => {
+      console.error("Logout error details:", error);
       toast({
         title: "Logout failed",
         description: error.message,

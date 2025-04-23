@@ -40,24 +40,39 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
+    console.log(`Making request to: ${queryKey[0]}`);
+    
     // Prepare headers with JWT token if available
     const headers: Record<string, string> = {};
     const token = localStorage.getItem("auth_token");
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
+      console.log("Using auth token from localStorage");
+    } else {
+      console.log("No auth token found in localStorage");
     }
     
-    const res = await fetch(queryKey[0] as string, {
-      headers,
-      credentials: "include",
-    });
+    try {
+      const res = await fetch(queryKey[0] as string, {
+        headers,
+        credentials: "include",
+      });
+      
+      console.log(`Response status: ${res.status} for ${queryKey[0]}`);
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        console.log(`Returning null for 401 on ${queryKey[0]}`);
+        return null;
+      }
+
+      await throwIfResNotOk(res);
+      const data = await res.json();
+      console.log(`Response data for ${queryKey[0]}:`, data);
+      return data;
+    } catch (error) {
+      console.error(`Error fetching ${queryKey[0]}:`, error);
+      throw error;
     }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
 
 export const queryClient = new QueryClient({
