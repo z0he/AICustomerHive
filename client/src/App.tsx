@@ -2,12 +2,14 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/lib/protected-route";
 
 import Dashboard from "@/pages/Dashboard";
 import Campaigns from "@/pages/Campaigns";
 import Customers from "@/pages/Customers";
 import Analytics from "@/pages/Analytics";
-import Login from "@/pages/Login";
+import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
 // Custom placeholder page for routes under development
@@ -26,20 +28,23 @@ const UnderDevelopment = ({ title }: { title: string }) => {
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Login} />
-      <Route path="/dashboard" component={Dashboard} />
+      {/* Protected routes */}
+      <ProtectedRoute path="/" component={Dashboard} />
+      <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/customers" component={Customers} />
+      <ProtectedRoute path="/campaigns" component={Campaigns} />
+      <ProtectedRoute path="/analytics" component={Analytics} />
       
-      {/* Implemented routes */}
-      <Route path="/customers" component={Customers} />
-      <Route path="/campaigns" component={Campaigns} />
-      <Route path="/analytics" component={Analytics} />
+      {/* Protected routes still under development */}
+      <ProtectedRoute path="/campaigns/:id" component={
+        ({ params }: { params: { id: string } }) => 
+          <UnderDevelopment title={`Campaign #${params.id}`} />
+      } />
+      <ProtectedRoute path="/messages" component={() => <UnderDevelopment title="Messages" />} />
+      <ProtectedRoute path="/settings" component={() => <UnderDevelopment title="Settings" />} />
       
-      {/* Routes still under development */}
-      <Route path="/campaigns/:id">
-        {(params) => <UnderDevelopment title={`Campaign #${params.id}`} />}
-      </Route>
-      <Route path="/messages" component={() => <UnderDevelopment title="Messages" />} />
-      <Route path="/settings" component={() => <UnderDevelopment title="Settings" />} />
+      {/* Public routes */}
+      <Route path="/auth" component={AuthPage} />
       
       <Route component={NotFound} />
     </Switch>
@@ -49,10 +54,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <WouterRouter>
-        <Router />
-        <Toaster />
-      </WouterRouter>
+      <AuthProvider>
+        <WouterRouter>
+          <Router />
+          <Toaster />
+        </WouterRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
