@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import VoiceCommandHelp from "./VoiceCommandHelp";
 
 interface VoiceCommandSuggestion {
   id: number;
