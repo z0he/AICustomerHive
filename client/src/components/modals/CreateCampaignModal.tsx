@@ -1,5 +1,5 @@
 import { FC, useState, useEffect, useMemo } from "react";
-import { X, Megaphone } from "lucide-react";
+import { X, Megaphone, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
 
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
@@ -206,6 +208,89 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
   
   // useState to track when to refresh message suggestions
   const [refreshSuggestions, setRefreshSuggestions] = useState(0);
+  const [aiGeneratedSuggestions, setAiGeneratedSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const { toast } = useToast();
+
+  // API mutation for fetching AI-powered campaign suggestions
+  const suggestionsMutation = useMutation({
+    mutationFn: async (data: { campaignGoal: string; targetAudience: string }) => {
+      const response = await fetch('/api/ai/campaign-suggestions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch campaign suggestions');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.suggestions && data.suggestions.length > 0) {
+        setAiGeneratedSuggestions(data.suggestions);
+      } else {
+        // Fallback to static messages if no suggestions are returned
+        setAiGeneratedSuggestions(aiGeneratedMessages);
+      }
+      setIsLoadingSuggestions(false);
+    },
+    onError: (error) => {
+      console.error('Error fetching campaign suggestions:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate AI campaign suggestions. Using default messages instead.',
+        variant: 'destructive'
+      });
+      setAiGeneratedSuggestions(aiGeneratedMessages);
+      setIsLoadingSuggestions(false);
+    }
+  });
+
+  // Fetch AI suggestions when target audience changes
+  useEffect(() => {
+    const fetchSuggestions = () => {
+      const audiences = form.getValues().targetAudience;
+      if (!Object.values(audiences).some(v => v)) {
+        // No audience selected, use default messages
+        setAiGeneratedSuggestions(aiGeneratedMessages);
+        return;
+      }
+
+      // Create audience description for AI
+      let audienceDescriptions = [];
+      if (audiences.inactive) audienceDescriptions.push("inactive customers who haven't made a purchase recently");
+      if (audiences.top) audienceDescriptions.push("top VIP customers with high lifetime value");
+      if (audiences.new) audienceDescriptions.push("new customers who joined in the last 30 days");
+      if (audiences.recurring) audienceDescriptions.push("recurring customers with 2+ purchases");
+      if (audiences.highSpenders) audienceDescriptions.push("high-spending customers");
+      if (audiences.seasonal) audienceDescriptions.push("customers interested in seasonal offers");
+      if (audiences.location) {
+        const location = form.getValues().locationValue || "specific regions";
+        audienceDescriptions.push(`customers in ${location}`);
+      }
+      if (audiences.industry) {
+        const industry = form.getValues().industryValue || "specific industries";
+        audienceDescriptions.push(`customers in the ${industry} industry`);
+      }
+      if (audiences.recentActivity) audienceDescriptions.push("customers with recent activity");
+
+      const targetAudience = audienceDescriptions.join(", ");
+      const campaignType = form.getValues().type || "email";
+      const campaignGoal = `Create a ${campaignType} campaign to engage ${targetAudience}`;
+
+      setIsLoadingSuggestions(true);
+      suggestionsMutation.mutate({ campaignGoal, targetAudience });
+    };
+
+    // Debounce the fetch to avoid too many requests while user is selecting options
+    const timeoutId = setTimeout(fetchSuggestions, 500);
+    return () => clearTimeout(timeoutId);
+  }, [refreshSuggestions]);
 
   // Toggle selectors based on checkboxes and trigger message refresh
   useEffect(() => {
@@ -218,8 +303,8 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
         setShowSeasonalSelector(!!value.targetAudience?.seasonal);
       }
       
-      // If any target audience checkbox changes, trigger a refresh of message suggestions
-      if (name && name.startsWith('targetAudience.')) {
+      // If any target audience checkbox or campaign type changes, trigger a refresh of message suggestions
+      if ((name && name.startsWith('targetAudience.')) || name === 'type') {
         setRefreshSuggestions(prev => prev + 1);
       }
     });
@@ -233,48 +318,10 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
     onClose();
   };
   
-  // Filter AI messages based on selected target audience (memoized for performance)
+  // Get suggestions based on combined AI and static messages
   const filteredMessages = useMemo(() => {
-    const audiences = form.getValues().targetAudience;
-    
-    // If no specific audiences are selected, return all messages
-    if (!Object.values(audiences).some(v => v)) {
-      return aiGeneratedMessages;
-    }
-    
-    let relevantMessages = [];
-    
-    // Add general messages
-    relevantMessages.push(aiGeneratedMessages[0]);
-    
-    // Add audience-specific messages
-    if (audiences.inactive) {
-      relevantMessages.push(aiGeneratedMessages[1]);
-    }
-    if (audiences.top) {
-      relevantMessages.push(aiGeneratedMessages[2]);
-    }
-    if (audiences.new) {
-      relevantMessages.push(aiGeneratedMessages[3]);
-    }
-    if (audiences.recurring) {
-      relevantMessages.push(aiGeneratedMessages[4]);
-    }
-    if (audiences.highSpenders) {
-      relevantMessages.push(aiGeneratedMessages[5]);
-    }
-    if (audiences.seasonal) {
-      relevantMessages.push(aiGeneratedMessages[6]);
-    }
-    if (audiences.location) {
-      relevantMessages.push(aiGeneratedMessages[7]);
-    }
-    if (audiences.industry) {
-      relevantMessages.push(aiGeneratedMessages[8], aiGeneratedMessages[9]);
-    }
-    
-    return relevantMessages;
-  }, [refreshSuggestions, form]);
+    return aiGeneratedSuggestions.length > 0 ? aiGeneratedSuggestions : aiGeneratedMessages;
+  }, [aiGeneratedSuggestions]);
   
   const selectAIMessage = (message: string) => {
     form.setValue('message', message, { shouldValidate: true });
@@ -666,20 +713,41 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
             />
             
             <div>
-              <p className="text-sm font-medium text-slate-700 mb-2">AI-Generated Messages:</p>
-              <div className="space-y-2">
-                {filteredMessages.map((message: string, idx: number) => (
-                  <Card 
-                    key={idx} 
-                    className="cursor-pointer hover:bg-slate-50 transition-colors"
-                    onClick={() => selectAIMessage(message)}
-                  >
-                    <CardContent className="p-3">
-                      <p className="text-sm text-slate-700">{message}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-slate-700">AI-Generated Messages:</p>
+                {isLoadingSuggestions && (
+                  <div className="flex items-center text-xs text-slate-500">
+                    <RefreshCw className="animate-spin h-3 w-3 mr-1" />
+                    <span>Generating suggestions...</span>
+                  </div>
+                )}
               </div>
+              
+              {isLoadingSuggestions ? (
+                <div className="space-y-2">
+                  <div className="h-16 bg-slate-100 animate-pulse rounded-md" />
+                  <div className="h-16 bg-slate-100 animate-pulse rounded-md" />
+                  <div className="h-16 bg-slate-100 animate-pulse rounded-md" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredMessages.map((message: string, idx: number) => (
+                    <Card 
+                      key={idx} 
+                      className="cursor-pointer hover:bg-slate-50 transition-colors border border-slate-200 hover:border-primary-300"
+                      onClick={() => selectAIMessage(message)}
+                    >
+                      <CardContent className="p-3">
+                        <p className="text-sm text-slate-700">{message}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              
+              <p className="text-xs text-slate-500 mt-2">
+                <span className="font-medium">Tip:</span> Select a target audience and campaign type to get AI-generated message suggestions.
+              </p>
             </div>
             
             <div>
