@@ -10,6 +10,7 @@ import { storage } from "./storage";
 import { queryClient } from "./lib/db";
 import { User as SelectUser } from "@shared/schema";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 
 declare global {
   namespace Express {
@@ -262,6 +263,81 @@ export function setupAuth(app: Express) {
       }
       res.sendStatus(200);
     });
+  });
+
+  // Google authentication endpoint
+  app.post("/api/auth/google", async (req: Request, res: Response) => {
+    try {
+      const { idToken } = req.body;
+      
+      if (!idToken) {
+        return res.status(400).json({ message: "ID token is required" });
+      }
+      
+      // Create Google OAuth client
+      const client = new OAuth2Client(process.env.VITE_FIREBASE_API_KEY);
+      
+      // Verify the ID token
+      const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.VITE_FIREBASE_API_KEY
+      });
+      
+      // Get the payload from the token
+      const payload = ticket.getPayload();
+      
+      if (!payload) {
+        return res.status(400).json({ message: "Invalid ID token" });
+      }
+      
+      const { sub: googleId, email, name: fullName } = payload;
+      
+      // Check if user exists with this Google ID or email
+      let user = await storage.getUserByUsername(email || googleId);
+      
+      if (!user) {
+        // Create a new user
+        const initials = fullName
+          ? fullName
+              .split(" ")
+              .map(word => word[0])
+              .join("")
+              .toUpperCase()
+          : "U";
+        
+        user = await storage.createUser({
+          username: email || googleId,
+          password: randomBytes(32).toString("hex"), // Random password as we'll use Google for auth
+          name: fullName || "Google User",
+          initials,
+          googleId
+        });
+      }
+      
+      // Log the user in
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Failed to log in with Google" });
+        }
+        
+        // Generate JWT token
+        const token = generateToken(user);
+        
+        // Return the user and token
+        return res.json({
+          user: {
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            initials: user.initials
+          },
+          token
+        });
+      });
+    } catch (error) {
+      console.error("Google auth error:", error);
+      return res.status(401).json({ message: "Google authentication failed" });
+    }
   });
 
   // Current user endpoint (both session and JWT auth)
