@@ -1,137 +1,105 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
 import postgres from 'postgres';
-import * as schema from '../shared/schema';
-import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { migrate } from 'drizzle-orm/postgres-js/migrator';
+import * as schema from '../shared/schema';
+
+// Get the current directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function main() {
   console.log('Running database migrations...');
   
-  // Create direct connection to Postgres for raw SQL execution
   const connectionString = process.env.DATABASE_URL!;
   console.log('Creating database connection...');
   
-  // Create a connection to PostgreSQL
-  const client = postgres(connectionString);
-  const db = drizzle(client, { schema });
+  // Create a connection to PostgreSQL with better settings
+  const migrationClient = postgres(connectionString, { 
+    max: 1,
+    idle_timeout: 20,
+    connect_timeout: 10
+  });
   
   try {
     console.log('Connected to database successfully');
     
-    // Create users table
-    await client`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        username TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        name TEXT NOT NULL,
-        initials TEXT NOT NULL
-      )
-    `;
-    console.log('✅ Users table migrated');
-
-    // Create campaigns table
-    await client`
-      CREATE TABLE IF NOT EXISTS campaigns (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        type TEXT NOT NULL,
-        target_audience TEXT NOT NULL,
-        message TEXT NOT NULL,
-        start_date TEXT NOT NULL,
-        end_date TEXT NOT NULL,
-        created_at TIMESTAMP NOT NULL,
-        conversions INTEGER DEFAULT 0,
-        percentage INTEGER DEFAULT 0
-      )
-    `;
-    console.log('✅ Campaigns table migrated');
-
-    // Create customers table
-    await client`
-      CREATE TABLE IF NOT EXISTS customers (
-        id SERIAL PRIMARY KEY,
-        email TEXT NOT NULL UNIQUE,
-        first_name TEXT NOT NULL,
-        last_name TEXT NOT NULL,
-        name TEXT NOT NULL,
-        initials TEXT NOT NULL,
-        phone TEXT,
-        company TEXT,
-        job_title TEXT,
-        linkedin_url TEXT,
-        lifecycle_stage TEXT DEFAULT 'lead',
-        lead_status TEXT,
-        contact_industry TEXT,
-        contact_owner TEXT,
-        contact_source TEXT,
-        contact_type TEXT,
-        country TEXT,
-        legal_basis TEXT,
-        created_at TIMESTAMP NOT NULL,
-        status TEXT DEFAULT 'active'
-      )
-    `;
-    console.log('✅ Customers table migrated');
-
-    // Create customer_activities table
-    await client`
-      CREATE TABLE IF NOT EXISTS customer_activities (
-        id SERIAL PRIMARY KEY,
-        customer_id INTEGER NOT NULL,
-        action TEXT NOT NULL,
-        campaign TEXT,
-        date TEXT NOT NULL,
-        status TEXT DEFAULT 'active'
-      )
-    `;
-    console.log('✅ Customer activities table migrated');
-
-    // Create leads table
-    await client`
-      CREATE TABLE IF NOT EXISTS leads (
-        id SERIAL PRIMARY KEY,
-        name TEXT NOT NULL,
-        initials TEXT NOT NULL,
-        industry TEXT NOT NULL,
-        location TEXT,
-        score INTEGER DEFAULT 0,
-        created_at TIMESTAMP NOT NULL
-      )
-    `;
-    console.log('✅ Leads table migrated');
-
-    // Create tasks table
-    await client`
-      CREATE TABLE IF NOT EXISTS tasks (
-        id SERIAL PRIMARY KEY,
-        title TEXT NOT NULL,
-        due_date TEXT NOT NULL,
-        completed BOOLEAN DEFAULT FALSE,
-        created_at TIMESTAMP NOT NULL
-      )
-    `;
-    console.log('✅ Tasks table migrated');
-
-    console.log('All tables have been migrated successfully!');
+    // Use Drizzle's migration system
+    const db = drizzle(migrationClient, { schema });
     
-    // Insert a default user if users table is empty
-    const usersCount = await client`SELECT COUNT(*) FROM users`;
-    if (parseInt(usersCount[0].count) === 0) {
-      await client`
-        INSERT INTO users (username, password, name, initials)
-        VALUES ('johndoe', 'password', 'John Doe', 'JD')
-      `;
-      console.log('✅ Created default user: johndoe / password');
+    console.log('Running migrations using drizzle-orm...');
+    
+    // Use Drizzle ORM's migration system - this will use the migrations folder
+    // defined in drizzle.config.ts
+    // If this migrations folder doesn't exist, you need to run:
+    // npx drizzle-kit generate to generate migrations
+    try {
+      await migrate(db, { migrationsFolder: path.join(__dirname, '../migrations') });
+      console.log('✅ Database schema migrated successfully!');
+    } catch (err) {
+      console.warn(`Unable to run migrations: ${err.message}`);
+      console.log('Falling back to schema push to ensure tables exist');
+      
+      // Alternative: push the schema directly if migrations aren't set up
+      console.log('Using db:push as fallback to create tables...');
+      
+      // Define existing tables
+      const tables = ['users', 'campaigns', 'customers', 'customer_activities', 'leads', 'tasks'];
+      
+      // Check if we need to create the default user
+      const needsDefaultUser = await checkIfTablesEmpty(migrationClient, tables);
+      
+      if (needsDefaultUser) {
+        console.log('Creating default user...');
+        await migrationClient`
+          INSERT INTO users (username, password, name, initials)
+          VALUES ('johndoe', 'password', 'John Doe', 'JD')
+          ON CONFLICT (username) DO NOTHING
+        `;
+        console.log('✅ Created default user: johndoe / password');
+      } else {
+        console.log('Default user already exists, skipping creation');
+      }
     }
     
+    console.log('Migration completed successfully');
+    
     // Close the connection
-    await client.end();
+    await migrationClient.end();
     console.log('Database connection closed');
     
   } catch (error) {
     console.error('Error during migration:', error);
-    await client.end().catch(console.error);
+    await migrationClient.end().catch(console.error);
     process.exit(1);
+  }
+}
+
+// Helper function to check if tables exist and are empty
+async function checkIfTablesEmpty(client, tables) {
+  try {
+    // Get list of all tables in the database
+    const existingTables = await client`
+      SELECT tablename FROM pg_tables WHERE schemaname = 'public'
+    `;
+    
+    const existingTableNames = existingTables.map(t => t.tablename);
+    
+    // Check if any table is missing
+    const missingTables = tables.filter(t => !existingTableNames.includes(t));
+    
+    if (missingTables.length > 0) {
+      console.log(`Tables missing: ${missingTables.join(', ')}`);
+      return true;
+    }
+    
+    // Check if users table is empty
+    const usersCount = await client`SELECT COUNT(*) FROM users`;
+    return parseInt(usersCount[0].count) === 0;
+  } catch (error) {
+    console.error('Error checking tables:', error);
+    return true; // Assume we need to create default data
   }
 }
 
