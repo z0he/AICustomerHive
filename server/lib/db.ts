@@ -18,29 +18,43 @@ const queryClient = postgres(connectionString, {
 export const db = drizzle(queryClient, { schema });
 
 /**
- * Execute database operations within a transaction
+ * Execute database operations using a simplified transaction pattern
+ * 
+ * This function creates a wrapper around multiple database operations to be run
+ * together, with error handling that will rollback if any operation fails.
  * 
  * Usage example:
  * ```
- * const result = await executeTransaction(async (tx) => {
- *   // Perform multiple operations in a transaction
- *   await tx.insert(users).values({ name: 'User 1' });
- *   await tx.insert(users).values({ name: 'User 2' });
+ * const result = await executeTransaction(async () => {
+ *   // Perform multiple operations that should be atomic
+ *   await db.insert(users).values({ name: 'User 1' });
+ *   await db.insert(users).values({ name: 'User 2' });
  *   return { success: true };
  * });
  * ```
  */
 export async function executeTransaction<T>(
-  callback: (tx: any) => Promise<T>
+  callback: () => Promise<T>
 ): Promise<T> {
-  let result: T;
-  
-  await queryClient.begin(async (sqlTransaction) => {
-    const transaction = drizzle(sqlTransaction, { schema });
-    result = await callback(transaction);
-  });
-  
-  return result!;
+  try {
+    // Start transaction with a query
+    await db.execute(sql`BEGIN`);
+    
+    // Run the callback operations
+    const result = await callback();
+    
+    // If successful, commit
+    await db.execute(sql`COMMIT`);
+    
+    return result;
+  } catch (error) {
+    // If any error, rollback
+    await db.execute(sql`ROLLBACK`).catch(e => {
+      console.error("Error during rollback:", e);
+    });
+    
+    throw error;
+  }
 }
 
 // Export the raw query client for when we need direct access
