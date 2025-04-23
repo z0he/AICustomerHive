@@ -19,8 +19,11 @@ type AuthContextType = {
 
 type LoginData = Pick<InsertUser, "username" | "password">;
 
-export const AuthContext = createContext<AuthContextType | null>(null);
-export function AuthProvider({ children }: { children: ReactNode }) {
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export { AuthContext };
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const {
     data: user,
@@ -33,15 +36,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      const res = await apiRequest("POST", "/api/auth/login", credentials);
-      const data = await res.json();
-      
-      // Store the JWT token in localStorage
-      if (data.token) {
-        localStorage.setItem("auth_token", data.token);
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+          credentials: "include"
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.text();
+          throw new Error(errorData || `Login failed with status: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        
+        // Store the JWT token in localStorage
+        if (data.token) {
+          localStorage.setItem("auth_token", data.token);
+        }
+        
+        return data.user;
+      } catch (error) {
+        console.error("Login error:", error);
+        throw error;
       }
-      
-      return data.user;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/auth/user"], user);
@@ -57,15 +76,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerMutation = useMutation({
     mutationFn: async (credentials: InsertUser) => {
-      const res = await apiRequest("POST", "/api/auth/register", credentials);
-      const data = await res.json();
-      
-      // Store the JWT token in localStorage
-      if (data.token) {
-        localStorage.setItem("auth_token", data.token);
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(credentials),
+          credentials: "include"
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.text();
+          throw new Error(errorData || `Registration failed with status: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        
+        // Store the JWT token in localStorage
+        if (data.token) {
+          localStorage.setItem("auth_token", data.token);
+        }
+        
+        return data.user;
+      } catch (error) {
+        console.error("Registration error:", error);
+        throw error;
       }
-      
-      return data.user;
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/auth/user"], user);
@@ -81,9 +116,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/auth/logout");
-      // Clear the JWT token
-      localStorage.removeItem("auth_token");
+      try {
+        const res = await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include"
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.text();
+          throw new Error(errorData || `Logout failed with status: ${res.status}`);
+        }
+        
+        // Clear the JWT token
+        localStorage.removeItem("auth_token");
+      } catch (error) {
+        console.error("Logout error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/user"], null);

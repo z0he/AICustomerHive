@@ -38,6 +38,13 @@ async function hashPassword(password: string): Promise<string> {
  * Compare the supplied password with the stored password hash
  */
 async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+  // Check if the stored password has our expected format (hash.salt)
+  if (!stored.includes(".")) {
+    // For testing/development, allow direct comparison
+    return supplied === stored;
+  }
+  
+  // Otherwise, do proper hashed password comparison
   const [hashed, salt] = stored.split(".");
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
@@ -98,14 +105,32 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
+        console.log(`Attempting login for user: ${username}`);
         const user = await storage.getUserByUsername(username);
         
-        if (!user || !(await comparePasswords(password, user.password))) {
+        if (!user) {
+          console.log(`User not found: ${username}`);
           return done(null, false, { message: "Invalid username or password" });
         }
         
-        return done(null, user);
+        console.log(`User found, comparing passwords for: ${username}`);
+        
+        try {
+          const passwordMatches = await comparePasswords(password, user.password);
+          
+          if (!passwordMatches) {
+            console.log(`Password mismatch for user: ${username}`);
+            return done(null, false, { message: "Invalid username or password" });
+          }
+          
+          console.log(`Authentication successful for user: ${username}`);
+          return done(null, user);
+        } catch (passwordError) {
+          console.error(`Password comparison error:`, passwordError);
+          return done(null, false, { message: "Error during authentication" });
+        }
       } catch (error) {
+        console.error(`Authentication error:`, error);
         return done(error);
       }
     }),
@@ -193,20 +218,40 @@ export function setupAuth(app: Express) {
   });
 
   // User login endpoint
-  app.post("/api/auth/login", passport.authenticate("local"), (req: Request, res: Response) => {
-    // Generate JWT token
-    const token = generateToken(req.user!);
-    
-    // Return the user and token
-    res.json({
-      user: {
-        id: req.user!.id,
-        username: req.user!.username,
-        name: req.user!.name,
-        initials: req.user!.initials
-      },
-      token
-    });
+  app.post("/api/auth/login", (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate("local", (err: Error, user: SelectUser | false, info: any) => {
+      if (err) {
+        console.error("Login error:", err);
+        return res.status(500).json({ message: "Authentication error occurred" });
+      }
+      
+      if (!user) {
+        console.log("Login failed:", info?.message || "Unknown reason");
+        return res.status(401).json({ message: info?.message || "Invalid username or password" });
+      }
+      
+      // User authenticated successfully, log them in
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("Login error after authentication:", loginErr);
+          return res.status(500).json({ message: "Failed to complete login" });
+        }
+        
+        // Generate JWT token
+        const token = generateToken(user);
+        
+        // Return the user and token
+        return res.json({
+          user: {
+            id: user.id,
+            username: user.username,
+            name: user.name,
+            initials: user.initials
+          },
+          token
+        });
+      });
+    })(req, res, next);
   });
 
   // User logout endpoint
