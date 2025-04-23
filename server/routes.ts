@@ -350,6 +350,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to generate campaign suggestions" });
     }
   });
+  
+  // Performance metrics for interactive charts
+  app.get("/api/metrics/performance", async (req: Request, res: Response) => {
+    try {
+      const period = req.query.period as string || '30d';
+      
+      // Get all campaigns for conversion data
+      const campaigns = await storage.getCampaigns(period);
+      // Get leads data
+      const leads = await storage.getLeads();
+      // Get customers data for sales metrics
+      const customers = await storage.getCustomers();
+      
+      // Generate daily data points for the last 30 days (or based on period)
+      const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+      const performanceData = [];
+      
+      const now = new Date();
+      for (let i = days; i >= 0; i--) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        // Calculate metrics for this date
+        // For a real app, we would query actual date-specific data from the database
+        // For now, we'll spread conversions and sales across dates
+        
+        // Calculate total conversions for this date (simulate some distribution)
+        const totalConversions = campaigns.reduce((sum, campaign) => {
+          const conversions = typeof campaign.conversions === 'number' ? campaign.conversions : 0;
+          return sum + conversions;
+        }, 0);
+        const dateConversions = Math.floor(totalConversions / days * (Math.random() * 0.5 + 0.75));
+        
+        // Calculate sales as a function of conversions with some variance
+        const dateSales = Math.floor(dateConversions * (Math.random() * 100 + 200));
+        
+        // Calculate lead count with some randomization
+        const totalLeads = leads.length;
+        const dateLeads = Math.floor(totalLeads / days * (Math.random() * 0.5 + 0.75));
+        
+        performanceData.push({
+          date: dateStr,
+          conversions: dateConversions,
+          sales: dateSales,
+          leads: dateLeads
+        });
+      }
+      
+      return res.json(performanceData);
+    } catch (error) {
+      console.error("Get performance metrics error:", error);
+      return res.status(500).json({ message: "Failed to fetch performance metrics data" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

@@ -15,6 +15,8 @@ import CustomerActivity from "@/components/dashboard/CustomerActivity";
 import SummaryMetrics from "@/components/dashboard/SummaryMetrics";
 import LeadScoring from "@/components/dashboard/LeadScoring";
 import NextActions from "@/components/dashboard/NextActions";
+import CampaignPerformanceChart from "@/components/dashboard/CampaignPerformanceChart";
+import PerformanceMetricsChart from "@/components/dashboard/PerformanceMetricsChart";
 
 // Types
 import { Campaign, Customer, Lead, Task } from "@shared/schema";
@@ -155,6 +157,27 @@ const Dashboard = () => {
         { id: 2, name: "New Customer Nurture", path: "/campaigns/2" },
         { id: 3, name: "Product Launch", path: "/campaigns/3" }
       ];
+    }
+  });
+  
+  // Performance metrics for charts
+  const { data: performanceData, isLoading: isPerformanceLoading } = useQuery({
+    queryKey: ['/api/metrics/performance', selectedPeriod],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/metrics/performance?period=${selectedPeriod}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to fetch performance metrics');
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Error fetching performance metrics:", error);
+        return [];
+      }
     }
   });
   
