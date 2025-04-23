@@ -64,13 +64,7 @@ export type MessageVariant = typeof messageVariants.$inferSelect;
 export const insertCampaignSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
   type: z.string().min(1, "Campaign type is required"),
-  targetAudience: z.object({
-    inactive: z.boolean().default(false),
-    top: z.boolean().default(false),
-    new: z.boolean().default(false),
-    industry: z.boolean().default(false),
-  }),
-  industryValue: z.string().optional(),
+  targetAudience: z.string().min(1, "Target audience is required"),
   message: z.string().min(10, "Message must be at least 10 characters"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
