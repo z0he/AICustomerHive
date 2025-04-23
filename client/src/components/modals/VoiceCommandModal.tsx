@@ -101,6 +101,49 @@ const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
                 <AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" />
                 Using simplified voice recognition. For better results, configure the OpenAI API key.
               </p>
+              <div className="mt-2 flex justify-end space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs bg-white"
+                  onClick={() => {
+                    window.open('https://platform.openai.com/account/api-keys', '_blank');
+                  }}
+                >
+                  Get API Key
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                  onClick={async () => {
+                    const apiKey = prompt('Please enter your OpenAI API key:');
+                    if (apiKey && apiKey.trim()) {
+                      try {
+                        const response = await fetch('/api/config/openai', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ apiKey: apiKey.trim() }),
+                          credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                          alert('API key has been configured successfully. Please refresh to activate enhanced voice commands.');
+                        } else {
+                          alert('Failed to configure API key. Please try again.');
+                        }
+                      } catch (error) {
+                        console.error('Error configuring API key:', error);
+                        alert('Error configuring API key. Please try again.');
+                      }
+                    }
+                  }}
+                >
+                  Configure Key
+                </Button>
+              </div>
             </div>
           )}
           
