@@ -469,6 +469,7 @@ const Customers = () => {
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList>
                   <TabsTrigger value="grid">All Customers</TabsTrigger>
+                  <TabsTrigger value="segments">Segments</TabsTrigger>
                   <TabsTrigger value="activity">Recent Activity</TabsTrigger>
                 </TabsList>
                 
