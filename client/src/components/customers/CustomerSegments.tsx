@@ -304,7 +304,15 @@ const exampleSegments: CustomerSegment[] = [
 ];
 
 // Segment Card Component
-const SegmentCard = ({ segment }: { segment: CustomerSegment }) => {
+const SegmentCard = ({ 
+  segment,
+  onViewAnalytics,
+  onViewCustomers
+}: { 
+  segment: CustomerSegment,
+  onViewAnalytics: (segment: CustomerSegment) => void,
+  onViewCustomers: (segment: CustomerSegment) => void
+}) => {
   return (
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader className="p-4 pb-2">
@@ -344,11 +352,21 @@ const SegmentCard = ({ segment }: { segment: CustomerSegment }) => {
           </ScrollArea>
           
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" size="sm" className="flex items-center gap-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={() => onViewAnalytics(segment)}
+            >
               <BarChart3 size={14} />
               <span>Analytics</span>
             </Button>
-            <Button variant="secondary" size="sm" className="flex items-center gap-1">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={() => onViewCustomers(segment)}
+            >
               <Users size={14} />
               <span>View</span>
             </Button>
@@ -410,9 +428,59 @@ const CustomerSegments = ({
     form.setValue('filterCriteria', newCriteria);
   };
   
+  // Apply segment filter criteria to customer data
+  const applySegmentFilters = (customers: Customer[], criteria: SegmentFilterCriteria[]): Customer[] => {
+    if (!customers || customers.length === 0 || !criteria || criteria.length === 0) {
+      return [];
+    }
+    
+    // Filter customers based on all criteria (AND logic)
+    return customers.filter(customer => {
+      // Check if customer matches all criteria
+      return criteria.every(rule => {
+        const field = rule.field as keyof Customer;
+        const value = customer[field];
+        
+        // Handle null/undefined values
+        if (value === null || value === undefined) {
+          if (rule.operator === 'empty') return true;
+          if (rule.operator === 'notEmpty') return false;
+          return false;
+        }
+        
+        // String comparison for text fields
+        const customerValue = String(value).toLowerCase();
+        const ruleValue = rule.value.toLowerCase();
+        
+        switch (rule.operator) {
+          case 'equals':
+            return customerValue === ruleValue;
+          case 'notEquals':
+            return customerValue !== ruleValue;
+          case 'contains':
+            return customerValue.includes(ruleValue);
+          case 'startsWith':
+            return customerValue.startsWith(ruleValue);
+          case 'endsWith':
+            return customerValue.endsWith(ruleValue);
+          case 'empty':
+            return customerValue === '';
+          case 'notEmpty':
+            return customerValue !== '';
+          default:
+            return false;
+        }
+      });
+    });
+  };
+  
   // Form submit handler
   const onSubmit = (data: SegmentFormValues) => {
     console.log("Creating segment with data:", data);
+    
+    // Apply filters to get matching customers
+    const matchingCustomers = applySegmentFilters(customers, data.filterCriteria);
+    const customerCount = matchingCustomers.length;
     
     // Create new segment
     const newSegment: CustomerSegment = {
@@ -420,7 +488,7 @@ const CustomerSegments = ({
       name: data.name,
       description: data.description,
       filterCriteria: data.filterCriteria,
-      customerCount: Math.floor(Math.random() * 100) + 10, // Mock count
+      customerCount: customerCount,
       createdAt: new Date()
     };
     
@@ -462,7 +530,22 @@ const CustomerSegments = ({
       {/* Segment Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {segments.map((segment) => (
-          <SegmentCard key={segment.id} segment={segment} />
+          <SegmentCard 
+            key={segment.id} 
+            segment={segment} 
+            onViewAnalytics={(segment) => {
+              toast({
+                title: "Segment Analytics",
+                description: `Viewing analytics for segment "${segment.name}"`,
+              });
+            }}
+            onViewCustomers={(segment) => {
+              toast({
+                title: "Segment Customers",
+                description: `Viewing ${segment.customerCount} customers in "${segment.name}" segment`,
+              });
+            }}
+          />
         ))}
       </div>
       
