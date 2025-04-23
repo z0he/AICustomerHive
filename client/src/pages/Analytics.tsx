@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
@@ -308,6 +308,15 @@ const Analytics = () => {
     staleTime: 300000 // 5 minutes
   });
   
+  const { data: customerTrendData, isLoading: isLoadingCustomerTrend } = useQuery<{
+    month: string;
+    newCustomers: number;
+    activeCustomers: number;
+  }[]>({
+    queryKey: ['/api/customers/trend'],
+    staleTime: 300000 // 5 minutes
+  });
+  
   const { data: campaigns, isLoading: isLoadingCampaigns } = useQuery<Campaign[]>({
     queryKey: ['/api/campaigns', timePeriod],
     queryFn: async () => {
@@ -330,25 +339,15 @@ const Analytics = () => {
     queryKey: ['/api/ai/insights', timePeriod],
     queryFn: async () => {
       try {
-        // First try to get AI-generated insights
-        // In a real app, this would be calling an API endpoint
-        // For now, hardcoding insights as these need OpenAI API in production
-        return {
-          insights: [
-            "Customer engagement peaks during promotional periods",
-            "High-value customers tend to respond better to email campaigns",
-            "Customers from the West region have the highest retention rates",
-            "First-time buyers are most likely to convert through social media channels",
-            "Email open rates increase by 15% when personalized subject lines are used"
-          ],
-          recommendations: [
-            "Implement a loyalty program for high-value customers",
-            "Increase email campaign frequency for the most engaged segments",
-            "Create targeted offers for customers who haven't purchased in 3+ months",
-            "Focus on social media outreach for new customer acquisition",
-            "Use A/B testing to optimize email subject lines"
-          ]
-        };
+        const res = await fetch(`/api/ai/insights?period=${timePeriod}`, {
+          credentials: 'include'
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to fetch AI insights');
+        }
+        
+        return await res.json();
       } catch (error) {
         console.error("Failed to get AI insights:", error);
         throw new Error("Failed to get AI insights");
@@ -357,17 +356,30 @@ const Analytics = () => {
     enabled: activeTab === "insights" // Only fetch when insights tab is active
   });
   
-  // Simulate generating AI insights
-  const generateNewInsights = () => {
+  // Refresh AI insights from API
+  const generateNewInsights = async () => {
     setIsGeneratingInsights(true);
     
-    setTimeout(() => {
-      setIsGeneratingInsights(false);
+    try {
+      // Use the queryClient to invalidate the insights query and refetch
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/insights'] });
+      
+      // Show a success toast
       toast({
         title: "Insights updated",
-        description: "New AI-generated insights are now available",
+        description: "New AI-generated insights are now available"
       });
-    }, 2000);
+    } catch (error) {
+      console.error("Failed to refresh insights:", error);
+      
+      toast({
+        title: "Error",
+        description: "Failed to refresh insights. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingInsights(false);
+    }
   };
   
   // Handle export

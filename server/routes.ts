@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { interpretVoiceCommand, generateCampaignSuggestions } from "./lib/openai";
+import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData } from "./lib/openai";
 import { z } from "zod";
 import { insertCampaignSchema, insertCustomerSchema, insertLeadSchema, insertTaskSchema } from "@shared/schema";
 import { setupAuth } from "./auth";
@@ -102,6 +102,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get customers error:", error);
       return res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+  
+  // Customer trend data endpoint
+  app.get("/api/customers/trend", async (req: Request, res: Response) => {
+    try {
+      const customers = await storage.getCustomers();
+      
+      // Get the creation dates and sort them
+      const dates = customers.map(c => new Date(c.createdAt).getTime()).sort();
+      
+      // Group by month to create trend data
+      const monthlyData: {[key: string]: {newCustomers: number, activeCustomers: number}} = {};
+      
+      // Create records for the last 6 months
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthKey = month.toLocaleString('default', { month: 'short' });
+        monthlyData[monthKey] = { newCustomers: 0, activeCustomers: 0 };
+      }
+      
+      // Process customer data
+      customers.forEach(customer => {
+        const creationDate = new Date(customer.createdAt);
+        const monthKey = creationDate.toLocaleString('default', { month: 'short' });
+        
+        // Only count if it's in our 6-month window
+        if (monthlyData[monthKey]) {
+          monthlyData[monthKey].newCustomers += 1;
+        }
+        
+        // For active customers, we'll count all customers created up to this month
+        Object.keys(monthlyData).forEach(month => {
+          const monthDate = new Date(now.getFullYear(), Object.keys(monthlyData).indexOf(month), 1);
+          if (creationDate <= monthDate) {
+            monthlyData[month].activeCustomers += 1;
+          }
+        });
+      });
+      
+      // Convert to array format for chart
+      const trendData = Object.keys(monthlyData).map(month => ({
+        month,
+        newCustomers: monthlyData[month].newCustomers,
+        activeCustomers: monthlyData[month].activeCustomers
+      }));
+      
+      return res.json(trendData);
+    } catch (error) {
+      console.error("Get customer trend error:", error);
+      return res.status(500).json({ message: "Failed to fetch customer trend data" });
     }
   });
   
@@ -228,6 +280,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // AI insights endpoint
+  app.get("/api/ai/insights", async (req: Request, res: Response) => {
+    try {
+      const period = req.query.period as string || '30d';
+      
+      // Get customer data to analyze
+      const customers = await storage.getCustomers();
+      
+      // Call the OpenAI function to analyze customer data
+      const insights = await analyzeCustomerData(customers);
+      return res.json(insights);
+    } catch (error) {
+      console.error("Get AI insights error:", error);
+      return res.status(500).json({ message: "Failed to generate AI insights" });
+    }
+  });
+
   // AI Campaign suggestions
   app.post("/api/ai/campaign-suggestions", async (req: Request, res: Response) => {
     try {
