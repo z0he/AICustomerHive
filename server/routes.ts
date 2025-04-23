@@ -100,6 +100,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.get("/api/campaigns/:id", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+      
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      return res.json(campaign);
+    } catch (error) {
+      console.error("Get campaign error:", error);
+      return res.status(500).json({ message: "Failed to fetch campaign" });
+    }
+  });
+  
   // Message Variant routes (for A/B testing)
   app.get("/api/campaigns/:id/variants", async (req: Request, res: Response) => {
     try {
