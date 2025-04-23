@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { db } from "../lib/db";
 import { IStorage } from "../storage";
 import { 
@@ -7,7 +7,8 @@ import {
   customers, type Customer, type InsertCustomer,
   customerActivities, type CustomerActivity,
   leads, type Lead, type InsertLead,
-  tasks, type Task, type InsertTask
+  tasks, type Task, type InsertTask,
+  messageVariants, type MessageVariant, type InsertMessageVariant
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {
@@ -73,6 +74,74 @@ export class DbStorage implements IStorage {
       .limit(limit);
     
     return result;
+  }
+  
+  // ----- Message Variant methods (for A/B testing) -----
+  
+  async getMessageVariants(campaignId: number): Promise<MessageVariant[]> {
+    return await db.select()
+      .from(messageVariants)
+      .where(eq(messageVariants.campaignId, campaignId))
+      .orderBy(desc(messageVariants.createdAt));
+  }
+  
+  async createMessageVariant(variant: InsertMessageVariant): Promise<MessageVariant> {
+    const variantData = {
+      ...variant,
+      impressions: 0,
+      conversions: 0,
+      conversionRate: 0,
+      createdAt: new Date()
+    };
+    
+    // Use type assertion for the insert
+    const result = await db.insert(messageVariants).values(variantData as any).returning();
+    
+    return result[0];
+  }
+  
+  async updateMessageVariantStats(
+    variantId: number, 
+    impressions?: number, 
+    conversions?: number
+  ): Promise<MessageVariant> {
+    // First get the current variant
+    const variantResult = await db.select()
+      .from(messageVariants)
+      .where(eq(messageVariants.id, variantId));
+    
+    if (variantResult.length === 0) {
+      throw new Error(`Message variant with id ${variantId} not found`);
+    }
+    
+    const variant = variantResult[0];
+    
+    // Calculate new stats
+    const newImpressions = impressions !== undefined 
+      ? (variant.impressions || 0) + impressions 
+      : (variant.impressions || 0);
+      
+    const newConversions = conversions !== undefined 
+      ? (variant.conversions || 0) + conversions 
+      : (variant.conversions || 0);
+    
+    // Calculate conversion rate
+    let newConversionRate = 0;
+    if (newImpressions > 0) {
+      newConversionRate = Math.round((newConversions / newImpressions) * 100);
+    }
+    
+    // Update the variant
+    const result = await db.update(messageVariants)
+      .set({ 
+        impressions: newImpressions, 
+        conversions: newConversions,
+        conversionRate: newConversionRate
+      })
+      .where(eq(messageVariants.id, variantId))
+      .returning();
+    
+    return result[0];
   }
   
   // ----- Customer methods -----

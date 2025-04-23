@@ -4,7 +4,13 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData } from "./lib/openai";
 import { z } from "zod";
-import { insertCampaignSchema, insertCustomerSchema, insertLeadSchema, insertTaskSchema } from "@shared/schema";
+import { 
+  insertCampaignSchema, 
+  insertCustomerSchema, 
+  insertLeadSchema, 
+  insertTaskSchema,
+  insertMessageVariantSchema
+} from "@shared/schema";
 import { setupAuth } from "./auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -91,6 +97,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get recent campaigns error:", error);
       return res.status(500).json({ message: "Failed to fetch recent campaigns" });
+    }
+  });
+  
+  // Message Variant routes (for A/B testing)
+  app.get("/api/campaigns/:id/variants", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+      
+      const variants = await storage.getMessageVariants(campaignId);
+      return res.json(variants);
+    } catch (error) {
+      console.error("Get message variants error:", error);
+      return res.status(500).json({ message: "Failed to fetch message variants" });
+    }
+  });
+  
+  app.post("/api/campaigns/:id/variants", async (req: Request, res: Response) => {
+    try {
+      const campaignId = parseInt(req.params.id);
+      if (isNaN(campaignId)) {
+        return res.status(400).json({ message: "Invalid campaign ID" });
+      }
+      
+      // Create a Zod validator that includes the campaign ID
+      const variantWithCampaignId = insertMessageVariantSchema.extend({
+        campaignId: z.number()
+      });
+      
+      const validatedData = variantWithCampaignId.parse({
+        ...req.body,
+        campaignId
+      });
+      
+      const variant = await storage.createMessageVariant(validatedData);
+      return res.status(201).json(variant);
+    } catch (error) {
+      console.error("Create message variant error:", error);
+      return res.status(400).json({ message: "Invalid message variant data" });
+    }
+  });
+  
+  app.post("/api/variants/:id/stats", async (req: Request, res: Response) => {
+    try {
+      const variantId = parseInt(req.params.id);
+      if (isNaN(variantId)) {
+        return res.status(400).json({ message: "Invalid variant ID" });
+      }
+      
+      const { impressions, conversions } = req.body;
+      
+      // Both can be optional, but at least one should be provided
+      if (impressions === undefined && conversions === undefined) {
+        return res.status(400).json({ message: "At least one of impressions or conversions must be provided" });
+      }
+      
+      const variant = await storage.updateMessageVariantStats(variantId, impressions, conversions);
+      return res.json(variant);
+    } catch (error) {
+      console.error("Update variant stats error:", error);
+      return res.status(500).json({ message: "Failed to update variant statistics" });
     }
   });
   
