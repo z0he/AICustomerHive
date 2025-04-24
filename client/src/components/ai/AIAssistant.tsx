@@ -63,7 +63,7 @@ export function AIAssistant() {
           title: "Campaign Performance",
           description: "Navigating to campaign analytics",
         });
-        navigate('/analytics');
+        setLocation('/analytics');
         break;
         
       case 'show_campaign_status':
@@ -71,7 +71,7 @@ export function AIAssistant() {
           title: "Campaign Status",
           description: "Showing active campaigns",
         });
-        navigate('/campaigns');
+        setLocation('/campaigns');
         break;
         
       case 'send_email':
@@ -79,7 +79,7 @@ export function AIAssistant() {
           title: "Email Campaign",
           description: "Opening email composer",
         });
-        navigate('/campaigns/new?type=email');
+        setLocation('/campaigns/new?type=email');
         break;
         
       case 'show_leads':
@@ -87,7 +87,7 @@ export function AIAssistant() {
           title: "Lead Management",
           description: "Showing your leads",
         });
-        navigate('/leads');
+        setLocation('/leads');
         break;
         
       default:
@@ -216,7 +216,7 @@ export function AIAssistant() {
             
             <Button
               type="button"
-              onClick={() => navigate('/campaigns/ai-suggestions')}
+              onClick={() => setLocation('/campaigns/ai-suggestions')}
             >
               <Bot className="h-4 w-4 mr-2" />
               Get Campaign Suggestions

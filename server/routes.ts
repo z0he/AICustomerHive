@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData } from "./lib/openai";
+import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey } from "./lib/openai";
 import { z } from "zod";
 import { 
   insertCampaignSchema, 
