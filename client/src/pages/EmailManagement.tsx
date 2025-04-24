@@ -467,7 +467,7 @@ const EmailManagement: React.FC = () => {
                     <DialogHeader>
                       <DialogTitle>Create New Email Template</DialogTitle>
                       <DialogDescription>
-                        Create a reusable email template. Use {{variable}} syntax to define placeholders.
+                        Create a reusable email template. Use {`{{variableName}}`} syntax to define placeholders.
                       </DialogDescription>
                     </DialogHeader>
                     <Form {...templateForm}>
@@ -519,7 +519,7 @@ const EmailManagement: React.FC = () => {
                             <FormItem>
                               <FormLabel>Subject</FormLabel>
                               <FormControl>
-                                <Input placeholder="Welcome to {{companyName}}!" {...field} />
+                                <Input placeholder="Welcome to Our Company!" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -533,13 +533,13 @@ const EmailManagement: React.FC = () => {
                               <FormLabel>HTML Content</FormLabel>
                               <FormControl>
                                 <Textarea 
-                                  placeholder="<h1>Hello {{name}}</h1><p>Welcome to our service!</p>" 
+                                  placeholder="<h1>Hello John</h1><p>Welcome to our service!</p>" 
                                   className="min-h-[100px]"
                                   {...field} 
                                 />
                               </FormControl>
                               <FormDescription>
-                                HTML version of your email. Use {{variable}} for dynamic content.
+                                HTML version of your email. Use {`{{variableName}}`} for dynamic content.
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -553,7 +553,7 @@ const EmailManagement: React.FC = () => {
                               <FormLabel>Text Content</FormLabel>
                               <FormControl>
                                 <Textarea 
-                                  placeholder="Hello {{name}}, Welcome to our service!" 
+                                  placeholder="Hello John, Welcome to our service!" 
                                   className="min-h-[100px]"
                                   {...field} 
                                 />
