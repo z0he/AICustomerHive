@@ -98,7 +98,7 @@ const EmailManagement: React.FC = () => {
 
   // API status query
   const { data: apiStatus, isLoading: isStatusLoading, refetch: refetchStatus } = useQuery({
-    queryKey: ['/api/config/sendgrid/status'],
+    queryKey: ['/api/config/mailgun/status'],
     refetchOnWindowFocus: false,
   });
 
@@ -127,7 +127,7 @@ const EmailManagement: React.FC = () => {
   // Configure API key mutation
   const configureApiMutation = useMutation({
     mutationFn: async (data: ConfigureApiKeyFormData) => {
-      const response = await fetch('/api/config/sendgrid', {
+      const response = await fetch('/api/config/mailgun', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ const EmailManagement: React.FC = () => {
     onSuccess: () => {
       toast({
         title: 'API Key Configured',
-        description: 'SendGrid API key has been successfully configured.',
+        description: 'Mailgun API key and domain have been successfully configured.',
         variant: 'success',
       });
       refetchStatus();
@@ -311,15 +311,15 @@ const EmailManagement: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Settings className="mr-2" size={20} />
-                SendGrid Configuration
+                Mailgun Configuration
               </CardTitle>
               <CardDescription>
-                Configure your SendGrid API key to enable email capabilities.
+                Configure your Mailgun API key and domain to enable email capabilities.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="mb-6">
-                <h3 className="text-lg font-medium mb-2">SendGrid API Status</h3>
+                <h3 className="text-lg font-medium mb-2">Mailgun API Status</h3>
                 {isStatusLoading ? (
                   <div className="flex items-center">
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -330,12 +330,12 @@ const EmailManagement: React.FC = () => {
                     {apiStatus?.configured ? (
                       <>
                         <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                        <span>SendGrid API is properly configured and ready to use.</span>
+                        <span>Mailgun API is properly configured and ready to use.</span>
                       </>
                     ) : (
                       <>
                         <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                        <span>SendGrid API is not configured. Please add your API key below.</span>
+                        <span>Mailgun API is not configured. Please add your API key and domain below.</span>
                       </>
                     )}
                     <Button 
@@ -359,20 +359,20 @@ const EmailManagement: React.FC = () => {
                     name="apiKey"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>SendGrid API Key</FormLabel>
+                        <FormLabel>Mailgun API Key</FormLabel>
                         <FormControl>
                           <div className="flex">
                             <Input 
-                              placeholder="SG.xxxxxxxxxxxxxxxxxxxxxxxx" 
+                              placeholder="key-xxxxxxxxxxxxxxxxxxxxxxxx" 
                               type="password"
                               {...field} 
                             />
                           </div>
                         </FormControl>
                         <FormDescription>
-                          Provide your SendGrid API key to enable email sending capabilities.
+                          Provide your Mailgun API key to enable email sending capabilities.
                           <a 
-                            href="https://app.sendgrid.com/settings/api_keys" 
+                            href="https://app.mailgun.com/app/account/security/api_keys" 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-primary underline ml-1"
@@ -384,6 +384,37 @@ const EmailManagement: React.FC = () => {
                       </FormItem>
                     )}
                   />
+                  
+                  <FormField
+                    control={apiKeyForm.control}
+                    name="domain"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mailgun Domain</FormLabel>
+                        <FormControl>
+                          <div className="flex">
+                            <Input 
+                              placeholder="mg.yourdomain.com" 
+                              {...field} 
+                            />
+                          </div>
+                        </FormControl>
+                        <FormDescription>
+                          Enter your Mailgun domain. You can find this in your Mailgun dashboard.
+                          <a 
+                            href="https://app.mailgun.com/app/domains" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary underline ml-1"
+                          >
+                            View your domains
+                          </a>
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
                   <Button 
                     type="submit" 
                     disabled={configureApiMutation.isPending}
@@ -396,7 +427,7 @@ const EmailManagement: React.FC = () => {
                     ) : (
                       <>
                         <Key className="mr-2 h-4 w-4" />
-                        Save API Key
+                        Save Configuration
                       </>
                     )}
                   </Button>
@@ -405,7 +436,7 @@ const EmailManagement: React.FC = () => {
             </CardContent>
             <CardFooter>
               <p className="text-sm text-muted-foreground">
-                Your API key is securely stored and never exposed to the client side.
+                Your API key and domain are securely stored and never exposed to the client side.
               </p>
             </CardFooter>
           </Card>
