@@ -1,4 +1,4 @@
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, asc, gte, lte } from "drizzle-orm";
 import { db } from "../lib/db";
 import { IStorage } from "../storage";
 import { 
@@ -10,7 +10,8 @@ import {
   tasks, type Task, type InsertTask,
   messageVariants, type MessageVariant, type InsertMessageVariant,
   emailTemplates, type EmailTemplate, type InsertEmailTemplate,
-  emailLogs, type EmailLog, type InsertEmailLog
+  emailLogs, type EmailLog, type InsertEmailLog,
+  calendarEvents, type CalendarEvent, type InsertCalendarEvent
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {
@@ -844,6 +845,158 @@ export class DbStorage implements IStorage {
       });
       
       return emailLog;
+    }
+  }
+
+  // ----- Calendar/Events methods -----
+  
+  async getCalendarEvents(startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
+    try {
+      let query = db.select().from(calendarEvents);
+      
+      // Filter by date range if provided
+      if (startDate && endDate) {
+        query = query.where(
+          and(
+            gte(calendarEvents.startDate, startDate),
+            lte(calendarEvents.endDate, endDate)
+          )
+        );
+      } else if (startDate) {
+        query = query.where(gte(calendarEvents.startDate, startDate));
+      } else if (endDate) {
+        query = query.where(lte(calendarEvents.endDate, endDate));
+      }
+      
+      return await query.orderBy(asc(calendarEvents.startDate));
+    } catch (error) {
+      console.error("Failed to get calendar events:", error);
+      return [];
+    }
+  }
+  
+  async getCalendarEvent(id: number): Promise<CalendarEvent | undefined> {
+    try {
+      const result = await db
+        .select()
+        .from(calendarEvents)
+        .where(eq(calendarEvents.id, id))
+        .limit(1);
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Failed to get calendar event #${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async getCalendarEventsByOwner(ownerId: number, startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
+    try {
+      let query = db
+        .select()
+        .from(calendarEvents)
+        .where(eq(calendarEvents.ownerId, ownerId));
+      
+      // Filter by date range if provided
+      if (startDate && endDate) {
+        query = query.where(
+          and(
+            gte(calendarEvents.startDate, startDate),
+            lte(calendarEvents.endDate, endDate)
+          )
+        );
+      } else if (startDate) {
+        query = query.where(gte(calendarEvents.startDate, startDate));
+      } else if (endDate) {
+        query = query.where(lte(calendarEvents.endDate, endDate));
+      }
+      
+      return await query.orderBy(asc(calendarEvents.startDate));
+    } catch (error) {
+      console.error(`Failed to get calendar events for owner #${ownerId}:`, error);
+      return [];
+    }
+  }
+  
+  async getCalendarEventsByEntity(entityType: string, entityId: number): Promise<CalendarEvent[]> {
+    try {
+      const result = await db
+        .select()
+        .from(calendarEvents)
+        .where(
+          and(
+            eq(calendarEvents.relatedEntityType, entityType),
+            eq(calendarEvents.relatedEntityId, entityId)
+          )
+        )
+        .orderBy(asc(calendarEvents.startDate));
+      
+      return result;
+    } catch (error) {
+      console.error(`Failed to get calendar events for entity ${entityType}#${entityId}:`, error);
+      return [];
+    }
+  }
+  
+  async createCalendarEvent(eventData: InsertCalendarEvent): Promise<CalendarEvent> {
+    try {
+      const event = {
+        ...eventData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const result = await db.insert(calendarEvents).values(event as any).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Failed to create calendar event:", error);
+      throw new Error("Failed to create calendar event");
+    }
+  }
+  
+  async updateCalendarEvent(id: number, eventData: Partial<CalendarEvent>): Promise<CalendarEvent> {
+    try {
+      // Make sure event exists
+      const event = await this.getCalendarEvent(id);
+      if (!event) {
+        throw new Error(`Calendar event with ID ${id} not found`);
+      }
+      
+      // Include updated timestamp
+      const updatedData = {
+        ...eventData,
+        updatedAt: new Date()
+      };
+      
+      const result = await db
+        .update(calendarEvents)
+        .set(updatedData)
+        .where(eq(calendarEvents.id, id))
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Failed to update calendar event #${id}:`, error);
+      throw new Error(`Failed to update calendar event #${id}`);
+    }
+  }
+  
+  async deleteCalendarEvent(id: number): Promise<boolean> {
+    try {
+      // Make sure event exists
+      const event = await this.getCalendarEvent(id);
+      if (!event) {
+        throw new Error(`Calendar event with ID ${id} not found`);
+      }
+      
+      await db
+        .delete(calendarEvents)
+        .where(eq(calendarEvents.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete calendar event #${id}:`, error);
+      return false;
     }
   }
 }
