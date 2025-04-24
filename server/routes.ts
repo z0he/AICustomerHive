@@ -635,6 +635,310 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== CUSTOMER EXPORT/IMPORT ROUTES =====
+  
+  app.get("/api/customers/export", async (req: Request, res: Response) => {
+    try {
+      const exportData = await storage.exportCustomers();
+      return res.json(exportData);
+    } catch (error) {
+      console.error("Export customers error:", error);
+      return res.status(500).json({ message: "Failed to export customer data" });
+    }
+  });
+  
+  app.post("/api/customers/import", async (req: Request, res: Response) => {
+    try {
+      const { data } = req.body;
+      
+      if (!data || !Array.isArray(data)) {
+        return res.status(400).json({ message: "Invalid import data. Expected array of customer records." });
+      }
+      
+      const result = await storage.importCustomers(data);
+      return res.json(result);
+    } catch (error) {
+      console.error("Import customers error:", error);
+      return res.status(500).json({ message: "Failed to import customer data" });
+    }
+  });
+  
+  // ===== CALENDAR/SCHEDULING ROUTES =====
+  
+  app.get("/api/calendar/events", async (req: Request, res: Response) => {
+    try {
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      
+      const events = await storage.getCalendarEvents(startDate, endDate);
+      return res.json(events);
+    } catch (error) {
+      console.error("Get calendar events error:", error);
+      return res.status(500).json({ message: "Failed to fetch calendar events" });
+    }
+  });
+  
+  app.get("/api/calendar/events/owner/:ownerId", async (req: Request, res: Response) => {
+    try {
+      const ownerId = parseInt(req.params.ownerId);
+      if (isNaN(ownerId)) {
+        return res.status(400).json({ message: "Invalid owner ID" });
+      }
+      
+      const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+      const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+      
+      const events = await storage.getCalendarEventsByOwner(ownerId, startDate, endDate);
+      return res.json(events);
+    } catch (error) {
+      console.error("Get calendar events by owner error:", error);
+      return res.status(500).json({ message: "Failed to fetch calendar events for owner" });
+    }
+  });
+  
+  app.get("/api/calendar/events/entity/:type/:id", async (req: Request, res: Response) => {
+    try {
+      const entityType = req.params.type;
+      const entityId = parseInt(req.params.id);
+      
+      if (!entityType || isNaN(entityId)) {
+        return res.status(400).json({ message: "Invalid entity type or ID" });
+      }
+      
+      const events = await storage.getCalendarEventsByEntity(entityType, entityId);
+      return res.json(events);
+    } catch (error) {
+      console.error("Get calendar events by entity error:", error);
+      return res.status(500).json({ message: "Failed to fetch calendar events for entity" });
+    }
+  });
+  
+  app.get("/api/calendar/events/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+      
+      const event = await storage.getCalendarEvent(id);
+      if (!event) {
+        return res.status(404).json({ message: "Calendar event not found" });
+      }
+      
+      return res.json(event);
+    } catch (error) {
+      console.error("Get calendar event error:", error);
+      return res.status(500).json({ message: "Failed to fetch calendar event" });
+    }
+  });
+  
+  app.post("/api/calendar/events", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertCalendarEventSchema.parse(req.body);
+      const event = await storage.createCalendarEvent(validatedData);
+      return res.status(201).json(event);
+    } catch (error) {
+      console.error("Create calendar event error:", error);
+      return res.status(400).json({ message: "Invalid calendar event data" });
+    }
+  });
+  
+  app.patch("/api/calendar/events/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+      
+      const event = await storage.updateCalendarEvent(id, req.body);
+      return res.json(event);
+    } catch (error) {
+      console.error("Update calendar event error:", error);
+      return res.status(500).json({ message: "Failed to update calendar event" });
+    }
+  });
+  
+  app.delete("/api/calendar/events/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid event ID" });
+      }
+      
+      const success = await storage.deleteCalendarEvent(id);
+      return res.json({ success });
+    } catch (error) {
+      console.error("Delete calendar event error:", error);
+      return res.status(500).json({ message: "Failed to delete calendar event" });
+    }
+  });
+  
+  // ===== EMAIL TEMPLATES ROUTES =====
+  
+  app.get("/api/email/templates", async (req: Request, res: Response) => {
+    try {
+      const category = req.query.category as string;
+      const templates = await storage.getEmailTemplates(category);
+      return res.json(templates);
+    } catch (error) {
+      console.error("Get email templates error:", error);
+      return res.status(500).json({ message: "Failed to fetch email templates" });
+    }
+  });
+  
+  app.get("/api/email/templates/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+      
+      const template = await storage.getEmailTemplate(id);
+      if (!template) {
+        return res.status(404).json({ message: "Email template not found" });
+      }
+      
+      return res.json(template);
+    } catch (error) {
+      console.error("Get email template error:", error);
+      return res.status(500).json({ message: "Failed to fetch email template" });
+    }
+  });
+  
+  app.post("/api/email/templates", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertEmailTemplateSchema.parse(req.body);
+      const template = await storage.createEmailTemplate(validatedData);
+      return res.status(201).json(template);
+    } catch (error) {
+      console.error("Create email template error:", error);
+      return res.status(400).json({ message: "Invalid email template data" });
+    }
+  });
+  
+  app.patch("/api/email/templates/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+      
+      const template = await storage.updateEmailTemplate(id, req.body);
+      return res.json(template);
+    } catch (error) {
+      console.error("Update email template error:", error);
+      return res.status(500).json({ message: "Failed to update email template" });
+    }
+  });
+  
+  app.delete("/api/email/templates/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+      
+      const success = await storage.deleteEmailTemplate(id);
+      return res.json({ success });
+    } catch (error) {
+      console.error("Delete email template error:", error);
+      return res.status(500).json({ message: "Failed to delete email template" });
+    }
+  });
+  
+  // ===== EMAIL SENDING & LOGS ROUTES =====
+  
+  app.get("/api/email/logs", async (req: Request, res: Response) => {
+    try {
+      const entityType = req.query.entityType as string;
+      const entityId = req.query.entityId ? parseInt(req.query.entityId as string) : undefined;
+      
+      const logs = await storage.getEmailLogs(entityType, entityId);
+      return res.json(logs);
+    } catch (error) {
+      console.error("Get email logs error:", error);
+      return res.status(500).json({ message: "Failed to fetch email logs" });
+    }
+  });
+  
+  app.post("/api/email/send", async (req: Request, res: Response) => {
+    try {
+      const { from, to, subject, body, options } = req.body;
+      
+      if (!from || !to || !subject || !body) {
+        return res.status(400).json({ 
+          message: "Missing required email fields. Please provide from, to, subject, and body."
+        });
+      }
+      
+      const emailLog = await storage.sendEmail(from, to, subject, body, options || {});
+      return res.json(emailLog);
+    } catch (error) {
+      console.error("Send email error:", error);
+      return res.status(500).json({ message: "Failed to send email" });
+    }
+  });
+  
+  app.post("/api/email/send-template", async (req: Request, res: Response) => {
+    try {
+      const { templateId, to, data, options } = req.body;
+      
+      if (!templateId || !to || !data) {
+        return res.status(400).json({ 
+          message: "Missing required fields. Please provide templateId, to, and data."
+        });
+      }
+      
+      const templateIdNumber = parseInt(templateId);
+      if (isNaN(templateIdNumber)) {
+        return res.status(400).json({ message: "Invalid template ID" });
+      }
+      
+      const emailLog = await storage.sendEmailWithTemplate(templateIdNumber, to, data, options || {});
+      return res.json(emailLog);
+    } catch (error) {
+      console.error("Send templated email error:", error);
+      return res.status(500).json({ message: "Failed to send templated email" });
+    }
+  });
+  
+  // ===== SENDGRID CONFIGURATION ROUTE =====
+  
+  app.post("/api/config/sendgrid", async (req: Request, res: Response) => {
+    try {
+      // In a real implementation, this would securely store the API key
+      // using environment variables or a secure vault service
+      // And would be properly authenticated
+      const { apiKey } = req.body;
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: "SendGrid API key is required" });
+      }
+      
+      // Initialize SendGrid with the provided API key
+      const success = initSendGrid(apiKey);
+      
+      if (!success) {
+        return res.status(500).json({ message: "Failed to initialize SendGrid with the provided API key" });
+      }
+      
+      return res.json({ success: true, message: "SendGrid API key has been configured" });
+    } catch (error) {
+      console.error("SendGrid configuration error:", error);
+      return res.status(500).json({ message: "Failed to configure SendGrid API key" });
+    }
+  });
+  
+  app.get("/api/config/sendgrid/status", async (req: Request, res: Response) => {
+    try {
+      const isConfigured = isSendGridInitialized();
+      return res.json({ configured: isConfigured });
+    } catch (error) {
+      console.error("SendGrid status check error:", error);
+      return res.status(500).json({ message: "Failed to check SendGrid configuration status" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
