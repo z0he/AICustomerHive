@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, ChangeEvent } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +6,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Download, Upload, AlertCircle, CheckCircle } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Loader2, Download, Upload, AlertCircle, CheckCircle, FilePlus, FileText, FileUp } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 
@@ -14,7 +16,9 @@ const CustomerData = () => {
   const { toast } = useToast();
   const [importData, setImportData] = useState<string>('');
   const [activeTab, setActiveTab] = useState('export');
+  const [importMethod, setImportMethod] = useState<'json' | 'csv'>('json');
   const [importResult, setImportResult] = useState<{imported: number; errors: any[]} | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Query to get customer export data
   const { data: exportData, isLoading: isExportLoading, error: exportError } = useQuery({
@@ -22,7 +26,7 @@ const CustomerData = () => {
     enabled: activeTab === 'export',
   });
 
-  // Mutation for importing customer data
+  // Mutation for importing customer data with JSON
   const importMutation = useMutation({
     mutationFn: async (data: any[]) => {
       const response = await fetch('/api/customers/import', {
@@ -53,6 +57,43 @@ const CustomerData = () => {
     onError: (error: Error) => {
       toast({
         title: 'Import Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Mutation for importing customer data with CSV file
+  const importCSVMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/customers/import', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to import CSV data');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setImportResult(data);
+      toast({
+        title: 'CSV Import Successful',
+        description: `Imported ${data.imported} customer records with ${data.errors.length} errors.`,
+        variant: 'success',
+      });
+      // Invalidate customer-related queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'CSV Import Failed',
         description: error.message,
         variant: 'destructive',
       });
@@ -148,6 +189,43 @@ const CustomerData = () => {
         variant: 'destructive',
       });
     }
+  };
+  
+  // Handle file upload click
+  const handleFileUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  // Handle file change event
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Check file type
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    if (fileExt !== 'csv') {
+      toast({
+        title: 'Invalid File Type',
+        description: 'Please upload a CSV file.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File Too Large',
+        description: 'File size should be less than 5MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Start upload
+    importCSVMutation.mutate(file);
   };
 
   return (
@@ -258,25 +336,99 @@ const CustomerData = () => {
                 Import Customer Data
               </CardTitle>
               <CardDescription>
-                Import customer data from JSON. The data must be an array of customer records.
+                Import customer data from JSON or CSV format. Choose your preferred import method below.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-2">
-                  JSON Data
-                </label>
-                <textarea
-                  className="min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  placeholder='[{ "firstName": "John", "lastName": "Doe", "email": "john@example.com" }, ...]'
-                  value={importData}
-                  onChange={(e) => setImportData(e.target.value)}
-                />
-                <p className="text-sm text-muted-foreground mt-2">
-                  Paste JSON data containing an array of customer records. Each record must have at least firstName, lastName, and email fields.
-                </p>
+              {/* Import Method Selection */}
+              <div className="mb-6">
+                <Label className="block text-sm font-medium mb-2">Import Method</Label>
+                <div className="flex space-x-4">
+                  <div 
+                    className={`flex-1 p-4 border rounded-md cursor-pointer flex flex-col items-center ${importMethod === 'json' ? 'border-primary bg-primary/5' : 'border-input'}`}
+                    onClick={() => setImportMethod('json')}
+                  >
+                    <FileText size={24} className={importMethod === 'json' ? 'text-primary' : 'text-muted-foreground'} />
+                    <span className="mt-2 font-medium">JSON</span>
+                    <span className="text-xs text-muted-foreground mt-1">Paste JSON data</span>
+                  </div>
+                  <div 
+                    className={`flex-1 p-4 border rounded-md cursor-pointer flex flex-col items-center ${importMethod === 'csv' ? 'border-primary bg-primary/5' : 'border-input'}`}
+                    onClick={() => setImportMethod('csv')}
+                  >
+                    <FileUp size={24} className={importMethod === 'csv' ? 'text-primary' : 'text-muted-foreground'} />
+                    <span className="mt-2 font-medium">CSV</span>
+                    <span className="text-xs text-muted-foreground mt-1">Upload CSV file</span>
+                  </div>
+                </div>
               </div>
               
+              {/* JSON Import Method */}
+              {importMethod === 'json' && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">
+                    JSON Data
+                  </label>
+                  <textarea
+                    className="min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    placeholder='[{ "firstName": "John", "lastName": "Doe", "email": "john@example.com" }, ...]'
+                    value={importData}
+                    onChange={(e) => setImportData(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Paste JSON data containing an array of customer records. Each record must have at least firstName, lastName, and email fields.
+                  </p>
+                </div>
+              )}
+              
+              {/* CSV Import Method */}
+              {importMethod === 'csv' && (
+                <div className="mb-4">
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-8 text-center">
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange} 
+                      accept=".csv" 
+                      className="hidden" 
+                    />
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <div className="p-3 bg-primary/10 rounded-full">
+                        <FileUp size={28} className="text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">
+                          Click to upload or drag and drop
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          CSV file (max 5MB)
+                        </p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleFileUploadClick}
+                        disabled={importCSVMutation.isPending}
+                      >
+                        {importCSVMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            Select CSV File
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Upload a CSV file with customer data. The first row should contain column headers matching the customer fields.
+                  </p>
+                </div>
+              )}
+              
+              {/* Import Results */}
               {importResult && (
                 <div className="mt-6">
                   <h3 className="text-lg font-medium mb-2">Import Results</h3>
@@ -314,22 +466,44 @@ const CustomerData = () => {
               <Button variant="outline" onClick={() => setActiveTab('export')}>
                 Switch to Export
               </Button>
-              <Button 
-                onClick={handleImport} 
-                disabled={!importData.trim() || importMutation.isPending}
-              >
-                {importMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Importing...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import Data
-                  </>
-                )}
-              </Button>
+              
+              {importMethod === 'json' && (
+                <Button 
+                  onClick={handleImport} 
+                  disabled={!importData.trim() || importMutation.isPending}
+                >
+                  {importMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Importing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Import JSON Data
+                    </>
+                  )}
+                </Button>
+              )}
+              
+              {importMethod === 'csv' && (
+                <Button 
+                  onClick={handleFileUploadClick}
+                  disabled={importCSVMutation.isPending}
+                >
+                  {importCSVMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload CSV File
+                    </>
+                  )}
+                </Button>
+              )}
             </CardFooter>
           </Card>
         </TabsContent>
