@@ -119,7 +119,7 @@ const CalendarManagement: React.FC = () => {
 
   // Get the filtered events for the current view
   const getFilteredEvents = () => {
-    if (!events) return [];
+    if (!events || !Array.isArray(events) || events.length === 0) return [];
     
     let filtered = [...events];
     
@@ -144,7 +144,7 @@ const CalendarManagement: React.FC = () => {
     }
     
     // Filter by status
-    const statusFilters = [];
+    const statusFilters: string[] = [];
     if (showConfirmed) statusFilters.push('confirmed');
     if (showTentative) statusFilters.push('tentative');
     if (showCancelled) statusFilters.push('cancelled');
@@ -166,12 +166,19 @@ const CalendarManagement: React.FC = () => {
   // Create event mutation
   const createEventMutation = useMutation({
     mutationFn: async (data: EventFormData) => {
+      // Convert date objects to ISO strings for API compatibility
+      const formattedData = {
+        ...data,
+        startDate: data.startDate.toISOString(),
+        endDate: data.endDate.toISOString()
+      };
+      
       const response = await fetch('/api/calendar/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formattedData),
       });
       
       if (!response.ok) {
@@ -203,12 +210,19 @@ const CalendarManagement: React.FC = () => {
   // Update event mutation
   const updateEventMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: EventFormData }) => {
+      // Convert date objects to ISO strings for API compatibility
+      const formattedData = {
+        ...data,
+        startDate: data.startDate.toISOString(),
+        endDate: data.endDate.toISOString()
+      };
+      
       const response = await fetch(`/api/calendar/events/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formattedData),
       });
       
       if (!response.ok) {
