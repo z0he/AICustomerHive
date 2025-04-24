@@ -272,6 +272,12 @@ const EmailManagement: React.FC = () => {
   };
 
   const onSendEmailSubmit: SubmitHandler<SendEmailFormData> = (data) => {
+    // Pre-sending notification
+    toast({
+      title: "Sending Email",
+      description: "Your email is being processed...",
+    });
+    
     sendEmailMutation.mutate(data);
   };
 
@@ -676,9 +682,87 @@ const EmailManagement: React.FC = () => {
                                     Send a test email using the {template.name} template.
                                   </DialogDescription>
                                 </DialogHeader>
-                                <div className="py-4">
-                                  <p>This feature will be implemented soon.</p>
-                                </div>
+                                <Form {...sendEmailForm}>
+                                  <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    // Get form values
+                                    const testTo = e.currentTarget.elements.namedItem('testTo') as HTMLInputElement;
+                                    
+                                    if (!testTo || !testTo.value) {
+                                      toast({
+                                        title: "Missing Information",
+                                        description: "Please provide a recipient email address",
+                                        variant: "destructive",
+                                      });
+                                      return;
+                                    }
+                                    
+                                    // Prepare template test data
+                                    toast({
+                                      title: "Sending Test Email",
+                                      description: "Sending a test email using template...",
+                                    });
+                                    
+                                    // Send template email
+                                    fetch('/api/email/send-template', {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({
+                                        templateId: template.id,
+                                        to: testTo.value,
+                                        data: { 
+                                          // Sample data for template variables
+                                          name: "Test User",
+                                          company: "Test Company",
+                                          date: new Date().toLocaleDateString(),
+                                        }
+                                      }),
+                                    })
+                                    .then(response => {
+                                      if (!response.ok) throw new Error("Failed to send test email");
+                                      return response.json();
+                                    })
+                                    .then(() => {
+                                      toast({
+                                        title: "Test Email Sent",
+                                        description: `Test email was sent to ${testTo.value}`,
+                                        variant: "success",
+                                      });
+                                      // Close dialog and refresh logs
+                                      document.querySelector('[data-dialog-close]')?.click();
+                                      refetchLogs();
+                                    })
+                                    .catch(error => {
+                                      toast({
+                                        title: "Failed to Send Test Email",
+                                        description: error.message,
+                                        variant: "destructive",
+                                      });
+                                    });
+                                  }} className="space-y-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="testTo">Send Test To</Label>
+                                      <Input 
+                                        id="testTo"
+                                        name="testTo"
+                                        placeholder="recipient@example.com"
+                                        type="email"
+                                        required
+                                      />
+                                      <p className="text-xs text-muted-foreground">
+                                        The test email will use sample data for template variables.
+                                      </p>
+                                    </div>
+                                    <DialogFooter>
+                                      <Button type="submit" className="mt-4">
+                                        <Send className="mr-2 h-4 w-4" />
+                                        Send Test Email
+                                      </Button>
+                                    </DialogFooter>
+                                  </form>
+                                </Form>
                               </DialogContent>
                             </Dialog>
                           </TableCell>
