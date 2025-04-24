@@ -283,9 +283,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Lead routes
+  app.get("/api/leads", async (req: Request, res: Response) => {
+    try {
+      // Handle filtering options
+      const source = req.query.source as string;
+      const status = req.query.status as string;
+      const minScore = req.query.minScore ? parseInt(req.query.minScore as string) : undefined;
+      const maxScore = req.query.maxScore ? parseInt(req.query.maxScore as string) : undefined;
+      const requiresFollowUp = req.query.requiresFollowUp === 'true';
+      
+      // Apply filters based on query parameters
+      if (source) {
+        const leads = await storage.getLeadsBySource(source);
+        return res.json(leads);
+      } else if (status) {
+        const leads = await storage.getLeadsByStatus(status);
+        return res.json(leads);
+      } else if (minScore !== undefined && maxScore !== undefined) {
+        const leads = await storage.getLeadsByScoreRange(minScore, maxScore);
+        return res.json(leads);
+      } else if (requiresFollowUp) {
+        const leads = await storage.getLeadsRequiringFollowUp();
+        return res.json(leads);
+      } else {
+        // Default: return all leads
+        const leads = await storage.getLeads();
+        return res.json(leads);
+      }
+    } catch (error) {
+      console.error("Get leads error:", error);
+      return res.status(500).json({ message: "Failed to fetch leads" });
+    }
+  });
+  
   app.get("/api/leads/top", async (req: Request, res: Response) => {
     try {
-      const leads = await storage.getTopLeads();
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const leads = await storage.getTopLeads(limit);
       return res.json(leads);
     } catch (error) {
       console.error("Get top leads error:", error);
@@ -301,6 +335,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Create lead error:", error);
       return res.status(400).json({ message: "Invalid lead data" });
+    }
+  });
+  
+  app.patch("/api/leads/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid lead ID" });
+      }
+      
+      const lead = await storage.updateLead(id, req.body);
+      return res.json(lead);
+    } catch (error) {
+      console.error("Update lead error:", error);
+      return res.status(500).json({ message: "Failed to update lead" });
+    }
+  });
+  
+  app.post("/api/leads/:id/score", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid lead ID" });
+      }
+      
+      const scoringData = req.body;
+      const lead = await storage.updateLeadScore(id, scoringData);
+      return res.json(lead);
+    } catch (error) {
+      console.error("Update lead score error:", error);
+      return res.status(500).json({ message: "Failed to update lead score" });
+    }
+  });
+  
+  app.post("/api/leads/:id/owner", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid lead ID" });
+      }
+      
+      const { ownerName } = req.body;
+      if (!ownerName) {
+        return res.status(400).json({ message: "Owner name is required" });
+      }
+      
+      const lead = await storage.assignLeadOwner(id, ownerName);
+      return res.json(lead);
+    } catch (error) {
+      console.error("Assign lead owner error:", error);
+      return res.status(500).json({ message: "Failed to assign lead owner" });
+    }
+  });
+  
+  app.post("/api/leads/:id/tags", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid lead ID" });
+      }
+      
+      const { tags } = req.body;
+      if (!tags || !Array.isArray(tags)) {
+        return res.status(400).json({ message: "Tags array is required" });
+      }
+      
+      const lead = await storage.addLeadTags(id, tags);
+      return res.json(lead);
+    } catch (error) {
+      console.error("Add lead tags error:", error);
+      return res.status(500).json({ message: "Failed to add lead tags" });
+    }
+  });
+  
+  app.post("/api/leads/:id/notes", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid lead ID" });
+      }
+      
+      const { note } = req.body;
+      if (!note) {
+        return res.status(400).json({ message: "Note content is required" });
+      }
+      
+      const lead = await storage.addLeadNote(id, note);
+      return res.json(lead);
+    } catch (error) {
+      console.error("Add lead note error:", error);
+      return res.status(500).json({ message: "Failed to add lead note" });
     }
   });
   
