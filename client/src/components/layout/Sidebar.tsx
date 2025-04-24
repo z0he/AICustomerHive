@@ -7,7 +7,8 @@ import {
   Mail, 
   BarChart2, 
   Settings,
-  Tag
+  Tag,
+  UserPlus
 } from "lucide-react";
 
 interface SidebarItem {

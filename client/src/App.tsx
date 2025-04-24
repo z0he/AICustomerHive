@@ -10,6 +10,7 @@ import Campaigns from "@/pages/Campaigns";
 import CampaignDetail from "@/pages/CampaignDetail";
 import Customers from "@/pages/Customers";
 import Analytics from "@/pages/Analytics";
+import LeadManagement from "@/pages/LeadManagement";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
@@ -35,6 +36,7 @@ function Router() {
       <ProtectedRoute path="/customers" component={Customers} />
       <ProtectedRoute path="/campaigns" component={Campaigns} />
       <ProtectedRoute path="/analytics" component={Analytics} />
+      <ProtectedRoute path="/leads" component={LeadManagement} />
       
       {/* Campaign detail route */}
       <ProtectedRoute path="/campaigns/:id" component={CampaignDetail} />
