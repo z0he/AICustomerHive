@@ -179,6 +179,93 @@ export class DbStorage implements IStorage {
     return await db.select().from(customerActivities);
   }
   
+  async exportCustomers(): Promise<any> {
+    try {
+      const customersList = await db.select().from(customers);
+      
+      // Format the data for export in a standard format (CSV data structure)
+      const exportData = {
+        data: customersList,
+        metadata: {
+          totalCount: customersList.length,
+          exportDate: new Date().toISOString(),
+          fields: [
+            'id', 'email', 'firstName', 'lastName', 'name', 'phone', 'company', 
+            'jobTitle', 'linkedinUrl', 'lifecycleStage', 'leadStatus',
+            'contactIndustry', 'contactOwner', 'contactSource', 'contactType',
+            'country', 'legalBasis', 'createdAt', 'status'
+          ]
+        }
+      };
+      
+      return exportData;
+    } catch (error) {
+      console.error("Failed to export customers:", error);
+      throw new Error("Failed to export customers");
+    }
+  }
+  
+  async importCustomers(customerData: any[]): Promise<{ imported: number; errors: any[] }> {
+    const errors: any[] = [];
+    let imported = 0;
+    
+    // Process each customer in the imported data
+    for (const data of customerData) {
+      try {
+        // Basic validation
+        if (!data.email || !data.firstName || !data.lastName) {
+          errors.push({
+            record: data,
+            error: 'Missing required fields: email, firstName, or lastName'
+          });
+          continue;
+        }
+        
+        // Check for duplicate email
+        const existingCustomer = await db.select()
+          .from(customers)
+          .where(eq(customers.email, data.email));
+        
+        if (existingCustomer.length > 0) {
+          errors.push({
+            record: data,
+            error: `Customer with email ${data.email} already exists`
+          });
+          continue;
+        }
+        
+        // Create customer
+        const insertCustomer: InsertCustomer = {
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone || null,
+          company: data.company || null,
+          jobTitle: data.jobTitle || null,
+          linkedinUrl: data.linkedinUrl || null,
+          lifecycleStage: data.lifecycleStage || 'lead',
+          leadStatus: data.leadStatus || null,
+          contactIndustry: data.contactIndustry || null,
+          contactOwner: data.contactOwner || null,
+          contactSource: data.contactSource || null,
+          contactType: data.contactType || null,
+          country: data.country || null,
+          legalBasis: data.legalBasis || null
+        };
+        
+        await this.createCustomer(insertCustomer);
+        imported++;
+      } catch (error) {
+        errors.push({
+          record: data,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+    
+    return { imported, errors };
+  }
+  
   // ----- Lead methods -----
   
   async getLeads(): Promise<Lead[]> {
