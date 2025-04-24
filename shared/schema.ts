@@ -275,8 +275,8 @@ export type EmailTemplate = typeof emailTemplates.$inferSelect;
 // Email log (sent emails)
 export const emailLogs = pgTable("email_logs", {
   id: serial("id").primaryKey(),
-  from: text("from").notNull(),
-  to: text("to").notNull(),
+  from: text("from_address").notNull(),
+  to: text("to_address").notNull(),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
   sentAt: timestamp("sent_at").notNull(),
