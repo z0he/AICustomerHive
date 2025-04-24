@@ -11,9 +11,22 @@ if (!process.env.MAILGUN_DOMAIN) {
 
 // Initialize Mailgun with API key
 const mailgun = new Mailgun(formData);
-const mg = process.env.MAILGUN_API_KEY ? 
+let mg = process.env.MAILGUN_API_KEY ? 
   mailgun.client({ username: 'api', key: process.env.MAILGUN_API_KEY }) : 
   null;
+
+/**
+ * Reinitialize the Mailgun client with updated credentials
+ */
+export function reinitializeMailgunClient(): void {
+  if (process.env.MAILGUN_API_KEY) {
+    mg = mailgun.client({ username: 'api', key: process.env.MAILGUN_API_KEY });
+    console.log("Mailgun client reinitialized with new API key");
+  } else {
+    mg = null;
+    console.warn("Cannot reinitialize Mailgun client: API key not set");
+  }
+}
 
 interface EmailParams {
   from: string;
