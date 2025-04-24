@@ -284,6 +284,87 @@ export class MemStorage implements IStorage {
     return this.customerActivities;
   }
   
+  async exportCustomers(): Promise<any> {
+    const customers = Array.from(this.customers.values());
+    
+    // Format the data for export in a standard format (CSV data structure)
+    const exportData = {
+      data: customers,
+      metadata: {
+        totalCount: customers.length,
+        exportDate: new Date().toISOString(),
+        fields: [
+          'id', 'email', 'firstName', 'lastName', 'name', 'phone', 'company', 
+          'jobTitle', 'linkedinUrl', 'lifecycleStage', 'leadStatus',
+          'contactIndustry', 'contactOwner', 'contactSource', 'contactType',
+          'country', 'legalBasis', 'createdAt', 'status'
+        ]
+      }
+    };
+    
+    return exportData;
+  }
+  
+  async importCustomers(customerData: any[]): Promise<{ imported: number; errors: any[] }> {
+    const errors: any[] = [];
+    let imported = 0;
+    
+    // Process each customer in the imported data
+    for (const data of customerData) {
+      try {
+        // Basic validation
+        if (!data.email || !data.firstName || !data.lastName) {
+          errors.push({
+            record: data,
+            error: 'Missing required fields: email, firstName, or lastName'
+          });
+          continue;
+        }
+        
+        // Check for duplicate email
+        const existingCustomer = Array.from(this.customers.values())
+          .find(customer => customer.email === data.email);
+        
+        if (existingCustomer) {
+          errors.push({
+            record: data,
+            error: `Customer with email ${data.email} already exists`
+          });
+          continue;
+        }
+        
+        // Create customer
+        const insertCustomer: InsertCustomer = {
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone || null,
+          company: data.company || null,
+          jobTitle: data.jobTitle || null,
+          linkedinUrl: data.linkedinUrl || null,
+          lifecycleStage: data.lifecycleStage || 'lead',
+          leadStatus: data.leadStatus || null,
+          contactIndustry: data.contactIndustry || null,
+          contactOwner: data.contactOwner || null,
+          contactSource: data.contactSource || null,
+          contactType: data.contactType || null,
+          country: data.country || null,
+          legalBasis: data.legalBasis || null
+        };
+        
+        await this.createCustomer(insertCustomer);
+        imported++;
+      } catch (error) {
+        errors.push({
+          record: data,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+    
+    return { imported, errors };
+  }
+  
   // ----- Lead methods -----
   
   async getLeads(): Promise<Lead[]> {
@@ -548,6 +629,252 @@ export class MemStorage implements IStorage {
     const updatedTask = { ...task, completed: !task.completed };
     this.tasks.set(id, updatedTask);
     return updatedTask;
+  }
+  
+  // ----- Calendar/Scheduling methods -----
+  
+  async getCalendarEvents(startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
+    let events = Array.from(this.calendarEvents.values());
+    
+    // Filter by date range if provided
+    if (startDate || endDate) {
+      events = events.filter(event => {
+        const eventStart = new Date(event.startDate);
+        const eventEnd = new Date(event.endDate);
+        
+        if (startDate && endDate) {
+          return eventStart >= startDate && eventEnd <= endDate;
+        } else if (startDate) {
+          return eventStart >= startDate;
+        } else if (endDate) {
+          return eventEnd <= endDate;
+        }
+        
+        return true;
+      });
+    }
+    
+    return events;
+  }
+  
+  async getCalendarEventsByOwner(ownerId: number, startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
+    // First get all events, possibly filtered by date
+    const events = await this.getCalendarEvents(startDate, endDate);
+    
+    // Then filter by owner
+    return events.filter(event => event.ownerId === ownerId);
+  }
+  
+  async getCalendarEventsByEntity(entityType: string, entityId: number): Promise<CalendarEvent[]> {
+    return Array.from(this.calendarEvents.values())
+      .filter(event => event.relatedEntityType === entityType && event.relatedEntityId === entityId);
+  }
+  
+  async getCalendarEvent(id: number): Promise<CalendarEvent | undefined> {
+    return this.calendarEvents.get(id);
+  }
+  
+  async createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent> {
+    const id = this.calendarEventCurrentId++;
+    
+    const calendarEvent: CalendarEvent = {
+      ...event,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    this.calendarEvents.set(id, calendarEvent);
+    return calendarEvent;
+  }
+  
+  async updateCalendarEvent(id: number, eventData: Partial<CalendarEvent>): Promise<CalendarEvent> {
+    const event = this.calendarEvents.get(id);
+    if (!event) {
+      throw new Error(`Calendar event with ID ${id} not found`);
+    }
+    
+    const updatedEvent = { 
+      ...event, 
+      ...eventData,
+      updatedAt: new Date()
+    };
+    
+    this.calendarEvents.set(id, updatedEvent);
+    return updatedEvent;
+  }
+  
+  async deleteCalendarEvent(id: number): Promise<boolean> {
+    const exists = this.calendarEvents.has(id);
+    if (!exists) {
+      throw new Error(`Calendar event with ID ${id} not found`);
+    }
+    
+    return this.calendarEvents.delete(id);
+  }
+  
+  // ----- Email methods -----
+  
+  async getEmailTemplates(category?: string): Promise<EmailTemplate[]> {
+    let templates = Array.from(this.emailTemplates.values());
+    
+    // Filter by category if provided
+    if (category) {
+      templates = templates.filter(template => template.category === category);
+    }
+    
+    return templates;
+  }
+  
+  async getEmailTemplate(id: number): Promise<EmailTemplate | undefined> {
+    return this.emailTemplates.get(id);
+  }
+  
+  async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
+    const id = this.emailTemplateCurrentId++;
+    
+    const emailTemplate: EmailTemplate = {
+      ...template,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    this.emailTemplates.set(id, emailTemplate);
+    return emailTemplate;
+  }
+  
+  async updateEmailTemplate(id: number, templateData: Partial<EmailTemplate>): Promise<EmailTemplate> {
+    const template = this.emailTemplates.get(id);
+    if (!template) {
+      throw new Error(`Email template with ID ${id} not found`);
+    }
+    
+    const updatedTemplate = { 
+      ...template, 
+      ...templateData,
+      updatedAt: new Date()
+    };
+    
+    this.emailTemplates.set(id, updatedTemplate);
+    return updatedTemplate;
+  }
+  
+  async deleteEmailTemplate(id: number): Promise<boolean> {
+    const exists = this.emailTemplates.has(id);
+    if (!exists) {
+      throw new Error(`Email template with ID ${id} not found`);
+    }
+    
+    return this.emailTemplates.delete(id);
+  }
+  
+  // ----- Email logs -----
+  
+  async getEmailLogs(entityType?: string, entityId?: number): Promise<EmailLog[]> {
+    let logs = Array.from(this.emailLogs.values());
+    
+    // Filter by entity if provided
+    if (entityType && entityId) {
+      logs = logs.filter(log => 
+        log.relatedEntityType === entityType && 
+        log.relatedEntityId === entityId
+      );
+    } else if (entityType) {
+      logs = logs.filter(log => log.relatedEntityType === entityType);
+    }
+    
+    return logs.sort((a, b) => {
+      // Sort by sent date, newest first
+      return new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime();
+    });
+  }
+  
+  async createEmailLog(log: InsertEmailLog): Promise<EmailLog> {
+    const id = this.emailLogCurrentId++;
+    
+    const emailLog: EmailLog = {
+      ...log,
+      id,
+      sentAt: new Date()
+    };
+    
+    this.emailLogs.set(id, emailLog);
+    return emailLog;
+  }
+  
+  async sendEmail(from: string, to: string, subject: string, body: string, options: any = {}): Promise<EmailLog> {
+    // In a real implementation, this would use an email service like SendGrid
+    try {
+      // Process options
+      const {
+        relatedEntityType,
+        relatedEntityId,
+        campaignId,
+        metadata = {}
+      } = options;
+      
+      // Log the email
+      const emailLog: InsertEmailLog = {
+        from,
+        to,
+        subject,
+        body,
+        status: 'sent',
+        relatedEntityType,
+        relatedEntityId,
+        campaignId,
+        metadata
+      };
+      
+      // Create the log entry
+      return await this.createEmailLog(emailLog);
+    } catch (error) {
+      // If sending fails, log it as failed
+      const emailLog: InsertEmailLog = {
+        from,
+        to,
+        subject,
+        body,
+        status: 'failed',
+        metadata: {
+          error: error instanceof Error ? error.message : String(error)
+        }
+      };
+      
+      return await this.createEmailLog(emailLog);
+    }
+  }
+  
+  async sendEmailWithTemplate(templateId: number, to: string, data: any, options: any = {}): Promise<EmailLog> {
+    // Find the template
+    const template = await this.getEmailTemplate(templateId);
+    if (!template) {
+      throw new Error(`Email template with ID ${templateId} not found`);
+    }
+    
+    // Process template with data
+    let body = template.bodyHtml;
+    let subject = template.subject;
+    
+    // Replace variables in the template
+    if (template.variables) {
+      template.variables.forEach(variable => {
+        const value = data[variable] || '';
+        const regex = new RegExp(`{{${variable}}}`, 'g');
+        body = body.replace(regex, value);
+        subject = subject.replace(regex, value);
+      });
+    }
+    
+    // Combine options with template data
+    const emailOptions = {
+      ...options,
+      templateId: template.id
+    };
+    
+    // Send the email
+    return await this.sendEmail(options.from || 'noreply@example.com', to, subject, body, emailOptions);
   }
   
   // ----- Dashboard metrics -----

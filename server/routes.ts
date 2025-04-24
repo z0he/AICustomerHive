@@ -3,13 +3,17 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey } from "./lib/openai";
+import { initSendGrid, sendEmail, isSendGridInitialized } from "./lib/sendgrid";
 import { z } from "zod";
 import { 
   insertCampaignSchema, 
   insertCustomerSchema, 
   insertLeadSchema, 
   insertTaskSchema,
-  insertMessageVariantSchema
+  insertMessageVariantSchema,
+  insertCalendarEventSchema,
+  insertEmailTemplateSchema,
+  insertEmailLogSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 
