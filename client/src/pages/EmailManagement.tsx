@@ -65,6 +65,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 // Form schemas
 const configureApiKeySchema = z.object({
   apiKey: z.string().min(1, "API key is required"),
+  domain: z.string().min(1, "Domain is required"),
 });
 
 const emailTemplateSchema = z.object({
@@ -235,6 +236,7 @@ const EmailManagement: React.FC = () => {
     resolver: zodResolver(configureApiKeySchema),
     defaultValues: {
       apiKey: '',
+      domain: '',
     },
   });
   

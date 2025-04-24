@@ -871,24 +871,73 @@ export class MemStorage implements IStorage {
     let body = template.bodyHtml;
     let subject = template.subject;
     
-    // Replace variables in the template
-    if (template.variables) {
-      template.variables.forEach(variable => {
-        const value = data[variable] || '';
-        const regex = new RegExp(`{{${variable}}}`, 'g');
-        body = body.replace(regex, value);
-        subject = subject.replace(regex, value);
-      });
+    try {
+      // Import the sendTemplateEmail function from mailgun.ts
+      const { sendTemplateEmail } = await import('./lib/mailgun');
+      
+      // Try to use Mailgun's native template functionality
+      // If we have a Mailgun template name in options, use that
+      if (options.mailgunTemplate) {
+        const success = await sendTemplateEmail(
+          to,
+          options.from || 'noreply@example.com',
+          subject,
+          data,
+          options.mailgunTemplate
+        );
+        
+        // Log the email
+        const emailLog: InsertEmailLog = {
+          from: options.from || 'noreply@example.com',
+          to,
+          subject,
+          body: template.bodyHtml,
+          status: success ? 'sent' : 'failed',
+          templateId: template.id,
+          metadata: { templateData: data }
+        };
+        
+        return await this.createEmailLog(emailLog);
+      }
+      
+      // Otherwise, use our local template processing
+      
+      // Replace variables in the template
+      if (template.variables) {
+        template.variables.forEach(variable => {
+          const value = data[variable] || '';
+          const regex = new RegExp(`{{${variable}}}`, 'g');
+          body = body.replace(regex, value);
+          subject = subject.replace(regex, value);
+        });
+      }
+      
+      // Combine options with template data
+      const emailOptions = {
+        ...options,
+        templateId: template.id,
+        html: body // Use the processed HTML template
+      };
+      
+      // Send the email using our regular sendEmail method
+      return await this.sendEmail(options.from || 'noreply@example.com', to, subject, body, emailOptions);
+    } catch (error) {
+      // Log a failed email attempt
+      const emailLog: InsertEmailLog = {
+        from: options.from || 'noreply@example.com',
+        to,
+        subject,
+        body: template.bodyHtml,
+        status: 'failed',
+        templateId: template.id,
+        metadata: {
+          error: error instanceof Error ? error.message : String(error),
+          templateData: data
+        }
+      };
+      
+      return await this.createEmailLog(emailLog);
     }
-    
-    // Combine options with template data
-    const emailOptions = {
-      ...options,
-      templateId: template.id
-    };
-    
-    // Send the email
-    return await this.sendEmail(options.from || 'noreply@example.com', to, subject, body, emailOptions);
   }
   
   // ----- Dashboard metrics -----

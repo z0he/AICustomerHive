@@ -36,7 +36,13 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
   }
 
   try {
-    const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, params);
+    // Ensure text field is always provided (Mailgun requires it)
+    const messageParams = {
+      ...params,
+      text: params.text || params.html || ' ' // Use empty space as fallback if neither text nor html provided
+    };
+    
+    const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, messageParams);
     console.log('Email sent successfully:', result);
     return true;
   } catch (error) {
@@ -59,6 +65,7 @@ export async function sendTemplateEmail(
     to,
     from,
     subject,
+    text: "This email contains HTML content. Please use an email client that supports HTML to view it properly.",
     template: templateName,
     'h:X-Mailgun-Variables': JSON.stringify(templateVariables)
   });
