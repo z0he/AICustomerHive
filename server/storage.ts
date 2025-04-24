@@ -804,15 +804,29 @@ export class MemStorage implements IStorage {
   }
   
   async sendEmail(from: string, to: string, subject: string, body: string, options: any = {}): Promise<EmailLog> {
-    // In a real implementation, this would use an email service like SendGrid
+    // Use Mailgun to send emails
     try {
       // Process options
       const {
         relatedEntityType,
         relatedEntityId,
         campaignId,
-        metadata = {}
+        metadata = {},
+        html
       } = options;
+      
+      // Try to send the email with Mailgun
+      const emailParams = {
+        from,
+        to,
+        subject,
+        text: body,
+        html: html || body // Use HTML if provided, otherwise use text content
+      };
+      
+      // Import the sendEmail function from mailgun.ts
+      const { sendEmail } = await import('./lib/mailgun');
+      const success = await sendEmail(emailParams);
       
       // Log the email
       const emailLog: InsertEmailLog = {
@@ -820,7 +834,7 @@ export class MemStorage implements IStorage {
         to,
         subject,
         body,
-        status: 'sent',
+        status: success ? 'sent' : 'failed',
         relatedEntityType,
         relatedEntityId,
         campaignId,

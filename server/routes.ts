@@ -3,7 +3,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey } from "./lib/openai";
-import { initSendGrid, sendEmail, isSendGridInitialized } from "./lib/sendgrid";
+import { sendEmail, sendTemplateEmail, isMailgunConfigured } from "./lib/mailgun";
 import { z } from "zod";
 import { 
   insertCampaignSchema, 
@@ -902,40 +902,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // ===== SENDGRID CONFIGURATION ROUTE =====
+  // ===== MAILGUN CONFIGURATION ROUTE =====
   
-  app.post("/api/config/sendgrid", async (req: Request, res: Response) => {
+  app.post("/api/config/mailgun", async (req: Request, res: Response) => {
     try {
       // In a real implementation, this would securely store the API key
       // using environment variables or a secure vault service
       // And would be properly authenticated
-      const { apiKey } = req.body;
+      const { apiKey, domain } = req.body;
       
       if (!apiKey) {
-        return res.status(400).json({ message: "SendGrid API key is required" });
+        return res.status(400).json({ message: "Mailgun API key is required" });
       }
       
-      // Initialize SendGrid with the provided API key
-      const success = initSendGrid(apiKey);
-      
-      if (!success) {
-        return res.status(500).json({ message: "Failed to initialize SendGrid with the provided API key" });
+      if (!domain) {
+        return res.status(400).json({ message: "Mailgun domain is required" });
       }
       
-      return res.json({ success: true, message: "SendGrid API key has been configured" });
+      // In a real implementation, we would store these values
+      // Here we'll just check environment variables are set
+      process.env.MAILGUN_API_KEY = apiKey;
+      process.env.MAILGUN_DOMAIN = domain;
+      
+      return res.json({ success: true, message: "Mailgun API key and domain have been configured" });
     } catch (error) {
-      console.error("SendGrid configuration error:", error);
-      return res.status(500).json({ message: "Failed to configure SendGrid API key" });
+      console.error("Mailgun configuration error:", error);
+      return res.status(500).json({ message: "Failed to configure Mailgun API key and domain" });
     }
   });
   
-  app.get("/api/config/sendgrid/status", async (req: Request, res: Response) => {
+  app.get("/api/config/mailgun/status", async (req: Request, res: Response) => {
     try {
-      const isConfigured = isSendGridInitialized();
+      const isConfigured = isMailgunConfigured();
       return res.json({ configured: isConfigured });
     } catch (error) {
-      console.error("SendGrid status check error:", error);
-      return res.status(500).json({ message: "Failed to check SendGrid configuration status" });
+      console.error("Mailgun status check error:", error);
+      return res.status(500).json({ message: "Failed to check Mailgun configuration status" });
     }
   });
 
