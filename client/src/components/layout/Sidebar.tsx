@@ -34,6 +34,7 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns }) => {
   const mainNavItems: SidebarItem[] = [
     { icon: <LayoutDashboard size={20} />, label: "Dashboard", path: "/dashboard" },
     { icon: <Users size={20} />, label: "Customers", path: "/customers" },
+    { icon: <UserPlus size={20} />, label: "Leads", path: "/leads" },
     { icon: <Megaphone size={20} />, label: "Campaigns", path: "/campaigns" },
     { icon: <Mail size={20} />, label: "Messages", path: "/messages" },
     { icon: <BarChart2 size={20} />, label: "Analytics", path: "/analytics" },
