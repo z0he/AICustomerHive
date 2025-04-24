@@ -5,7 +5,10 @@ import {
   leads, type Lead, type InsertLead,
   tasks, type Task, type InsertTask,
   customerActivities, type CustomerActivity,
-  messageVariants, type MessageVariant, type InsertMessageVariant
+  messageVariants, type MessageVariant, type InsertMessageVariant,
+  calendarEvents, type CalendarEvent, type InsertCalendarEvent,
+  emailTemplates, type EmailTemplate, type InsertEmailTemplate,
+  emailLogs, type EmailLog, type InsertEmailLog
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
 
@@ -34,6 +37,8 @@ export interface IStorage {
   getCustomer(id: number): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   getCustomerActivities(): Promise<CustomerActivity[]>;
+  exportCustomers(): Promise<any>; // Exports customer data in standard format
+  importCustomers(customerData: any[]): Promise<{ imported: number; errors: any[] }>;
   
   // Lead methods
   getLeads(): Promise<Lead[]>;
@@ -58,6 +63,28 @@ export interface IStorage {
   
   // Dashboard metrics
   getDashboardMetrics(): Promise<any[]>;
+  
+  // Calendar/Scheduling methods
+  getCalendarEvents(startDate?: Date, endDate?: Date): Promise<CalendarEvent[]>;
+  getCalendarEventsByOwner(ownerId: number, startDate?: Date, endDate?: Date): Promise<CalendarEvent[]>;
+  getCalendarEventsByEntity(entityType: string, entityId: number): Promise<CalendarEvent[]>;
+  getCalendarEvent(id: number): Promise<CalendarEvent | undefined>;
+  createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent>;
+  updateCalendarEvent(id: number, eventData: Partial<CalendarEvent>): Promise<CalendarEvent>;
+  deleteCalendarEvent(id: number): Promise<boolean>;
+  
+  // Email methods
+  getEmailTemplates(category?: string): Promise<EmailTemplate[]>;
+  getEmailTemplate(id: number): Promise<EmailTemplate | undefined>;
+  createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
+  updateEmailTemplate(id: number, templateData: Partial<EmailTemplate>): Promise<EmailTemplate>;
+  deleteEmailTemplate(id: number): Promise<boolean>;
+  
+  // Email logs
+  getEmailLogs(entityType?: string, entityId?: number): Promise<EmailLog[]>;
+  createEmailLog(log: InsertEmailLog): Promise<EmailLog>;
+  sendEmail(from: string, to: string, subject: string, body: string, options?: any): Promise<EmailLog>;
+  sendEmailWithTemplate(templateId: number, to: string, data: any, options?: any): Promise<EmailLog>;
 }
 
 export class MemStorage implements IStorage {
@@ -68,6 +95,9 @@ export class MemStorage implements IStorage {
   private tasks: Map<number, Task>;
   private customerActivities: CustomerActivity[];
   private messageVariants: Map<number, MessageVariant>;
+  private calendarEvents: Map<number, CalendarEvent>;
+  private emailTemplates: Map<number, EmailTemplate>;
+  private emailLogs: Map<number, EmailLog>;
   
   private userCurrentId: number;
   private campaignCurrentId: number;
@@ -76,6 +106,9 @@ export class MemStorage implements IStorage {
   private taskCurrentId: number;
   private activityCurrentId: number;
   private messageVariantCurrentId: number;
+  private calendarEventCurrentId: number;
+  private emailTemplateCurrentId: number;
+  private emailLogCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -85,6 +118,9 @@ export class MemStorage implements IStorage {
     this.tasks = new Map();
     this.customerActivities = [];
     this.messageVariants = new Map();
+    this.calendarEvents = new Map();
+    this.emailTemplates = new Map();
+    this.emailLogs = new Map();
     
     this.userCurrentId = 1;
     this.campaignCurrentId = 1;
@@ -93,6 +129,9 @@ export class MemStorage implements IStorage {
     this.taskCurrentId = 1;
     this.activityCurrentId = 1;
     this.messageVariantCurrentId = 1;
+    this.calendarEventCurrentId = 1;
+    this.emailTemplateCurrentId = 1;
+    this.emailLogCurrentId = 1;
     
     this.seedData();
   }

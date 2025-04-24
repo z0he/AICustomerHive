@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -201,3 +201,105 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
 
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Task = typeof tasks.$inferSelect;
+
+// Calendar events table (for scheduling follow-ups)
+export const calendarEvents = pgTable("calendar_events", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  allDay: boolean("all_day").default(false),
+  eventType: text("event_type").default("meeting"), // meeting, call, task, etc.
+  status: text("status").default("scheduled"), // scheduled, completed, cancelled
+  relatedEntityType: text("related_entity_type"), // lead, customer, campaign
+  relatedEntityId: integer("related_entity_id"),
+  ownerId: integer("owner_id"), // reference to user
+  reminderMinutes: integer("reminder_minutes"),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at"),
+  location: text("location"),
+  color: text("color").default("#4F46E5"), // event color for UI
+  recurrence: json("recurrence"), // store recurrence rules as JSON
+});
+
+export const insertCalendarEventSchema = createInsertSchema(calendarEvents).pick({
+  title: true,
+  description: true,
+  startDate: true,
+  endDate: true,
+  allDay: true,
+  eventType: true,
+  status: true,
+  relatedEntityType: true,
+  relatedEntityId: true,
+  ownerId: true,
+  reminderMinutes: true,
+  location: true,
+  color: true,
+  recurrence: true,
+});
+
+export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
+export type CalendarEvent = typeof calendarEvents.$inferSelect;
+
+// Email templates table
+export const emailTemplates = pgTable("email_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  subject: text("subject").notNull(),
+  bodyHtml: text("body_html").notNull(),
+  bodyText: text("body_text").notNull(),
+  category: text("category").default("general"), // follow-up, welcome, nurture, etc.
+  createdBy: integer("created_by"), // reference to user
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at"),
+  variables: text("variables").array(), // available template variables
+});
+
+export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).pick({
+  name: true,
+  subject: true,
+  bodyHtml: true,
+  bodyText: true,
+  category: true,
+  createdBy: true,
+  isDefault: true,
+  variables: true,
+});
+
+export type InsertEmailTemplate = z.infer<typeof insertEmailTemplateSchema>;
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+
+// Email log (sent emails)
+export const emailLogs = pgTable("email_logs", {
+  id: serial("id").primaryKey(),
+  from: text("from").notNull(),
+  to: text("to").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  sentAt: timestamp("sent_at").notNull(),
+  status: text("status").default("sent"), // sent, delivered, opened, clicked, failed
+  templateId: integer("template_id"),
+  campaignId: integer("campaign_id"),
+  relatedEntityType: text("related_entity_type"), // lead, customer
+  relatedEntityId: integer("related_entity_id"),
+  metadata: json("metadata"), // tracking data, error messages, etc.
+});
+
+export const insertEmailLogSchema = createInsertSchema(emailLogs).pick({
+  from: true,
+  to: true,
+  subject: true,
+  body: true,
+  status: true,
+  templateId: true,
+  campaignId: true,
+  relatedEntityType: true,
+  relatedEntityId: true,
+  metadata: true,
+});
+
+export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
+export type EmailLog = typeof emailLogs.$inferSelect;
