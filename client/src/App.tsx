@@ -13,6 +13,9 @@ import Analytics from "@/pages/Analytics";
 import LeadManagement from "@/pages/LeadManagement";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
+import CustomerData from "@/pages/CustomerData";
+import EmailManagement from "@/pages/EmailManagement";
+import CalendarManagement from "@/pages/CalendarManagement";
 
 // Custom placeholder page for routes under development
 const UnderDevelopment = ({ title }: { title: string }) => {
@@ -37,6 +40,9 @@ function Router() {
       <ProtectedRoute path="/campaigns" component={Campaigns} />
       <ProtectedRoute path="/analytics" component={Analytics} />
       <ProtectedRoute path="/leads" component={LeadManagement} />
+      <ProtectedRoute path="/customer-data" component={CustomerData} />
+      <ProtectedRoute path="/email" component={EmailManagement} />
+      <ProtectedRoute path="/calendar" component={CalendarManagement} />
       
       {/* Campaign detail route */}
       <ProtectedRoute path="/campaigns/:id" component={CampaignDetail} />

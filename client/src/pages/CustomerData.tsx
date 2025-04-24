@@ -1,0 +1,341 @@
+import React, { useState } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Download, Upload, AlertCircle, CheckCircle } from "lucide-react";
+import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
+
+const CustomerData = () => {
+  const { toast } = useToast();
+  const [importData, setImportData] = useState<string>('');
+  const [activeTab, setActiveTab] = useState('export');
+  const [importResult, setImportResult] = useState<{imported: number; errors: any[]} | null>(null);
+
+  // Query to get customer export data
+  const { data: exportData, isLoading: isExportLoading, error: exportError } = useQuery({
+    queryKey: ['/api/customers/export'],
+    enabled: activeTab === 'export',
+  });
+
+  // Mutation for importing customer data
+  const importMutation = useMutation({
+    mutationFn: async (data: any[]) => {
+      const response = await fetch('/api/customers/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ data }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to import customer data');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setImportResult(data);
+      toast({
+        title: 'Import Successful',
+        description: `Imported ${data.imported} customer records with ${data.errors.length} errors.`,
+        variant: 'success',
+      });
+      // Invalidate customer-related queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Import Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Handle JSON export data download
+  const handleExportDownload = () => {
+    if (!exportData) return;
+    
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `customer_export_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'Export Downloaded',
+      description: 'Customer data has been exported successfully.',
+    });
+  };
+
+  // Handle CSV export data download
+  const handleCSVDownload = () => {
+    if (!exportData || !exportData.data) return;
+    
+    // Get field names from metadata or first item
+    const fields = exportData.metadata?.fields || Object.keys(exportData.data[0] || {});
+    
+    // Create CSV header row
+    let csv = fields.join(',') + '\n';
+    
+    // Add data rows
+    exportData.data.forEach((customer: any) => {
+      const row = fields.map(field => {
+        // Handle nested or missing fields
+        const value = customer[field];
+        // Escape and quote strings that contain commas or quotes
+        if (typeof value === 'string') {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        // Format dates
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        // Handle arrays
+        if (Array.isArray(value)) {
+          return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+        }
+        return value ?? '';
+      }).join(',');
+      
+      csv += row + '\n';
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `customer_export_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'CSV Downloaded',
+      description: 'Customer data has been exported as CSV successfully.',
+    });
+  };
+
+  // Handle import action
+  const handleImport = () => {
+    try {
+      const data = JSON.parse(importData);
+      
+      if (!Array.isArray(data)) {
+        throw new Error('Import data must be an array of customer records');
+      }
+      
+      importMutation.mutate(data);
+    } catch (e) {
+      toast({
+        title: 'Invalid JSON',
+        description: 'The import data must be valid JSON format.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <div className="container mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-6">Customer Data Management</h1>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="export">Export</TabsTrigger>
+          <TabsTrigger value="import">Import</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="export" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Download className="mr-2" size={20} />
+                Export Customer Data
+              </CardTitle>
+              <CardDescription>
+                Export your customer data for backup or transferring to another system.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isExportLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2">Loading export data...</span>
+                </div>
+              ) : exportError ? (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>
+                    Failed to load export data. Please try again.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium mb-2">Export Summary</h3>
+                    <div className="flex flex-wrap gap-4">
+                      <div className="bg-muted p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground">Total Customers</div>
+                        <div className="text-2xl font-bold">{exportData?.metadata?.totalCount || exportData?.data?.length || 0}</div>
+                      </div>
+                      <div className="bg-muted p-4 rounded-lg">
+                        <div className="text-sm text-muted-foreground">Export Date</div>
+                        <div className="text-md font-medium">
+                          {exportData?.metadata?.exportDate 
+                            ? new Date(exportData.metadata.exportDate).toLocaleDateString() 
+                            : new Date().toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <h3 className="text-lg font-medium mb-2">Available Fields</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {exportData?.metadata?.fields?.map((field: string) => (
+                        <Badge key={field} variant="outline">{field}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium mb-2">Sample Data (First 3 records)</h3>
+                    <div className="bg-muted p-4 rounded-lg overflow-x-auto">
+                      <pre className="text-xs">
+                        {JSON.stringify(exportData?.data?.slice(0, 3), null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                </>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={() => setActiveTab('import')}>
+                Switch to Import
+              </Button>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={handleCSVDownload} 
+                  disabled={isExportLoading || !!exportError}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download CSV
+                </Button>
+                <Button 
+                  onClick={handleExportDownload} 
+                  disabled={isExportLoading || !!exportError}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download JSON
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="import" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Upload className="mr-2" size={20} />
+                Import Customer Data
+              </CardTitle>
+              <CardDescription>
+                Import customer data from JSON. The data must be an array of customer records.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-2">
+                  JSON Data
+                </label>
+                <textarea
+                  className="min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  placeholder='[{ "firstName": "John", "lastName": "Doe", "email": "john@example.com" }, ...]'
+                  value={importData}
+                  onChange={(e) => setImportData(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground mt-2">
+                  Paste JSON data containing an array of customer records. Each record must have at least firstName, lastName, and email fields.
+                </p>
+              </div>
+              
+              {importResult && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium mb-2">Import Results</h3>
+                  <div className="flex gap-4 mb-4">
+                    <div className="bg-muted p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground">Imported Successfully</div>
+                      <div className="text-2xl font-bold text-green-600">{importResult.imported}</div>
+                    </div>
+                    <div className="bg-muted p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground">Errors</div>
+                      <div className="text-2xl font-bold text-red-600">{importResult.errors.length}</div>
+                    </div>
+                  </div>
+                  
+                  {importResult.errors.length > 0 && (
+                    <div>
+                      <h4 className="text-md font-medium mb-2">Error Details</h4>
+                      <div className="bg-muted p-4 rounded-lg max-h-[200px] overflow-y-auto">
+                        {importResult.errors.map((error, index) => (
+                          <div key={index} className="mb-2 pb-2 border-b border-border last:border-0">
+                            <p className="text-sm text-red-600">{error.error}</p>
+                            <details className="mt-1">
+                              <summary className="text-xs cursor-pointer">Record Data</summary>
+                              <pre className="text-xs mt-1 p-2 bg-background rounded">{JSON.stringify(error.record, null, 2)}</pre>
+                            </details>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={() => setActiveTab('export')}>
+                Switch to Export
+              </Button>
+              <Button 
+                onClick={handleImport} 
+                disabled={!importData.trim() || importMutation.isPending}
+              >
+                {importMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Importing...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import Data
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default CustomerData;
