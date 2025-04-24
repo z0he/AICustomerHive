@@ -1215,6 +1215,57 @@ export class MemStorage implements IStorage {
       this.tasks.set(task.id, task as Task);
     });
     this.taskCurrentId = 5;
+    
+    // Seed email templates
+    const emailTemplates = [
+      { 
+        id: 1, 
+        name: "Welcome Email", 
+        subject: "Welcome to our CRM!", 
+        bodyHtml: "<h1>Welcome!</h1><p>Dear {{name}},</p><p>Thank you for joining our platform. We're excited to have you on board!</p><p>Best regards,<br>The Team</p>",
+        bodyText: "Welcome!\n\nDear {{name}},\n\nThank you for joining our platform. We're excited to have you on board!\n\nBest regards,\nThe Team",
+        category: "onboarding",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: 1,
+        isDefault: true,
+        variables: ["name"]
+      },
+      { 
+        id: 2, 
+        name: "Lead Follow-up", 
+        subject: "Following up on our conversation", 
+        bodyHtml: "<p>Hello {{name}},</p><p>I wanted to follow up on our recent conversation about {{topic}}. Do you have any questions I can answer?</p><p>Looking forward to hearing from you,<br>{{sender}}</p>",
+        bodyText: "Hello {{name}},\n\nI wanted to follow up on our recent conversation about {{topic}}. Do you have any questions I can answer?\n\nLooking forward to hearing from you,\n{{sender}}",
+        category: "sales",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: 1,
+        isDefault: true,
+        variables: ["name", "topic", "sender"]
+      },
+      { 
+        id: 3, 
+        name: "Monthly Newsletter", 
+        subject: "{{month}} Newsletter - Latest Updates", 
+        bodyHtml: "<h2>{{month}} Newsletter</h2><p>Dear {{name}},</p><p>Here are our latest updates:</p><ul><li>{{update1}}</li><li>{{update2}}</li><li>{{update3}}</li></ul><p>Thank you for being a valued customer!</p>",
+        bodyText: "{{month}} Newsletter\n\nDear {{name}},\n\nHere are our latest updates:\n- {{update1}}\n- {{update2}}\n- {{update3}}\n\nThank you for being a valued customer!",
+        category: "marketing",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: 1,
+        isDefault: true,
+        variables: ["month", "name", "update1", "update2", "update3"]
+      }
+    ];
+    
+    emailTemplates.forEach(template => {
+      this.emailTemplates.set(template.id, template as EmailTemplate);
+    });
+    this.emailTemplateCurrentId = 4;
+    
+    // Initialize empty email logs
+    this.emailLogCurrentId = 1;
   }
 }
 
