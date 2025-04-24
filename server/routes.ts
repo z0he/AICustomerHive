@@ -3,7 +3,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey } from "./lib/openai";
-import { sendEmail, sendTemplateEmail, isMailgunConfigured } from "./lib/mailgun";
+import { sendEmail, sendTemplateEmail, isMailgunConfigured, reinitializeMailgunClient } from "./lib/mailgun";
 import { z } from "zod";
 import { 
   insertCampaignSchema, 
@@ -923,6 +923,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Here we'll just check environment variables are set
       process.env.MAILGUN_API_KEY = apiKey;
       process.env.MAILGUN_DOMAIN = domain;
+      
+      // Reinitialize the Mailgun client with the new API key
+      reinitializeMailgunClient();
+      
+      // Verify that the configuration is successful
+      const isConfigured = isMailgunConfigured();
+      
+      if (!isConfigured) {
+        return res.status(500).json({ 
+          success: false, 
+          message: "Failed to initialize Mailgun client. Please check your API key and domain."
+        });
+      }
       
       return res.json({ success: true, message: "Mailgun API key and domain have been configured" });
     } catch (error) {
