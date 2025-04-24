@@ -8,7 +8,9 @@ import {
   customerActivities, type CustomerActivity,
   leads, type Lead, type InsertLead,
   tasks, type Task, type InsertTask,
-  messageVariants, type MessageVariant, type InsertMessageVariant
+  messageVariants, type MessageVariant, type InsertMessageVariant,
+  emailTemplates, type EmailTemplate, type InsertEmailTemplate,
+  emailLogs, type EmailLog, type InsertEmailLog
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {
@@ -481,5 +483,280 @@ export class DbStorage implements IStorage {
       .map(part => part.charAt(0).toUpperCase())
       .join('')
       .substring(0, 2);
+  }
+  
+  // ----- Email Template methods -----
+  
+  async getEmailTemplates(category?: string): Promise<EmailTemplate[]> {
+    try {
+      let query = db.select().from(emailTemplates);
+      
+      if (category) {
+        query = query.where(eq(emailTemplates.category, category));
+      }
+      
+      return await query.orderBy(emailTemplates.name);
+    } catch (error) {
+      console.error("Failed to get email templates:", error);
+      return [];
+    }
+  }
+  
+  async getEmailTemplate(id: number): Promise<EmailTemplate | undefined> {
+    try {
+      const result = await db.select().from(emailTemplates).where(eq(emailTemplates.id, id));
+      return result[0];
+    } catch (error) {
+      console.error(`Failed to get email template #${id}:`, error);
+      return undefined;
+    }
+  }
+  
+  async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
+    try {
+      const templateData = {
+        ...template,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const result = await db.insert(emailTemplates).values(templateData as any).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Failed to create email template:", error);
+      throw new Error("Failed to create email template");
+    }
+  }
+  
+  async updateEmailTemplate(id: number, templateData: Partial<EmailTemplate>): Promise<EmailTemplate> {
+    try {
+      // Make sure template exists
+      const template = await this.getEmailTemplate(id);
+      if (!template) {
+        throw new Error(`Email template with ID ${id} not found`);
+      }
+      
+      // Include updated timestamp
+      const updatedData = {
+        ...templateData,
+        updatedAt: new Date()
+      };
+      
+      const result = await db
+        .update(emailTemplates)
+        .set(updatedData)
+        .where(eq(emailTemplates.id, id))
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Failed to update email template #${id}:`, error);
+      throw new Error(`Failed to update email template #${id}`);
+    }
+  }
+  
+  async deleteEmailTemplate(id: number): Promise<boolean> {
+    try {
+      // Make sure template exists
+      const template = await this.getEmailTemplate(id);
+      if (!template) {
+        throw new Error(`Email template with ID ${id} not found`);
+      }
+      
+      await db
+        .delete(emailTemplates)
+        .where(eq(emailTemplates.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete email template #${id}:`, error);
+      return false;
+    }
+  }
+  
+  // ----- Email Log methods -----
+  
+  async getEmailLogs(entityType?: string, entityId?: number): Promise<EmailLog[]> {
+    try {
+      let query = db.select().from(emailLogs);
+      
+      if (entityType && entityId) {
+        query = query.where(
+          and(
+            eq(emailLogs.relatedEntityType, entityType),
+            eq(emailLogs.relatedEntityId, entityId)
+          )
+        );
+      } else if (entityType) {
+        query = query.where(eq(emailLogs.relatedEntityType, entityType));
+      }
+      
+      return await query.orderBy(desc(emailLogs.sentAt));
+    } catch (error) {
+      console.error("Failed to get email logs:", error);
+      return [];
+    }
+  }
+  
+  async createEmailLog(log: InsertEmailLog): Promise<EmailLog> {
+    try {
+      const logData = {
+        ...log,
+        sentAt: new Date()
+      };
+      
+      const result = await db.insert(emailLogs).values(logData as any).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Failed to create email log:", error);
+      throw new Error("Failed to create email log");
+    }
+  }
+  
+  async sendEmail(
+    from: string, 
+    to: string, 
+    subject: string, 
+    body: string, 
+    options: any = {}
+  ): Promise<EmailLog> {
+    try {
+      // Import the sendEmail function from mailgun.ts
+      const { sendEmail } = await import('../lib/mailgun');
+      
+      // Send the email
+      const success = await sendEmail({
+        from,
+        to,
+        subject,
+        html: body,
+        text: options.text || body.replace(/<[^>]*>?/gm, '') // Strip HTML if no text provided
+      });
+      
+      if (!success) {
+        throw new Error('Failed to send email through Mailgun');
+      }
+      
+      // Log the email
+      const emailLog = await this.createEmailLog({
+        from,
+        to,
+        subject,
+        body,
+        status: 'sent',
+        campaignId: options.campaignId,
+        relatedEntityType: options.relatedEntityType,
+        relatedEntityId: options.relatedEntityId,
+        templateId: options.templateId,
+        metadata: options.metadata || {}
+      });
+      
+      return emailLog;
+    } catch (error) {
+      console.error("Failed to send email:", error);
+      
+      // Log the failed email
+      const emailLog = await this.createEmailLog({
+        from,
+        to,
+        subject,
+        body,
+        status: 'failed',
+        campaignId: options.campaignId,
+        relatedEntityType: options.relatedEntityType,
+        relatedEntityId: options.relatedEntityId,
+        templateId: options.templateId,
+        metadata: { error: error.message }
+      });
+      
+      return emailLog;
+    }
+  }
+  
+  async sendEmailWithTemplate(
+    templateId: number, 
+    to: string, 
+    data: any, 
+    options: any = {}
+  ): Promise<EmailLog> {
+    try {
+      // Get the template
+      const template = await this.getEmailTemplate(templateId);
+      if (!template) {
+        throw new Error(`Email template with ID ${templateId} not found`);
+      }
+      
+      // Import the sendTemplateEmail function from mailgun.ts
+      const { sendTemplateEmail } = await import('../lib/mailgun');
+      
+      // Get from address
+      const from = options.from || process.env.DEFAULT_FROM_EMAIL || 'noreply@example.com';
+      
+      // Send the email
+      const success = await sendTemplateEmail(
+        to,
+        from,
+        template.subject,
+        data,
+        template.name
+      );
+      
+      if (!success) {
+        throw new Error('Failed to send template email through Mailgun');
+      }
+      
+      // Log the email
+      const emailLog = await this.createEmailLog({
+        from,
+        to,
+        subject: template.subject,
+        body: template.bodyHtml,
+        status: 'sent',
+        templateId,
+        campaignId: options.campaignId,
+        relatedEntityType: options.relatedEntityType,
+        relatedEntityId: options.relatedEntityId,
+        metadata: { templateData: data }
+      });
+      
+      return emailLog;
+    } catch (error) {
+      console.error("Failed to send template email:", error);
+      
+      // Get the template if we can
+      let templateInfo: any = { id: templateId };
+      try {
+        const template = await this.getEmailTemplate(templateId);
+        if (template) {
+          templateInfo = {
+            id: template.id,
+            name: template.name,
+            subject: template.subject
+          };
+        }
+      } catch (e) {
+        // Ignore errors here
+      }
+      
+      // Log the failed email
+      const emailLog = await this.createEmailLog({
+        from: options.from || process.env.DEFAULT_FROM_EMAIL || 'noreply@example.com',
+        to,
+        subject: templateInfo.subject || 'Email with template',
+        body: 'Template email failed to send',
+        status: 'failed',
+        templateId,
+        campaignId: options.campaignId,
+        relatedEntityType: options.relatedEntityType,
+        relatedEntityId: options.relatedEntityId,
+        metadata: { 
+          error: error.message,
+          templateData: data,
+          templateInfo 
+        }
+      });
+      
+      return emailLog;
+    }
   }
 }
