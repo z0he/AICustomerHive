@@ -37,9 +37,18 @@ export interface IStorage {
   
   // Lead methods
   getLeads(): Promise<Lead[]>;
+  getLeadsBySource(source: string): Promise<Lead[]>;
+  getLeadsByStatus(status: string): Promise<Lead[]>;
+  getLeadsByScoreRange(minScore: number, maxScore: number): Promise<Lead[]>;
+  getLeadsRequiringFollowUp(): Promise<Lead[]>;
   getLead(id: number): Promise<Lead | undefined>;
   createLead(lead: InsertLead): Promise<Lead>;
+  updateLead(id: number, leadData: Partial<Lead>): Promise<Lead>;
+  updateLeadScore(id: number, scoringData: any): Promise<Lead>;
   getTopLeads(limit?: number): Promise<Lead[]>;
+  assignLeadOwner(id: number, ownerName: string): Promise<Lead>;
+  addLeadTags(id: number, tags: string[]): Promise<Lead>;
+  addLeadNote(id: number, note: string): Promise<Lead>;
   
   // Task methods
   getTasks(): Promise<Task[]>;
@@ -242,20 +251,128 @@ export class MemStorage implements IStorage {
     return Array.from(this.leads.values());
   }
   
+  async getLeadsBySource(source: string): Promise<Lead[]> {
+    return Array.from(this.leads.values())
+      .filter(lead => lead.leadSource === source);
+  }
+  
+  async getLeadsByStatus(status: string): Promise<Lead[]> {
+    return Array.from(this.leads.values())
+      .filter(lead => lead.leadStatus === status);
+  }
+  
+  async getLeadsByScoreRange(minScore: number, maxScore: number): Promise<Lead[]> {
+    return Array.from(this.leads.values())
+      .filter(lead => {
+        const score = lead.score ?? 0;
+        return score >= minScore && score <= maxScore;
+      });
+  }
+  
+  async getLeadsRequiringFollowUp(): Promise<Lead[]> {
+    const now = new Date();
+    return Array.from(this.leads.values())
+      .filter(lead => {
+        // Include leads with nextFollowUpDate today or in the past
+        if (lead.nextFollowUpDate) {
+          return new Date(lead.nextFollowUpDate) <= now;
+        }
+        return false;
+      })
+      .sort((a, b) => {
+        // Sort by follow-up date (oldest first)
+        if (a.nextFollowUpDate && b.nextFollowUpDate) {
+          return new Date(a.nextFollowUpDate).getTime() - new Date(b.nextFollowUpDate).getTime();
+        }
+        return 0;
+      });
+  }
+  
   async getLead(id: number): Promise<Lead | undefined> {
     return this.leads.get(id);
   }
   
   async createLead(insertLead: InsertLead): Promise<Lead> {
     const id = this.leadCurrentId++;
+    
+    // Calculate an initial lead score if not provided
+    let score = insertLead.score;
+    if (score === undefined) {
+      score = this.calculateLeadScore(insertLead);
+    }
+    
     const lead: Lead = { 
       ...insertLead, 
       id,
       initials: this.getInitials(insertLead.name),
+      score,
       createdAt: new Date()
     };
     this.leads.set(id, lead);
     return lead;
+  }
+  
+  async updateLead(id: number, leadData: Partial<Lead>): Promise<Lead> {
+    const lead = this.leads.get(id);
+    if (!lead) {
+      throw new Error(`Lead with ID ${id} not found`);
+    }
+    
+    const updatedLead = { ...lead, ...leadData };
+    this.leads.set(id, updatedLead);
+    return updatedLead;
+  }
+  
+  async updateLeadScore(id: number, scoringData: any): Promise<Lead> {
+    const lead = this.leads.get(id);
+    if (!lead) {
+      throw new Error(`Lead with ID ${id} not found`);
+    }
+    
+    // Calculate new score based on scoring data
+    // This is where we would implement our advanced lead scoring algorithm
+    // For now, we'll use a simplified approach
+    let newScore = lead.score || 0;
+    
+    // Example scoring factors:
+    // 1. Engagement level (e.g., email opens, website visits)
+    if (scoringData.engagementLevel !== undefined) {
+      newScore += scoringData.engagementLevel * 0.3; // 30% weight
+    }
+    
+    // 2. Company size/value
+    if (scoringData.companyValue !== undefined) {
+      newScore += scoringData.companyValue * 0.2; // 20% weight
+    }
+    
+    // 3. Recency of interaction
+    if (scoringData.interactionRecency !== undefined) {
+      newScore += scoringData.interactionRecency * 0.2; // 20% weight
+    }
+    
+    // 4. Content engagement
+    if (scoringData.contentEngagement !== undefined) {
+      newScore += scoringData.contentEngagement * 0.15; // 15% weight
+    }
+    
+    // 5. Social media engagement
+    if (scoringData.socialEngagement !== undefined) {
+      newScore += scoringData.socialEngagement * 0.15; // 15% weight
+    }
+    
+    // Ensure score is between 0 and 100
+    newScore = Math.max(0, Math.min(100, Math.round(newScore)));
+    
+    // Update lead with new score
+    const updatedLead = { 
+      ...lead, 
+      score: newScore,
+      engagementLevel: scoringData.engagementLevel || lead.engagementLevel,
+      conversionProbability: this.calculateConversionProbability(newScore)
+    };
+    
+    this.leads.set(id, updatedLead);
+    return updatedLead;
   }
   
   async getTopLeads(limit: number = 5): Promise<Lead[]> {
@@ -267,6 +384,98 @@ export class MemStorage implements IStorage {
         return scoreB - scoreA;
       })
       .slice(0, limit);
+  }
+  
+  async assignLeadOwner(id: number, ownerName: string): Promise<Lead> {
+    const lead = this.leads.get(id);
+    if (!lead) {
+      throw new Error(`Lead with ID ${id} not found`);
+    }
+    
+    const updatedLead = { ...lead, leadOwner: ownerName };
+    this.leads.set(id, updatedLead);
+    return updatedLead;
+  }
+  
+  async addLeadTags(id: number, newTags: string[]): Promise<Lead> {
+    const lead = this.leads.get(id);
+    if (!lead) {
+      throw new Error(`Lead with ID ${id} not found`);
+    }
+    
+    // Combine existing tags with new ones, removing duplicates
+    const existingTags = lead.tags || [];
+    const updatedTags = [...new Set([...existingTags, ...newTags])];
+    
+    const updatedLead = { ...lead, tags: updatedTags };
+    this.leads.set(id, updatedLead);
+    return updatedLead;
+  }
+  
+  async addLeadNote(id: number, note: string): Promise<Lead> {
+    const lead = this.leads.get(id);
+    if (!lead) {
+      throw new Error(`Lead with ID ${id} not found`);
+    }
+    
+    // Append new note to existing notes
+    const existingNotes = lead.notes || '';
+    const timestamp = new Date().toISOString();
+    const updatedNotes = existingNotes 
+      ? `${existingNotes}\n\n[${timestamp}]\n${note}`
+      : `[${timestamp}]\n${note}`;
+    
+    const updatedLead = { ...lead, notes: updatedNotes };
+    this.leads.set(id, updatedLead);
+    return updatedLead;
+  }
+  
+  // Helper methods for lead scoring
+  private calculateLeadScore(lead: InsertLead | Lead): number {
+    let score = 0;
+    
+    // Base score starts at 20
+    score += 20;
+    
+    // Add points for completeness of data
+    if (lead.email) score += 10;
+    if (lead.phone) score += 5;
+    if (lead.company) score += 10;
+    if (lead.jobTitle) score += 5;
+    
+    // Add points based on industry (some industries might be more valuable)
+    if (lead.industry) {
+      const highValueIndustries = ['Finance', 'Healthcare', 'Technology', 'Manufacturing'];
+      if (highValueIndustries.includes(lead.industry)) {
+        score += 15;
+      } else {
+        score += 5;
+      }
+    }
+    
+    // Add points based on lead source
+    if (lead.leadSource) {
+      const highValueSources = ['Referral', 'Direct', 'Partner'];
+      if (highValueSources.includes(lead.leadSource)) {
+        score += 15;
+      } else {
+        score += 5;
+      }
+    }
+    
+    // Add points for engagement level
+    if (lead.engagementLevel) {
+      score += Math.min(20, lead.engagementLevel / 5);
+    }
+    
+    // Ensure score is between 0 and 100
+    return Math.max(0, Math.min(100, Math.round(score)));
+  }
+  
+  private calculateConversionProbability(score: number): number {
+    // Simple conversion probability based on lead score
+    // More sophisticated models would consider more factors
+    return Math.min(100, Math.round(score * 1.2));
   }
   
   // ----- Task methods -----

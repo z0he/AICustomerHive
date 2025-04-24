@@ -145,7 +145,20 @@ export const leads = pgTable("leads", {
   initials: text("initials").notNull(),
   industry: text("industry").notNull(),
   location: text("location"),
-  score: integer("score").default(0),
+  email: text("email"),
+  phone: text("phone"),
+  company: text("company"),
+  jobTitle: text("job_title"),
+  leadSource: text("lead_source"), // e.g. website, referral, advertisement
+  leadStatus: text("lead_status").default("new"), // new, contacted, qualified, converted
+  leadOwner: text("lead_owner"),
+  lastContactDate: timestamp("last_contact_date"),
+  nextFollowUpDate: timestamp("next_follow_up_date"),
+  engagementLevel: integer("engagement_level").default(0), // 0-100
+  conversionProbability: integer("conversion_probability").default(0), // 0-100
+  score: integer("score").default(0), // 0-100
+  tags: text("tags").array(),
+  notes: text("notes"),
   createdAt: timestamp("created_at").notNull(),
 });
 
@@ -153,7 +166,20 @@ export const insertLeadSchema = createInsertSchema(leads).pick({
   name: true,
   industry: true,
   location: true,
+  email: true,
+  phone: true,
+  company: true,
+  jobTitle: true,
+  leadSource: true,
+  leadStatus: true,
+  leadOwner: true,
+  lastContactDate: true,
+  nextFollowUpDate: true,
+  engagementLevel: true,
+  conversionProbability: true,
   score: true,
+  tags: true,
+  notes: true,
 });
 
 export type InsertLead = z.infer<typeof insertLeadSchema>;
