@@ -927,7 +927,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(emailLog);
     } catch (error) {
       console.error("Send email error:", error);
-      return res.status(500).json({ message: "Failed to send email" });
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Failed to send email";
+      
+      return res.status(500).json({ 
+        message: errorMessage,
+        details: error instanceof Error && error.message.includes('Mailgun')
+          ? "This may be due to Mailgun sandbox domain restrictions. Please activate your Mailgun account or verify recipient emails in your Mailgun dashboard."
+          : undefined
+      });
     }
   });
   
@@ -950,7 +959,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(emailLog);
     } catch (error) {
       console.error("Send templated email error:", error);
-      return res.status(500).json({ message: "Failed to send templated email" });
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Failed to send templated email";
+      
+      return res.status(500).json({ 
+        message: errorMessage,
+        details: error instanceof Error && error.message.includes('Mailgun')
+          ? "This may be due to Mailgun sandbox domain restrictions. Please activate your Mailgun account or verify recipient emails in your Mailgun dashboard."
+          : undefined
+      });
     }
   });
   

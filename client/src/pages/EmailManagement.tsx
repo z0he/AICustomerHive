@@ -720,9 +720,15 @@ const EmailManagement: React.FC = () => {
                                         }
                                       }),
                                     })
-                                    .then(response => {
-                                      if (!response.ok) throw new Error("Failed to send test email");
-                                      return response.json();
+                                    .then(async response => {
+                                      const data = await response.json();
+                                      
+                                      if (!response.ok) {
+                                        let errorMsg = data.message || "Failed to send test email";
+                                        throw new Error(errorMsg, { cause: data });
+                                      }
+                                      
+                                      return data;
                                     })
                                     .then(() => {
                                       toast({
@@ -735,11 +741,21 @@ const EmailManagement: React.FC = () => {
                                       refetchLogs();
                                     })
                                     .catch(error => {
-                                      toast({
-                                        title: "Failed to Send Test Email",
-                                        description: error.message,
-                                        variant: "destructive",
-                                      });
+                                      const errorData = error.cause || {};
+                                      
+                                      if (errorData.details && errorData.details.includes('Mailgun')) {
+                                        toast({
+                                          title: "Mailgun Account Needs Activation",
+                                          description: errorData.details,
+                                          variant: "destructive",
+                                        });
+                                      } else {
+                                        toast({
+                                          title: "Failed to Send Test Email",
+                                          description: error.message,
+                                          variant: "destructive",
+                                        });
+                                      }
                                     });
                                   }} className="space-y-4">
                                     <div className="space-y-2">

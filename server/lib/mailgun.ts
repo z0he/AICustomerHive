@@ -60,6 +60,17 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('Mailgun email error:', error);
+    
+    // Check for sandbox domain activation error
+    if (error.status === 403 && error.details && error.details.includes('Please activate your Mailgun account')) {
+      throw new Error('Mailgun account needs activation. Please check your email for the activation link from Mailgun or log in to your Mailgun control panel to activate your account.');
+    }
+    
+    // Check for sandbox domain recipient verification error
+    if (error.status === 403 && error.details && error.details.includes('not authorized to send')) {
+      throw new Error('Mailgun sandbox domains only allow sending to verified recipients. Please authorize the recipient email in your Mailgun console or upgrade to a paid account.');
+    }
+    
     return false;
   }
 }
