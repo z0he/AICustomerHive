@@ -63,6 +63,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Check OpenAI API key status
+  app.get("/api/config/openai/status", async (req: Request, res: Response) => {
+    try {
+      // Use the hasValidApiKey function from our openai.ts
+      const isConfigured = hasValidApiKey();
+      return res.json({ configured: isConfigured });
+    } catch (error) {
+      console.error("API key status check error:", error);
+      return res.status(500).json({ message: "Failed to check API key status" });
+    }
+  });
+  
   // Campaign routes
   app.get("/api/campaigns", async (req: Request, res: Response) => {
     try {
