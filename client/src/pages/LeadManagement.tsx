@@ -11,6 +11,7 @@ import LeadForm from "@/components/leads/LeadForm";
 import LeadDetails from "@/components/leads/LeadDetails";
 import LeadScoringCard from "@/components/leads/LeadScoringCard";
 import LeadStatusFilter from "@/components/leads/LeadStatusFilter";
+import { LeadVisualization } from "@/components/leads/LeadVisualization";
 import { 
   Card, 
   CardContent, 
@@ -413,6 +414,11 @@ export default function LeadManagement() {
                   </DialogContent>
                 </Dialog>
               </div>
+            </div>
+            
+            {/* Lead Analytics Visualization */}
+            <div className="mb-6">
+              <LeadVisualization leads={leads} />
             </div>
             
             {/* Lead Management Interface */}
