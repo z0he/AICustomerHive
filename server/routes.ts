@@ -5,6 +5,8 @@ import { storage } from "./storage";
 import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey } from "./lib/openai";
 import { sendEmail, sendTemplateEmail, isMailgunConfigured, reinitializeMailgunClient } from "./lib/mailgun";
 import { z } from "zod";
+import { parse as csvParse } from 'csv-parse/sync';
+import { stringify as csvStringify } from 'csv-stringify/sync';
 import { 
   insertCampaignSchema, 
   insertCustomerSchema, 
@@ -639,8 +641,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/customers/export", async (req: Request, res: Response) => {
     try {
+      const format = (req.query.format || 'json') as string;
       const exportData = await storage.exportCustomers();
-      return res.json(exportData);
+      
+      if (format.toLowerCase() === 'csv') {
+        // Convert to CSV
+        const header = exportData.metadata.fields;
+        const rows = exportData.data.map((customer: any) => {
+          return header.map((field: string) => customer[field] !== undefined ? customer[field] : '');
+        });
+        
+        // Add header row
+        rows.unshift(header);
+        
+        // Generate CSV
+        const csvOutput = csvStringify(rows);
+        
+        // Send as file download
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="customer-export.csv"');
+        return res.send(csvOutput);
+      } else {
+        // Default JSON format
+        return res.json(exportData);
+      }
     } catch (error) {
       console.error("Export customers error:", error);
       return res.status(500).json({ message: "Failed to export customer data" });
@@ -649,10 +673,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/customers/import", async (req: Request, res: Response) => {
     try {
-      const { data } = req.body;
+      const contentType = req.headers['content-type'] || '';
+      let data;
       
-      if (!data || !Array.isArray(data)) {
-        return res.status(400).json({ message: "Invalid import data. Expected array of customer records." });
+      if (contentType.includes('multipart/form-data')) {
+        // Handle file upload for CSV
+        if (!req.files || !req.files.file) {
+          return res.status(400).json({ message: "No file uploaded" });
+        }
+        
+        const file = req.files.file as any;
+        const csvData = file.data.toString('utf8');
+        
+        // Parse CSV to JSON
+        try {
+          data = csvParse(csvData, {
+            columns: true,
+            skip_empty_lines: true,
+            trim: true
+          });
+        } catch (csvError) {
+          console.error("CSV parse error:", csvError);
+          return res.status(400).json({ message: "Invalid CSV format" });
+        }
+      } else {
+        // Handle JSON data
+        const { data: jsonData } = req.body;
+        
+        if (!jsonData || !Array.isArray(jsonData)) {
+          return res.status(400).json({ message: "Invalid import data. Expected array of customer records." });
+        }
+        
+        data = jsonData;
       }
       
       const result = await storage.importCustomers(data);
