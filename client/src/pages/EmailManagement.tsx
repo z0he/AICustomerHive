@@ -26,6 +26,9 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import EmailTemplateCard from '@/components/email/EmailTemplateCard';
+import EmailCampaignIntegration from '@/components/email/EmailCampaignIntegration';
+import EmailAnalytics from '@/components/email/EmailAnalytics';
+import EmailSequenceManager from '@/components/email/EmailSequenceManager';
 import {
   Select,
   SelectContent,
@@ -147,7 +150,6 @@ const EmailManagement: React.FC = () => {
       toast({
         title: 'API Key Configured',
         description: 'Mailgun API key and domain have been successfully configured.',
-        variant: 'success',
       });
       refetchStatus();
     },
@@ -182,7 +184,6 @@ const EmailManagement: React.FC = () => {
       toast({
         title: 'Template Created',
         description: 'Email template has been successfully created.',
-        variant: 'success',
       });
       setTemplateDialogOpen(false);
       refetchTemplates();
@@ -218,7 +219,6 @@ const EmailManagement: React.FC = () => {
       toast({
         title: 'Email Sent',
         description: 'Your email has been sent successfully.',
-        variant: 'success',
       });
       setSendDialogOpen(false);
       refetchLogs();
@@ -306,10 +306,12 @@ const EmailManagement: React.FC = () => {
       <h1 className="text-3xl font-bold mb-6">Email Management</h1>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="configuration">Configuration</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="logs">Email Logs</TabsTrigger>
+          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="sequences">Sequences</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
         
         {/* Configuration Tab */}
@@ -653,6 +655,21 @@ const EmailManagement: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Campaign Integration Tab */}
+        <TabsContent value="campaigns" className="mt-4">
+          <EmailCampaignIntegration />
+        </TabsContent>
+
+        {/* Sequences Tab */}
+        <TabsContent value="sequences" className="mt-4">
+          <EmailSequenceManager />
+        </TabsContent>
+
+        {/* Analytics Tab */}
+        <TabsContent value="analytics" className="mt-4">
+          <EmailAnalytics />
         </TabsContent>
         
         {/* Email Logs Tab */}
