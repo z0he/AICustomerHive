@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
+import EmailTemplateCard from '@/components/email/EmailTemplateCard';
 import {
   Select,
   SelectContent,

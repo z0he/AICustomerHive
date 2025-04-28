@@ -127,7 +127,6 @@ const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({ template, onRefre
       toast({
         title: 'Template Updated',
         description: 'Email template has been successfully updated.',
-        variant: 'success',
       });
       setIsEditModalOpen(false);
       onRefresh();
@@ -159,7 +158,6 @@ const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({ template, onRefre
       toast({
         title: 'Template Deleted',
         description: 'Email template has been successfully deleted.',
-        variant: 'success',
       });
       setIsDeleteModalOpen(false);
       onRefresh();
@@ -198,7 +196,6 @@ const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({ template, onRefre
       toast({
         title: 'Email Sent',
         description: 'Your email has been sent successfully using the template.',
-        variant: 'success',
       });
       setIsSendModalOpen(false);
       sendEmailForm.reset({
