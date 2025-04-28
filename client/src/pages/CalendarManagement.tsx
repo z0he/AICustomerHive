@@ -871,6 +871,276 @@ const CalendarManagement: React.FC = () => {
                 )}
               />
               
+              {/* Recurring Event Options */}
+              <div className="space-y-4 mt-6">
+                <div className="flex items-center space-x-2">
+                  <FormField
+                    control={createEventForm.control}
+                    name="isRecurring"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Recurring event</FormLabel>
+                          <FormDescription>
+                            Make this a repeating event
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                {createEventForm.watch("isRecurring") && (
+                  <div className="space-y-4 border p-4 rounded-md">
+                    <FormField
+                      control={createEventForm.control}
+                      name="recurrencePattern"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recurrence pattern</FormLabel>
+                          <Select 
+                            defaultValue={field.value} 
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select recurrence pattern" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="daily">Daily</SelectItem>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                              <SelectItem value="yearly">Yearly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={createEventForm.control}
+                      name="recurrenceInterval"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Repeat every</FormLabel>
+                          <div className="flex items-center space-x-2">
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={1} 
+                                max={99} 
+                                {...field} 
+                                value={field.value || 1}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                                className="w-16"
+                              />
+                            </FormControl>
+                            <span className="text-sm text-muted-foreground">
+                              {createEventForm.watch("recurrencePattern") === "daily" && "days"}
+                              {createEventForm.watch("recurrencePattern") === "weekly" && "weeks"}
+                              {createEventForm.watch("recurrencePattern") === "monthly" && "months"}
+                              {createEventForm.watch("recurrencePattern") === "yearly" && "years"}
+                            </span>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Weekday selection for weekly recurrence */}
+                    {createEventForm.watch("recurrencePattern") === "weekly" && (
+                      <FormField
+                        control={createEventForm.control}
+                        name="recurrenceDaysOfWeek"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Repeat on</FormLabel>
+                            <div className="flex flex-wrap gap-2">
+                              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day, index) => (
+                                <Badge 
+                                  key={index} 
+                                  variant={field.value?.includes(index) ? "default" : "outline"}
+                                  className="cursor-pointer"
+                                  onClick={() => {
+                                    const current = field.value || [];
+                                    const newValue = current.includes(index)
+                                      ? current.filter(d => d !== index)
+                                      : [...current, index];
+                                    field.onChange(newValue);
+                                  }}
+                                >
+                                  {day}
+                                </Badge>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
+                    {/* End recurrence options */}
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium">End recurrence</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="radio" 
+                            id="never-end" 
+                            name="recurrence-end" 
+                            checked={!createEventForm.watch("recurrenceEndDate") && !createEventForm.watch("recurrenceEndAfterOccurrences")}
+                            onChange={() => {
+                              createEventForm.setValue("recurrenceEndDate", undefined);
+                              createEventForm.setValue("recurrenceEndAfterOccurrences", undefined);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor="never-end" className="text-sm">Never end</label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="radio" 
+                            id="end-after" 
+                            name="recurrence-end" 
+                            checked={!!createEventForm.watch("recurrenceEndAfterOccurrences")}
+                            onChange={() => {
+                              createEventForm.setValue("recurrenceEndAfterOccurrences", 10);
+                              createEventForm.setValue("recurrenceEndDate", undefined);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor="end-after" className="text-sm">End after</label>
+                          <Input 
+                            type="number" 
+                            min={1} 
+                            max={999} 
+                            value={createEventForm.watch("recurrenceEndAfterOccurrences") || 10}
+                            onChange={(e) => createEventForm.setValue("recurrenceEndAfterOccurrences", parseInt(e.target.value))}
+                            disabled={!createEventForm.watch("recurrenceEndAfterOccurrences")}
+                            className="w-16"
+                          />
+                          <span className="text-sm text-muted-foreground">occurrences</span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="radio" 
+                            id="end-on-date" 
+                            name="recurrence-end" 
+                            checked={!!createEventForm.watch("recurrenceEndDate")}
+                            onChange={() => {
+                              const nextMonth = new Date();
+                              nextMonth.setMonth(nextMonth.getMonth() + 1);
+                              createEventForm.setValue("recurrenceEndDate", nextMonth);
+                              createEventForm.setValue("recurrenceEndAfterOccurrences", undefined);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor="end-on-date" className="text-sm">End by</label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={`w-[200px] pl-3 text-left font-normal ${!createEventForm.watch("recurrenceEndDate") && "text-muted-foreground"}`}
+                                disabled={!createEventForm.watch("recurrenceEndDate")}
+                              >
+                                {createEventForm.watch("recurrenceEndDate") ? (
+                                  format(createEventForm.watch("recurrenceEndDate") as Date, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={createEventForm.watch("recurrenceEndDate") as Date | undefined}
+                                onSelect={(date) => date && createEventForm.setValue("recurrenceEndDate", date)}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Reminders Section */}
+              <div className="space-y-4 mt-6">
+                <h3 className="text-sm font-medium">Reminders</h3>
+                <div className="space-y-2">
+                  {createEventForm.watch("reminders")?.map((reminder, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <Input 
+                        type="number" 
+                        min={1} 
+                        value={reminder.time}
+                        onChange={(e) => {
+                          const reminders = [...createEventForm.watch("reminders")];
+                          reminders[index] = { ...reminders[index], time: parseInt(e.target.value) || 1 };
+                          createEventForm.setValue("reminders", reminders);
+                        }}
+                        className="w-16"
+                      />
+                      <Select 
+                        value={reminder.unit}
+                        onValueChange={(value) => {
+                          const reminders = [...createEventForm.watch("reminders")];
+                          reminders[index] = { ...reminders[index], unit: value as "minutes" | "hours" | "days" | "weeks" };
+                          createEventForm.setValue("reminders", reminders);
+                        }}
+                      >
+                        <SelectTrigger className="w-[110px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="minutes">Minutes</SelectItem>
+                          <SelectItem value="hours">Hours</SelectItem>
+                          <SelectItem value="days">Days</SelectItem>
+                          <SelectItem value="weeks">Weeks</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span>before</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          const reminders = createEventForm.watch("reminders").filter((_, i) => i !== index);
+                          createEventForm.setValue("reminders", reminders);
+                        }}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentReminders = createEventForm.watch("reminders") || [];
+                      createEventForm.setValue("reminders", [
+                        ...currentReminders, 
+                        { time: 15, unit: "minutes" }
+                      ]);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add reminder
+                  </Button>
+                </div>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={createEventForm.control}
@@ -1197,6 +1467,276 @@ const CalendarManagement: React.FC = () => {
                     </FormItem>
                   )}
                 />
+              </div>
+              
+              {/* Recurring Event Options */}
+              <div className="space-y-4 mt-6">
+                <div className="flex items-center space-x-2">
+                  <FormField
+                    control={editEventForm.control}
+                    name="isRecurring"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>Recurring event</FormLabel>
+                          <FormDescription>
+                            Make this a repeating event
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                {editEventForm.watch("isRecurring") && (
+                  <div className="space-y-4 border p-4 rounded-md">
+                    <FormField
+                      control={editEventForm.control}
+                      name="recurrencePattern"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Recurrence pattern</FormLabel>
+                          <Select 
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select recurrence pattern" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="daily">Daily</SelectItem>
+                              <SelectItem value="weekly">Weekly</SelectItem>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                              <SelectItem value="yearly">Yearly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={editEventForm.control}
+                      name="recurrenceInterval"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Repeat every</FormLabel>
+                          <div className="flex items-center space-x-2">
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min={1} 
+                                max={99} 
+                                {...field} 
+                                value={field.value || 1}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                                className="w-16"
+                              />
+                            </FormControl>
+                            <span className="text-sm text-muted-foreground">
+                              {editEventForm.watch("recurrencePattern") === "daily" && "days"}
+                              {editEventForm.watch("recurrencePattern") === "weekly" && "weeks"}
+                              {editEventForm.watch("recurrencePattern") === "monthly" && "months"}
+                              {editEventForm.watch("recurrencePattern") === "yearly" && "years"}
+                            </span>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Weekday selection for weekly recurrence */}
+                    {editEventForm.watch("recurrencePattern") === "weekly" && (
+                      <FormField
+                        control={editEventForm.control}
+                        name="recurrenceDaysOfWeek"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Repeat on</FormLabel>
+                            <div className="flex flex-wrap gap-2">
+                              {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day, index) => (
+                                <Badge 
+                                  key={index} 
+                                  variant={field.value?.includes(index) ? "default" : "outline"}
+                                  className="cursor-pointer"
+                                  onClick={() => {
+                                    const current = field.value || [];
+                                    const newValue = current.includes(index)
+                                      ? current.filter(d => d !== index)
+                                      : [...current, index];
+                                    field.onChange(newValue);
+                                  }}
+                                >
+                                  {day}
+                                </Badge>
+                              ))}
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                    
+                    {/* End recurrence options */}
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium">End recurrence</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="radio" 
+                            id="edit-never-end" 
+                            name="edit-recurrence-end" 
+                            checked={!editEventForm.watch("recurrenceEndDate") && !editEventForm.watch("recurrenceEndAfterOccurrences")}
+                            onChange={() => {
+                              editEventForm.setValue("recurrenceEndDate", undefined);
+                              editEventForm.setValue("recurrenceEndAfterOccurrences", undefined);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor="edit-never-end" className="text-sm">Never end</label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="radio" 
+                            id="edit-end-after" 
+                            name="edit-recurrence-end" 
+                            checked={!!editEventForm.watch("recurrenceEndAfterOccurrences")}
+                            onChange={() => {
+                              editEventForm.setValue("recurrenceEndAfterOccurrences", 10);
+                              editEventForm.setValue("recurrenceEndDate", undefined);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor="edit-end-after" className="text-sm">End after</label>
+                          <Input 
+                            type="number" 
+                            min={1} 
+                            max={999} 
+                            value={editEventForm.watch("recurrenceEndAfterOccurrences") || 10}
+                            onChange={(e) => editEventForm.setValue("recurrenceEndAfterOccurrences", parseInt(e.target.value))}
+                            disabled={!editEventForm.watch("recurrenceEndAfterOccurrences")}
+                            className="w-16"
+                          />
+                          <span className="text-sm text-muted-foreground">occurrences</span>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="radio" 
+                            id="edit-end-on-date" 
+                            name="edit-recurrence-end" 
+                            checked={!!editEventForm.watch("recurrenceEndDate")}
+                            onChange={() => {
+                              const nextMonth = new Date();
+                              nextMonth.setMonth(nextMonth.getMonth() + 1);
+                              editEventForm.setValue("recurrenceEndDate", nextMonth);
+                              editEventForm.setValue("recurrenceEndAfterOccurrences", undefined);
+                            }}
+                            className="h-4 w-4"
+                          />
+                          <label htmlFor="edit-end-on-date" className="text-sm">End by</label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={`w-[200px] pl-3 text-left font-normal ${!editEventForm.watch("recurrenceEndDate") && "text-muted-foreground"}`}
+                                disabled={!editEventForm.watch("recurrenceEndDate")}
+                              >
+                                {editEventForm.watch("recurrenceEndDate") ? (
+                                  format(editEventForm.watch("recurrenceEndDate") as Date, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={editEventForm.watch("recurrenceEndDate") as Date | undefined}
+                                onSelect={(date) => date && editEventForm.setValue("recurrenceEndDate", date)}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Reminders Section */}
+              <div className="space-y-4 mt-6">
+                <h3 className="text-sm font-medium">Reminders</h3>
+                <div className="space-y-2">
+                  {editEventForm.watch("reminders")?.map((reminder, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <Input 
+                        type="number" 
+                        min={1} 
+                        value={reminder.time}
+                        onChange={(e) => {
+                          const reminders = [...editEventForm.watch("reminders")];
+                          reminders[index] = { ...reminders[index], time: parseInt(e.target.value) || 1 };
+                          editEventForm.setValue("reminders", reminders);
+                        }}
+                        className="w-16"
+                      />
+                      <Select 
+                        value={reminder.unit}
+                        onValueChange={(value) => {
+                          const reminders = [...editEventForm.watch("reminders")];
+                          reminders[index] = { ...reminders[index], unit: value as "minutes" | "hours" | "days" | "weeks" };
+                          editEventForm.setValue("reminders", reminders);
+                        }}
+                      >
+                        <SelectTrigger className="w-[110px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="minutes">Minutes</SelectItem>
+                          <SelectItem value="hours">Hours</SelectItem>
+                          <SelectItem value="days">Days</SelectItem>
+                          <SelectItem value="weeks">Weeks</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span>before</span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          const reminders = editEventForm.watch("reminders").filter((_, i) => i !== index);
+                          editEventForm.setValue("reminders", reminders);
+                        }}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const currentReminders = editEventForm.watch("reminders") || [];
+                      editEventForm.setValue("reminders", [
+                        ...currentReminders, 
+                        { time: 15, unit: "minutes" }
+                      ]);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add reminder
+                  </Button>
+                </div>
               </div>
               
               <FormField
