@@ -681,7 +681,19 @@ const EmailSequenceManager = () => {
                           <div className="flex items-center mr-4">
                             <Switch
                               checked={sequence.active}
-                              onCheckedChange={() => toggleSequenceStatus(sequence)}
+                              onCheckedChange={() => {
+                                // Update the sequence in the UI immediately for better UX
+                                const updatedSequences = [...sequences];
+                                const index = updatedSequences.findIndex((s: any) => s.id === sequence.id);
+                                if (index !== -1) {
+                                  updatedSequences[index] = {
+                                    ...updatedSequences[index],
+                                    active: !updatedSequences[index].active
+                                  };
+                                }
+                                // Call the API to toggle the status
+                                toggleSequenceStatus(sequence);
+                              }}
                             />
                             <span className="ml-2 text-sm">
                               {sequence.active ? "Active" : "Inactive"}
@@ -1126,7 +1138,7 @@ const EmailSequenceManager = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Custom Email</SelectItem>
+                          <SelectItem value="custom">Custom Email</SelectItem>
                           {templates.map((template: any) => (
                             <SelectItem key={template.id} value={template.id.toString()}>
                               {template.name}

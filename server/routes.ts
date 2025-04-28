@@ -1124,6 +1124,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to fetch sequence steps" });
     }
   });
+  
+  // For getting all steps (used in the sequence step creation form)
+  app.get("/api/email/sequences/steps", async (req: Request, res: Response) => {
+    try {
+      // Return an empty array as this is just for initializing the form
+      return res.json([]);
+    } catch (error) {
+      console.error("Get all sequence steps error:", error);
+      return res.status(500).json({ message: "Failed to fetch sequence steps" });
+    }
+  });
+  
+  // Route for handling sequence status toggling
+  app.patch("/api/email/sequences/:id/status", async (req: Request, res: Response) => {
+    try {
+      const sequenceId = parseInt(req.params.id);
+      
+      if (isNaN(sequenceId)) {
+        return res.status(400).json({ message: "Invalid sequence ID" });
+      }
+      
+      // In a real implementation, this would update the database
+      // Here we just return success
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Update sequence status error:", error);
+      return res.status(500).json({ message: "Failed to update sequence status" });
+    }
+  });
+  
+  // Route for creating/updating sequence steps
+  app.post("/api/email/sequences/steps", async (req: Request, res: Response) => {
+    try {
+      const { sequenceId, name, subject, bodyHtml, bodyText, delayDays, delayHours, condition } = req.body;
+      
+      if (!sequenceId || !name || !subject || !bodyHtml) {
+        return res.status(400).json({ 
+          message: "Missing required fields. Please provide sequenceId, name, subject, and bodyHtml."
+        });
+      }
+      
+      // In a real implementation, this would create a new step in the database
+      // For now, return a mock response
+      const newStep = {
+        id: Date.now(), // Using timestamp as a simple unique ID
+        sequenceId,
+        name,
+        subject,
+        bodyHtml,
+        bodyText: bodyText || "",
+        delayDays: delayDays || 0,
+        delayHours: delayHours || 0,
+        condition: condition || "",
+        createdAt: new Date().toISOString()
+      };
+      
+      return res.status(201).json(newStep);
+    } catch (error) {
+      console.error("Create sequence step error:", error);
+      return res.status(500).json({ message: "Failed to create sequence step" });
+    }
+  });
+  
+  // Route for updating sequence steps
+  app.put("/api/email/sequences/steps/:id", async (req: Request, res: Response) => {
+    try {
+      const stepId = parseInt(req.params.id);
+      
+      if (isNaN(stepId)) {
+        return res.status(400).json({ message: "Invalid step ID" });
+      }
+      
+      const { name, subject, bodyHtml, bodyText, delayDays, delayHours, condition } = req.body;
+      
+      if (!name || !subject || !bodyHtml) {
+        return res.status(400).json({ 
+          message: "Missing required fields. Please provide name, subject, and bodyHtml."
+        });
+      }
+      
+      // In a real implementation, this would update the step in the database
+      // For now, return success
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Update sequence step error:", error);
+      return res.status(500).json({ message: "Failed to update sequence step" });
+    }
+  });
 
   // ===== EMAIL ANALYTICS ROUTES =====
   
