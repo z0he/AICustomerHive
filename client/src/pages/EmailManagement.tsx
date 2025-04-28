@@ -544,7 +544,7 @@ const EmailManagement: React.FC = () => {
               <p className="text-sm text-muted-foreground">
                 Your API key and domain are securely stored and never exposed to the client side.
               </p>
-              <Alert variant="warning" className="mt-2">
+              <Alert className="mt-2 border-amber-500 text-amber-800 dark:text-amber-300">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Important Mailgun Information</AlertTitle>
                 <AlertDescription>
