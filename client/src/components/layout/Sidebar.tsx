@@ -4,7 +4,6 @@ import {
   LayoutDashboard, 
   Users, 
   Megaphone, 
-  Mail, 
   BarChart2, 
   Settings,
   Tag,
@@ -42,7 +41,6 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns }) => {
     { icon: <Send size={20} />, label: "Email", path: "/email" },
     { icon: <CalendarDays size={20} />, label: "Calendar", path: "/calendar" },
     { icon: <FileDown size={20} />, label: "Data Mgmt", path: "/customer-data" },
-    { icon: <Mail size={20} />, label: "Messages", path: "/messages" },
     { icon: <BarChart2 size={20} />, label: "Analytics", path: "/analytics" },
   ];
 

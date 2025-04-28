@@ -48,7 +48,6 @@ function Router() {
       <ProtectedRoute path="/campaigns/:id" component={CampaignDetail} />
       
       {/* Protected routes still under development */}
-      <ProtectedRoute path="/messages" component={() => <UnderDevelopment title="Messages" />} />
       <ProtectedRoute path="/settings" component={() => <UnderDevelopment title="Settings" />} />
       
       {/* Public routes */}
