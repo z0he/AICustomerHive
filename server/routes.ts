@@ -1024,6 +1024,278 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== EMAIL SEQUENCES ROUTES =====
+  
+  app.get("/api/email/sequences", async (req: Request, res: Response) => {
+    try {
+      // In a real implementation, this would fetch from the database
+      const sequences = [
+        {
+          id: 1,
+          name: "Welcome Sequence",
+          description: "Onboarding sequence for new customers",
+          triggerType: "event",
+          targetType: "customers",
+          active: true,
+          stepCount: 3,
+          createdAt: "2025-04-01T10:00:00.000Z"
+        },
+        {
+          id: 2,
+          name: "Lead Nurturing",
+          description: "Nurture sequence for potential customers",
+          triggerType: "manual",
+          targetType: "leads",
+          active: false,
+          stepCount: 5,
+          createdAt: "2025-04-05T14:30:00.000Z"
+        },
+        {
+          id: 3,
+          name: "Customer Retention",
+          description: "Re-engagement sequence for inactive users",
+          triggerType: "scheduled",
+          targetType: "segment",
+          targetId: 1,
+          active: true,
+          stepCount: 4,
+          createdAt: "2025-04-10T09:15:00.000Z"
+        }
+      ];
+      
+      return res.json(sequences);
+    } catch (error) {
+      console.error("Get email sequences error:", error);
+      return res.status(500).json({ message: "Failed to fetch email sequences" });
+    }
+  });
+
+  app.get("/api/email/sequences/steps/:sequenceId", async (req: Request, res: Response) => {
+    try {
+      const sequenceId = parseInt(req.params.sequenceId);
+      
+      if (isNaN(sequenceId)) {
+        return res.status(400).json({ message: "Invalid sequence ID" });
+      }
+
+      // In a real implementation, this would fetch from the database
+      const steps = [
+        {
+          id: 1,
+          sequenceId,
+          name: "Introduction Email",
+          subject: "Welcome to our platform",
+          bodyHtml: "<p>Welcome to our platform! We're excited to have you on board.</p>",
+          bodyText: "Welcome to our platform! We're excited to have you on board.",
+          delayDays: 0,
+          delayHours: 0,
+          condition: "",
+          createdAt: "2025-04-15T10:00:00.000Z"
+        },
+        {
+          id: 2,
+          sequenceId,
+          name: "Follow-up",
+          subject: "How are you finding our platform?",
+          bodyHtml: "<p>It's been a few days since you joined. How are you finding our platform?</p>",
+          bodyText: "It's been a few days since you joined. How are you finding our platform?",
+          delayDays: 3,
+          delayHours: 0,
+          condition: "opened_previous_email",
+          createdAt: "2025-04-15T10:05:00.000Z"
+        },
+        {
+          id: 3,
+          sequenceId,
+          name: "Feature Highlight",
+          subject: "Discover these powerful features",
+          bodyHtml: "<p>Have you discovered these powerful features yet?</p>",
+          bodyText: "Have you discovered these powerful features yet?",
+          delayDays: 7,
+          delayHours: 0,
+          condition: "",
+          createdAt: "2025-04-15T10:10:00.000Z"
+        }
+      ];
+      
+      return res.json(steps);
+    } catch (error) {
+      console.error("Get sequence steps error:", error);
+      return res.status(500).json({ message: "Failed to fetch sequence steps" });
+    }
+  });
+
+  // ===== EMAIL ANALYTICS ROUTES =====
+  
+  app.get("/api/email/analytics", async (req: Request, res: Response) => {
+    try {
+      const timeRange = req.query.timeRange || 'last30';
+
+      // In a real implementation, this would calculate analytics from real data
+      const analyticsData = {
+        overview: {
+          totalSent: 1247,
+          openRate: 0.42,
+          clickRate: 0.18,
+          bounceRate: 0.03,
+          unsubscribeRate: 0.01
+        },
+        campaigns: [
+          {
+            id: 1,
+            name: "Product Update - April",
+            date: "2025-04-10",
+            openRate: 0.48,
+            clickRate: 0.22,
+            conversionRate: 0.05,
+            type: "Newsletter"
+          },
+          {
+            id: 2,
+            name: "Spring Promotion",
+            date: "2025-04-15",
+            openRate: 0.52,
+            clickRate: 0.31,
+            conversionRate: 0.08,
+            type: "Promotion"
+          },
+          {
+            id: 3,
+            name: "Customer Survey",
+            date: "2025-04-20",
+            openRate: 0.38,
+            clickRate: 0.12,
+            conversionRate: 0.02,
+            type: "Survey"
+          },
+          {
+            id: 4,
+            name: "Feature Announcement",
+            date: "2025-04-25",
+            openRate: 0.45,
+            clickRate: 0.19,
+            conversionRate: 0.04,
+            type: "Announcement"
+          }
+        ],
+        trends: [
+          { date: "Apr 01", openRate: 0.41, clickRate: 0.16, bounceRate: 0.03, unsubscribeRate: 0.01 },
+          { date: "Apr 05", openRate: 0.43, clickRate: 0.18, bounceRate: 0.025, unsubscribeRate: 0.01 },
+          { date: "Apr 10", openRate: 0.44, clickRate: 0.19, bounceRate: 0.02, unsubscribeRate: 0.009 },
+          { date: "Apr 15", openRate: 0.47, clickRate: 0.21, bounceRate: 0.018, unsubscribeRate: 0.008 },
+          { date: "Apr 20", openRate: 0.45, clickRate: 0.20, bounceRate: 0.022, unsubscribeRate: 0.01 },
+          { date: "Apr 25", openRate: 0.42, clickRate: 0.17, bounceRate: 0.03, unsubscribeRate: 0.012 }
+        ],
+        devices: [
+          { name: "Mobile", value: 0.53 },
+          { name: "Desktop", value: 0.38 },
+          { name: "Tablet", value: 0.07 },
+          { name: "Other", value: 0.02 }
+        ],
+        timeDistribution: [
+          { time: "6AM-9AM", opens: 320 },
+          { time: "9AM-12PM", opens: 580 },
+          { time: "12PM-3PM", opens: 430 },
+          { time: "3PM-6PM", opens: 390 },
+          { time: "6PM-9PM", opens: 520 },
+          { time: "9PM-12AM", opens: 280 },
+          { time: "12AM-6AM", opens: 140 }
+        ]
+      };
+      
+      return res.json(analyticsData);
+    } catch (error) {
+      console.error("Get email analytics error:", error);
+      return res.status(500).json({ message: "Failed to fetch email analytics" });
+    }
+  });
+
+  app.get("/api/customers/segments", async (req: Request, res: Response) => {
+    try {
+      // In a real implementation, this would fetch from the database
+      const segments = [
+        {
+          id: 1,
+          name: "Active Users",
+          description: "Users who have logged in within the last 30 days",
+          count: 524,
+          createdAt: "2025-03-15T10:00:00.000Z"
+        },
+        {
+          id: 2,
+          name: "High-Value Customers",
+          description: "Customers who have spent over $1000",
+          count: 128,
+          createdAt: "2025-03-20T14:30:00.000Z"
+        },
+        {
+          id: 3,
+          name: "Recently Inactive",
+          description: "Users who haven't logged in for 30-60 days",
+          count: 215,
+          createdAt: "2025-03-25T09:15:00.000Z"
+        }
+      ];
+      
+      return res.json(segments);
+    } catch (error) {
+      console.error("Get customer segments error:", error);
+      return res.status(500).json({ message: "Failed to fetch customer segments" });
+    }
+  });
+
+  app.get("/api/campaigns/emails", async (req: Request, res: Response) => {
+    try {
+      // In a real implementation, this would fetch from the database
+      const campaignEmails = [
+        {
+          id: 1,
+          campaignId: 1,
+          campaignName: "Spring Promotion",
+          templateId: 3,
+          templateName: "Monthly Newsletter",
+          subject: "Special Spring Offers Inside!",
+          segmentId: 1,
+          segmentName: "Active Users",
+          status: "sent",
+          scheduledFor: "2025-04-10T09:00:00.000Z",
+          sentAt: "2025-04-10T09:00:00.000Z"
+        },
+        {
+          id: 2,
+          campaignId: 1,
+          campaignName: "Spring Promotion",
+          templateId: 2,
+          templateName: "Follow-up Email",
+          subject: "Last Chance: Spring Deals End Tomorrow",
+          segmentId: null,
+          segmentName: null,
+          status: "scheduled",
+          scheduledFor: "2025-04-30T09:00:00.000Z",
+          sentAt: null
+        },
+        {
+          id: 3,
+          campaignId: 2,
+          campaignName: "Product Update",
+          templateId: 3,
+          templateName: "Monthly Newsletter",
+          subject: "New Features You'll Love",
+          segmentId: 2,
+          segmentName: "High-Value Customers",
+          status: "sent",
+          scheduledFor: "2025-04-15T10:00:00.000Z",
+          sentAt: "2025-04-15T10:00:00.000Z"
+        }
+      ];
+      
+      return res.json(campaignEmails);
+    } catch (error) {
+      console.error("Get campaign emails error:", error);
+      return res.status(500).json({ message: "Failed to fetch campaign emails" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
