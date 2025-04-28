@@ -86,9 +86,21 @@ const eventSchema = z.object({
   relatedEntityId: z.string().optional().transform(val => val ? parseInt(val, 10) : undefined),
   ownerId: z.string().optional().transform(val => val ? parseInt(val, 10) : undefined),
   url: z.string().optional(),
-  reminders: z.string().optional().transform(val => 
-    val ? val.split(',').map(v => parseInt(v.trim(), 10)) : []
-  ),
+  
+  // Convert multiple reminders from UI to JSON format
+  reminders: z.array(z.object({
+    time: z.number(),
+    unit: z.enum(["minutes", "hours", "days", "weeks"])
+  })).optional().default([]),
+  
+  // Recurring event fields
+  isRecurring: z.boolean().default(false),
+  recurrencePattern: z.enum(["daily", "weekly", "monthly", "yearly"]).optional(),
+  recurrenceInterval: z.number().min(1).optional().default(1),
+  recurrenceDaysOfWeek: z.array(z.number().min(0).max(6)).optional(),
+  recurrenceEndDate: z.date().optional(),
+  recurrenceEndAfterOccurrences: z.number().optional(),
+  recurrenceExceptions: z.array(z.date()).optional().default([]),
 });
 
 type EventFormData = z.infer<typeof eventSchema>;
@@ -295,6 +307,10 @@ const CalendarManagement: React.FC = () => {
       allDay: false,
       location: '',
       status: 'confirmed',
+      reminders: [],
+      isRecurring: false,
+      recurrenceInterval: 1,
+      recurrenceDaysOfWeek: []
     },
   });
 
@@ -308,6 +324,10 @@ const CalendarManagement: React.FC = () => {
       allDay: false,
       location: '',
       status: 'confirmed',
+      reminders: [],
+      isRecurring: false,
+      recurrenceInterval: 1,
+      recurrenceDaysOfWeek: []
     },
   });
 
@@ -325,6 +345,29 @@ const CalendarManagement: React.FC = () => {
   // Handle edit button click
   const handleEditEvent = (event: any) => {
     setSelectedEvent(event);
+    
+    // Parse reminders from DB format to UI format
+    let parsedReminders = [];
+    if (event.reminders && typeof event.reminders === 'object') {
+      // Use the new format where reminders is an array of objects
+      parsedReminders = event.reminders;
+    } else if (event.reminderMinutes) {
+      // Support legacy format where reminderMinutes is a number
+      parsedReminders = [{ time: event.reminderMinutes, unit: 'minutes' }];
+    }
+    
+    // Parse recurrence exceptions
+    let recurrenceExceptions = [];
+    if (event.recurrenceExceptions && Array.isArray(event.recurrenceExceptions)) {
+      recurrenceExceptions = event.recurrenceExceptions.map((date: string) => new Date(date));
+    }
+    
+    // Parse recurrence days of week
+    let recurrenceDaysOfWeek = [];
+    if (event.recurrenceDaysOfWeek && Array.isArray(event.recurrenceDaysOfWeek)) {
+      recurrenceDaysOfWeek = event.recurrenceDaysOfWeek;
+    }
+    
     editEventForm.reset({
       title: event.title,
       description: event.description || '',
@@ -337,8 +380,18 @@ const CalendarManagement: React.FC = () => {
       relatedEntityId: event.relatedEntityId?.toString() || '',
       ownerId: event.ownerId?.toString() || '',
       url: event.url || '',
-      reminders: event.reminders?.join(',') || '',
+      
+      // Set the recurring event fields
+      reminders: parsedReminders,
+      isRecurring: event.isRecurring || false,
+      recurrencePattern: event.recurrencePattern || undefined,
+      recurrenceInterval: event.recurrenceInterval || 1,
+      recurrenceDaysOfWeek: recurrenceDaysOfWeek,
+      recurrenceEndDate: event.recurrenceEndDate ? new Date(event.recurrenceEndDate) : undefined,
+      recurrenceEndAfterOccurrences: event.recurrenceEndAfterOccurrences || undefined,
+      recurrenceExceptions: recurrenceExceptions,
     });
+    
     setIsEditModalOpen(true);
   };
 

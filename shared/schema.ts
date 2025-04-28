@@ -215,12 +215,24 @@ export const calendarEvents = pgTable("calendar_events", {
   relatedEntityType: text("related_entity_type"), // lead, customer, campaign
   relatedEntityId: integer("related_entity_id"),
   ownerId: integer("owner_id"), // reference to user
-  reminderMinutes: integer("reminder_minutes"),
+  
+  // Enhanced reminders functionality - store multiple reminders as an array
+  reminders: json("reminders"), // [{time: 15, unit: 'minutes'}, {time: 1, unit: 'days'}]
+  
+  // Recurring event properties
+  isRecurring: boolean("is_recurring").default(false),
+  recurrencePattern: text("recurrence_pattern"), // daily, weekly, monthly, yearly
+  recurrenceInterval: integer("recurrence_interval").default(1), // every X days/weeks/months/years
+  recurrenceDaysOfWeek: json("recurrence_days_of_week"), // [0,1,2,3,4,5,6] (0 = Sunday)
+  recurrenceEndDate: timestamp("recurrence_end_date"),
+  recurrenceEndAfterOccurrences: integer("recurrence_end_after_occurrences"),
+  recurrenceExceptions: json("recurrence_exceptions"), // dates to exclude
+  
   createdAt: timestamp("created_at").notNull(),
   updatedAt: timestamp("updated_at"),
   location: text("location"),
   color: text("color").default("#4F46E5"), // event color for UI
-  recurrence: json("recurrence"), // store recurrence rules as JSON
+  recurrence: json("recurrence"), // store legacy recurrence rules as JSON for compatibility
 });
 
 export const insertCalendarEventSchema = createInsertSchema(calendarEvents).pick({
@@ -234,10 +246,17 @@ export const insertCalendarEventSchema = createInsertSchema(calendarEvents).pick
   relatedEntityType: true,
   relatedEntityId: true,
   ownerId: true,
-  reminderMinutes: true,
+  reminders: true,
+  isRecurring: true,
+  recurrencePattern: true,
+  recurrenceInterval: true,
+  recurrenceDaysOfWeek: true,
+  recurrenceEndDate: true,
+  recurrenceEndAfterOccurrences: true,
+  recurrenceExceptions: true,
   location: true,
   color: true,
-  recurrence: true,
+  recurrence: true, // Keep for backward compatibility
 });
 
 export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
