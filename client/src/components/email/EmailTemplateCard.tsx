@@ -297,6 +297,10 @@ const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({ template, onRefre
             <Eye className="h-4 w-4 mr-1" />
             Preview
           </Button>
+          <Button variant="secondary" size="sm" onClick={() => setIsSendModalOpen(true)}>
+            <Send className="h-4 w-4 mr-1" />
+            Test Send
+          </Button>
         </div>
         <div className="space-x-1">
           <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)}>
@@ -548,9 +552,9 @@ const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({ template, onRefre
       <Dialog open={isSendModalOpen} onOpenChange={setIsSendModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Send Email with Template</DialogTitle>
+            <DialogTitle>Send Test Email</DialogTitle>
             <DialogDescription>
-              Use the "{template.name}" template to send an email.
+              Use the "{template.name}" template to send a test email.
             </DialogDescription>
           </DialogHeader>
           

@@ -359,6 +359,97 @@ const EmailManagement: React.FC = () => {
                 )}
               </div>
               
+              {apiStatus?.configured && (
+                <div className="mb-6">
+                  <Card className="border-dashed">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">Send Test Email</CardTitle>
+                      <CardDescription>
+                        Test your email configuration by sending a test email
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Form {...sendEmailForm}>
+                        <form onSubmit={sendEmailForm.handleSubmit(onSendEmailSubmit)} className="space-y-4">
+                          <FormField
+                            control={sendEmailForm.control}
+                            name="from"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>From</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="noreply@yourdomain.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={sendEmailForm.control}
+                            name="to"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>To</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="recipient@example.com" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={sendEmailForm.control}
+                            name="subject"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Subject</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Test Email from CRM" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={sendEmailForm.control}
+                            name="body"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Message</FormLabel>
+                                <FormControl>
+                                  <Textarea 
+                                    placeholder="This is a test email from the CRM system." 
+                                    className="min-h-[100px]"
+                                    {...field} 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <Button 
+                            type="submit" 
+                            disabled={sendEmailMutation.isPending}
+                          >
+                            {sendEmailMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Sending...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="mr-2 h-4 w-4" />
+                                Send Test Email
+                              </>
+                            )}
+                          </Button>
+                        </form>
+                      </Form>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+              
               <Separator className="my-6" />
               
               <Form {...apiKeyForm}>
