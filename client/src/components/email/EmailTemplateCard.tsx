@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
@@ -387,10 +388,11 @@ const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({ template, onRefre
                   <FormItem>
                     <FormLabel>HTML Content</FormLabel>
                     <FormControl>
-                      <Textarea 
+                      <RichTextEditor 
+                        value={field.value}
+                        onChange={field.onChange}
                         placeholder="<p>Hello {{name}},</p><p>Welcome to our platform!</p>" 
-                        className="min-h-[200px]" 
-                        {...field} 
+                        minHeight="200px"
                       />
                     </FormControl>
                     <FormDescription>
