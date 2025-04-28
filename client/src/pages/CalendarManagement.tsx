@@ -204,7 +204,7 @@ const CalendarManagement: React.FC = () => {
       toast({
         title: 'Event Created',
         description: 'Calendar event has been created successfully.',
-        variant: 'success',
+        variant: 'default',
       });
       setIsCreateModalOpen(false);
       refetchEvents();
@@ -248,7 +248,7 @@ const CalendarManagement: React.FC = () => {
       toast({
         title: 'Event Updated',
         description: 'Calendar event has been updated successfully.',
-        variant: 'success',
+        variant: 'default',
       });
       setIsEditModalOpen(false);
       refetchEvents();
@@ -281,7 +281,7 @@ const CalendarManagement: React.FC = () => {
       toast({
         title: 'Event Deleted',
         description: 'Calendar event has been deleted successfully.',
-        variant: 'success',
+        variant: 'default',
       });
       setIsDeleteModalOpen(false);
       refetchEvents();
@@ -425,7 +425,7 @@ const CalendarManagement: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return <Badge variant="success">Confirmed</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-600">Confirmed</Badge>;
       case 'tentative':
         return <Badge variant="outline">Tentative</Badge>;
       case 'cancelled':
@@ -651,6 +651,34 @@ const CalendarManagement: React.FC = () => {
                             {event.description}
                           </div>
                         )}
+                        
+                        {/* Show recurring event indicator */}
+                        {event.isRecurring && (
+                          <div className="mt-2">
+                            <Badge className="bg-primary">
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              {event.recurrencePattern === "daily" && `Every ${event.recurrenceInterval > 1 ? event.recurrenceInterval : ''} day${event.recurrenceInterval > 1 ? 's' : ''}`}
+                              {event.recurrencePattern === "weekly" && `Every ${event.recurrenceInterval > 1 ? event.recurrenceInterval : ''} week${event.recurrenceInterval > 1 ? 's' : ''}`}
+                              {event.recurrencePattern === "monthly" && `Every ${event.recurrenceInterval > 1 ? event.recurrenceInterval : ''} month${event.recurrenceInterval > 1 ? 's' : ''}`}
+                              {event.recurrencePattern === "yearly" && `Every ${event.recurrenceInterval > 1 ? event.recurrenceInterval : ''} year${event.recurrenceInterval > 1 ? 's' : ''}`}
+                            </Badge>
+                          </div>
+                        )}
+                        
+                        {/* Show reminders */}
+                        {event.reminders && event.reminders.length > 0 && (
+                          <div className="mt-2">
+                            <div className="flex flex-wrap gap-1">
+                              {event.reminders.map((reminder: any, idx: number) => (
+                                <Badge key={idx} variant="outline" className="text-xs">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {reminder.time} {reminder.unit} before
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
                         {event.relatedEntityType && (
                           <div className="mt-2">
                             <Badge variant="outline">
