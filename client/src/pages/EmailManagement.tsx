@@ -378,8 +378,11 @@ const EmailManagement: React.FC = () => {
                               <FormItem>
                                 <FormLabel>From</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="noreply@yourdomain.com" {...field} />
+                                  <Input placeholder="postmaster@your-sandbox-domain.mailgun.org" {...field} />
                                 </FormControl>
+                                <FormDescription>
+                                  For sandbox domains, use <strong>postmaster@your-sandbox-domain.mailgun.org</strong> or another address with your sandbox domain.
+                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -393,6 +396,9 @@ const EmailManagement: React.FC = () => {
                                 <FormControl>
                                   <Input placeholder="recipient@example.com" {...field} />
                                 </FormControl>
+                                <FormDescription>
+                                  For sandbox domains, the recipient must be an authorized email address in your Mailgun account.
+                                </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -534,10 +540,21 @@ const EmailManagement: React.FC = () => {
                 </form>
               </Form>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex-col items-start gap-2">
               <p className="text-sm text-muted-foreground">
                 Your API key and domain are securely stored and never exposed to the client side.
               </p>
+              <Alert variant="warning" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Important Mailgun Information</AlertTitle>
+                <AlertDescription>
+                  <ul className="list-disc pl-4 text-sm space-y-1 mt-1">
+                    <li>New Mailgun accounts require activation. Check your email for an activation link, or log in to the Mailgun dashboard to activate your account.</li>
+                    <li>For sandbox domains, you must add authorized recipients in your Mailgun dashboard before you can send them emails.</li>
+                    <li>Sandbox domains can only send to verified recipients that you've explicitly authorized.</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
             </CardFooter>
           </Card>
         </TabsContent>
