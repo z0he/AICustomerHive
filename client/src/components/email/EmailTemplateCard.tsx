@@ -91,7 +91,7 @@ const EmailTemplateCard: React.FC<EmailTemplateCardProps> = ({ template, onRefre
       bodyHtml: template.bodyHtml,
       bodyText: template.bodyText,
       category: template.category,
-      variables: template.variables?.join(', ') || '',
+      variables: Array.isArray(template.variables) ? template.variables.join(', ') : '',
     },
   });
 
