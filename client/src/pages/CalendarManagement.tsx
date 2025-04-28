@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
+import AuthHeader from "@/components/auth/AuthHeader";
+import Sidebar from "@/components/layout/Sidebar";
 import {
   Select,
   SelectContent,
@@ -437,12 +439,53 @@ const CalendarManagement: React.FC = () => {
 
   const filteredEvents = getFilteredEvents();
 
+  // Query for user data
+  const {
+    data: userData,
+  } = useQuery({
+    queryKey: ['/api/auth/user'],
+  });
+  
+  // Query for notifications
+  const {
+    data: notifications,
+  } = useQuery({
+    queryKey: ['/api/notifications'],
+  });
+  
+  // Query for recent campaigns
+  const {
+    data: recentCampaigns,
+  } = useQuery({
+    queryKey: ['/api/campaigns/recent'],
+  });
+  
+  // Handle logout
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/auth';
+  };
+
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Calendar Management</h1>
+    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
+      {/* Header */}
+      <AuthHeader 
+        user={userData?.user || { id: 1, name: "John Doe", initials: "JD" }} 
+        notifications={notifications || []} 
+        onLogout={handleLogout}
+      />
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Calendar Sidebar */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar recentCampaigns={recentCampaigns || []} />
+        
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
+          <div className="max-w-6xl mx-auto">
+            <h1 className="text-3xl font-bold mb-6">Calendar Management</h1>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Calendar Sidebar */}
         <div className="md:col-span-1">
           <Card>
             <CardHeader>
@@ -1838,6 +1881,10 @@ const CalendarManagement: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
