@@ -356,9 +356,9 @@ const CustomerData = () => {
       const mappedData = data.map(record => {
         const mappedRecord: Record<string, any> = {};
         
-        // Apply mapping
+        // Apply mapping - skip empty source fields (which means "Don't import")
         Object.entries(mapping).forEach(([targetField, sourceField]) => {
-          if (sourceField && record[sourceField] !== undefined) {
+          if (sourceField && sourceField !== "" && record[sourceField] !== undefined) {
             mappedRecord[targetField] = record[sourceField];
           }
         });

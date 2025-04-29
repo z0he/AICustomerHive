@@ -107,7 +107,7 @@ const FieldMapping: React.FC<FieldMappingProps> = ({
       <div className="grid gap-4 max-h-[400px] overflow-y-auto pr-2">
         {targetFields.map((targetField) => {
           const isRequired = ['firstName', 'lastName', 'email'].includes(targetField);
-          const isMatched = !!fieldMapping[targetField];
+          const isMatched = fieldMapping[targetField] && fieldMapping[targetField] !== "";
           
           return (
             <div key={targetField} className="grid grid-cols-5 items-center gap-4">
@@ -120,7 +120,7 @@ const FieldMapping: React.FC<FieldMappingProps> = ({
               </div>
               <div className="col-span-3">
                 <Select
-                  value={fieldMapping[targetField] || ''}
+                  value={fieldMapping[targetField] === "" ? "_none_" : fieldMapping[targetField] || ''}
                   onValueChange={(value) => handleMappingChange(targetField, value)}
                 >
                   <SelectTrigger>
