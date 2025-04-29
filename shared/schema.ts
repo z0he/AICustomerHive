@@ -101,6 +101,7 @@ export const customers = pgTable("customers", {
   contactType: text("contact_type"),
   country: text("country"),
   legalBasis: text("legal_basis"),
+  customFields: json("custom_fields"), // For storing additional import fields
   createdAt: timestamp("created_at").notNull(),
   status: text("status").default("active"),
 });
@@ -121,6 +122,7 @@ export const insertCustomerSchema = createInsertSchema(customers).pick({
   contactSource: true,
   contactType: true,
   legalBasis: true,
+  customFields: true,
 });
 
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -159,6 +161,7 @@ export const leads = pgTable("leads", {
   score: integer("score").default(0), // 0-100
   tags: text("tags").array(),
   notes: text("notes"),
+  customFields: json("custom_fields"), // For storing additional import fields
   createdAt: timestamp("created_at").notNull(),
 });
 
@@ -180,6 +183,7 @@ export const insertLeadSchema = createInsertSchema(leads).pick({
   score: true,
   tags: true,
   notes: true,
+  customFields: true,
 });
 
 export type InsertLead = z.infer<typeof insertLeadSchema>;
