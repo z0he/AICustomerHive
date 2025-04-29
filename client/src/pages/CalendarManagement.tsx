@@ -23,6 +23,8 @@ import {
   CheckCircle,
   ArrowUpDown
 } from "lucide-react";
+import AuthHeader from '@/components/auth/AuthHeader';
+import Sidebar from '@/components/layout/Sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import {
@@ -437,11 +439,55 @@ const CalendarManagement: React.FC = () => {
 
   const filteredEvents = getFilteredEvents();
 
+  // Get user data for the header
+  const { data: userData } = useQuery({
+    queryKey: ['/api/auth/user'],
+  });
+
+  // Get notifications for the header
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['/api/notifications'],
+    queryFn: async () => {
+      // Default empty array if API not available
+      return [];
+    }
+  });
+
+  // Get recent campaigns for sidebar
+  const { data: recentCampaigns = [] } = useQuery({
+    queryKey: ['/api/campaigns/recent'],
+    queryFn: async () => {
+      // Default empty array if API not available
+      return [];
+    }
+  });
+
+  // Handle logout
+  const handleLogout = () => {
+    // Clear token and redirect to login
+    localStorage.removeItem('auth_token');
+    window.location.href = '/auth';
+  };
+
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Calendar Management</h1>
+    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
+      {/* Header */}
+      <AuthHeader 
+        user={userData?.user || { id: 1, name: "User", initials: "U" }} 
+        notifications={notifications} 
+        onLogout={handleLogout} 
+      />
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar recentCampaigns={recentCampaigns} />
+        
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
+          <div className="container mx-auto py-4">
+            <h1 className="text-3xl font-bold mb-6">Calendar Management</h1>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Calendar Sidebar */}
         <div className="md:col-span-1">
           <Card>
@@ -1838,6 +1884,9 @@ const CalendarManagement: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

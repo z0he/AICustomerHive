@@ -29,6 +29,8 @@ import EmailTemplateCard from '@/components/email/EmailTemplateCard';
 import EmailCampaignIntegration from '@/components/email/EmailCampaignIntegration';
 import EmailAnalytics from '@/components/email/EmailAnalytics';
 import EmailSequenceManager from '@/components/email/EmailSequenceManager';
+import AuthHeader from '@/components/auth/AuthHeader';
+import Sidebar from '@/components/layout/Sidebar';
 import {
   Select,
   SelectContent,
@@ -108,7 +110,7 @@ const EmailManagement: React.FC = () => {
 
   // Email templates query
   const { 
-    data: emailTemplates, 
+    data: emailTemplates = [], 
     isLoading: isTemplatesLoading, 
     error: templatesError,
     refetch: refetchTemplates
@@ -119,13 +121,36 @@ const EmailManagement: React.FC = () => {
 
   // Email logs query
   const { 
-    data: emailLogs, 
+    data: emailLogs = [], 
     isLoading: isLogsLoading, 
     error: logsError,
     refetch: refetchLogs
   } = useQuery({
     queryKey: ['/api/email/logs'],
     enabled: activeTab === 'logs',
+  });
+
+  // Get user data for the header
+  const { data: userData } = useQuery({
+    queryKey: ['/api/auth/user'],
+  });
+
+  // Get notifications for the header
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['/api/notifications'],
+    queryFn: async () => {
+      // Default empty array if API not available
+      return [];
+    }
+  });
+
+  // Get recent campaigns for sidebar
+  const { data: recentCampaigns = [] } = useQuery({
+    queryKey: ['/api/campaigns/recent'],
+    queryFn: async () => {
+      // Default empty array if API not available
+      return [];
+    }
   });
 
   // Configure API key mutation
@@ -301,396 +326,418 @@ const EmailManagement: React.FC = () => {
     }
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    // Clear token and redirect to login
+    localStorage.removeItem('auth_token');
+    window.location.href = '/auth';
+  };
+
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Email Management</h1>
+    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
+      {/* Header */}
+      <AuthHeader 
+        user={userData?.user || { id: 1, name: "User", initials: "U" }} 
+        notifications={notifications} 
+        onLogout={handleLogout} 
+      />
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="configuration">Configuration</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-          <TabsTrigger value="sequences">Sequences</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar recentCampaigns={recentCampaigns} />
         
-        {/* Configuration Tab */}
-        <TabsContent value="configuration" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Settings className="mr-2" size={20} />
-                Mailgun Configuration
-              </CardTitle>
-              <CardDescription>
-                Configure your Mailgun API key and domain to enable email capabilities.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-6">
-                <h3 className="text-lg font-medium mb-2">Mailgun API Status</h3>
-                {isStatusLoading ? (
-                  <div className="flex items-center">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Checking status...
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    {apiStatus?.configured ? (
-                      <>
-                        <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                        <span>Mailgun API is properly configured and ready to use.</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                        <span>Mailgun API is not configured. Please add your API key and domain below.</span>
-                      </>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="ml-2" 
-                      onClick={() => refetchStatus()}
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
+          <div className="container mx-auto py-4">
+            <h1 className="text-3xl font-bold mb-6">Email Management</h1>
+            
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="configuration">Configuration</TabsTrigger>
+                <TabsTrigger value="templates">Templates</TabsTrigger>
+                <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+                <TabsTrigger value="sequences">Sequences</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
               
-              {apiStatus?.configured && (
-                <div className="mb-6">
-                  <Card className="border-dashed">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">Send Test Email</CardTitle>
-                      <CardDescription>
-                        Test your email configuration by sending a test email
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Form {...sendEmailForm}>
-                        <form onSubmit={sendEmailForm.handleSubmit(onSendEmailSubmit)} className="space-y-4">
-                          <FormField
-                            control={sendEmailForm.control}
-                            name="from"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>From</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="postmaster@your-sandbox-domain.mailgun.org" {...field} />
-                                </FormControl>
-                                <FormDescription>
-                                  For sandbox domains, use <strong>postmaster@your-sandbox-domain.mailgun.org</strong> or another address with your sandbox domain.
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={sendEmailForm.control}
-                            name="to"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>To</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="recipient@example.com" {...field} />
-                                </FormControl>
-                                <FormDescription>
-                                  For sandbox domains, the recipient must be an authorized email address in your Mailgun account.
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={sendEmailForm.control}
-                            name="subject"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Subject</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Test Email from CRM" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={sendEmailForm.control}
-                            name="body"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Message</FormLabel>
-                                <FormControl>
-                                  <Textarea 
-                                    placeholder="This is a test email from the CRM system." 
-                                    className="min-h-[100px]"
+              {/* Configuration Tab */}
+              <TabsContent value="configuration" className="mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Settings className="mr-2" size={20} />
+                      Mailgun Configuration
+                    </CardTitle>
+                    <CardDescription>
+                      Configure your Mailgun API key and domain to enable email capabilities.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium mb-2">Mailgun API Status</h3>
+                      {isStatusLoading ? (
+                        <div className="flex items-center">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Checking status...
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          {apiStatus?.configured ? (
+                            <>
+                              <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                              <span>Mailgun API is properly configured and ready to use.</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+                              <span>Mailgun API is not configured. Please add your API key and domain below.</span>
+                            </>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="ml-2" 
+                            onClick={() => refetchStatus()}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {apiStatus?.configured && (
+                      <div className="mb-6">
+                        <Card className="border-dashed">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-lg">Send Test Email</CardTitle>
+                            <CardDescription>
+                              Test your email configuration by sending a test email
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <Form {...sendEmailForm}>
+                              <form onSubmit={sendEmailForm.handleSubmit(onSendEmailSubmit)} className="space-y-4">
+                                <FormField
+                                  control={sendEmailForm.control}
+                                  name="from"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>From</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="postmaster@your-sandbox-domain.mailgun.org" {...field} />
+                                      </FormControl>
+                                      <FormDescription>
+                                        For sandbox domains, use <strong>postmaster@your-sandbox-domain.mailgun.org</strong> or another address with your sandbox domain.
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={sendEmailForm.control}
+                                  name="to"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>To</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="recipient@example.com" {...field} />
+                                      </FormControl>
+                                      <FormDescription>
+                                        For sandbox domains, the recipient must be an authorized email address in your Mailgun account.
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={sendEmailForm.control}
+                                  name="subject"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Subject</FormLabel>
+                                      <FormControl>
+                                        <Input placeholder="Test Email from CRM" {...field} />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <FormField
+                                  control={sendEmailForm.control}
+                                  name="body"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Message</FormLabel>
+                                      <FormControl>
+                                        <Textarea 
+                                          placeholder="This is a test email from the CRM system." 
+                                          className="min-h-[100px]"
+                                          {...field} 
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <Button 
+                                  type="submit" 
+                                  disabled={sendEmailMutation.isPending}
+                                >
+                                  {sendEmailMutation.isPending ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Sending...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Send className="mr-2 h-4 w-4" />
+                                      Send Test Email
+                                    </>
+                                  )}
+                                </Button>
+                              </form>
+                            </Form>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    )}
+                    
+                    <Separator className="my-6" />
+                    
+                    <Form {...apiKeyForm}>
+                      <form onSubmit={apiKeyForm.handleSubmit(onApiKeySubmit)} className="space-y-6">
+                        <FormField
+                          control={apiKeyForm.control}
+                          name="apiKey"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Mailgun API Key</FormLabel>
+                              <FormControl>
+                                <div className="flex">
+                                  <Input 
+                                    placeholder="key-xxxxxxxxxxxxxxxxxxxxxxxx" 
+                                    type="password"
                                     {...field} 
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <Button 
-                            type="submit" 
-                            disabled={sendEmailMutation.isPending}
-                          >
-                            {sendEmailMutation.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Sending...
-                              </>
-                            ) : (
-                              <>
-                                <Send className="mr-2 h-4 w-4" />
-                                Send Test Email
-                              </>
-                            )}
-                          </Button>
-                        </form>
-                      </Form>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+                                </div>
+                              </FormControl>
+                              <FormDescription>
+                                Provide your Mailgun API key to enable email sending capabilities.
+                                <a 
+                                  href="https://app.mailgun.com/app/account/security/api_keys" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-primary underline ml-1"
+                                >
+                                  Get your API key here
+                                </a>
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={apiKeyForm.control}
+                          name="domain"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Mailgun Domain</FormLabel>
+                              <FormControl>
+                                <div className="flex">
+                                  <Input 
+                                    placeholder="mg.yourdomain.com" 
+                                    {...field} 
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormDescription>
+                                Enter your Mailgun domain. You can find this in your Mailgun dashboard.
+                                <a 
+                                  href="https://app.mailgun.com/app/domains" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-primary underline ml-1"
+                                >
+                                  View your domains
+                                </a>
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <Button 
+                          type="submit" 
+                          disabled={configureApiMutation.isPending}
+                        >
+                          {configureApiMutation.isPending ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Configuring...
+                            </>
+                          ) : (
+                            <>
+                              <Key className="mr-2 h-4 w-4" />
+                              Save API Configuration
+                            </>
+                          )}
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                  <CardFooter className="flex-col items-start gap-2">
+                    <p className="text-sm text-muted-foreground">
+                      Note: Your API key and domain are stored securely on the server.
+                    </p>
+                  </CardFooter>
+                </Card>
+              </TabsContent>
               
-              <Separator className="my-6" />
-              
-              <Form {...apiKeyForm}>
-                <form onSubmit={apiKeyForm.handleSubmit(onApiKeySubmit)} className="space-y-6">
-                  <FormField
-                    control={apiKeyForm.control}
-                    name="apiKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mailgun API Key</FormLabel>
-                        <FormControl>
-                          <div className="flex">
-                            <Input 
-                              placeholder="key-xxxxxxxxxxxxxxxxxxxxxxxx" 
-                              type="password"
-                              {...field} 
-                            />
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          Provide your Mailgun API key to enable email sending capabilities.
-                          <a 
-                            href="https://app.mailgun.com/app/account/security/api_keys" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-primary underline ml-1"
-                          >
-                            Get your API key here
-                          </a>
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={apiKeyForm.control}
-                    name="domain"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mailgun Domain</FormLabel>
-                        <FormControl>
-                          <div className="flex">
-                            <Input 
-                              placeholder="mg.yourdomain.com" 
-                              {...field} 
-                            />
-                          </div>
-                        </FormControl>
-                        <FormDescription>
-                          Enter your Mailgun domain. You can find this in your Mailgun dashboard.
-                          <a 
-                            href="https://app.mailgun.com/app/domains" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-primary underline ml-1"
-                          >
-                            View your domains
-                          </a>
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button 
-                    type="submit" 
-                    disabled={configureApiMutation.isPending}
-                  >
-                    {configureApiMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Configuring...
-                      </>
-                    ) : (
-                      <>
-                        <Key className="mr-2 h-4 w-4" />
-                        Save Configuration
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-            <CardFooter className="flex-col items-start gap-2">
-              <p className="text-sm text-muted-foreground">
-                Your API key and domain are securely stored and never exposed to the client side.
-              </p>
-              <Alert className="mt-2 border-amber-500 text-amber-800 dark:text-amber-300">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Important Mailgun Information</AlertTitle>
-                <AlertDescription>
-                  <ul className="list-disc pl-4 text-sm space-y-1 mt-1">
-                    <li>New Mailgun accounts require activation. Check your email for an activation link, or log in to the Mailgun dashboard to activate your account.</li>
-                    <li>For sandbox domains, you must add authorized recipients in your Mailgun dashboard before you can send them emails.</li>
-                    <li>Sandbox domains can only send to verified recipients that you've explicitly authorized.</li>
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        {/* Templates Tab */}
-        <TabsContent value="templates" className="mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between">
-                <div>
-                  <CardTitle className="flex items-center">
-                    <FileText className="mr-2" size={20} />
-                    Email Templates
-                  </CardTitle>
-                  <CardDescription>
-                    Manage your email templates for various scenarios.
-                  </CardDescription>
-                </div>
-                <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
+              {/* Templates Tab */}
+              <TabsContent value="templates" className="mt-4">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center">
+                        <FileText className="mr-2" size={20} />
+                        Email Templates
+                      </CardTitle>
+                      <CardDescription>
+                        Create and manage reusable email templates for your campaigns
+                      </CardDescription>
+                    </div>
+                    <Button onClick={() => setTemplateDialogOpen(true)}>
                       <Plus className="mr-2 h-4 w-4" />
                       New Template
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[600px]">
+                  </CardHeader>
+                  <CardContent>
+                    {isTemplatesLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    ) : templatesError ? (
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error loading templates</AlertTitle>
+                        <AlertDescription>
+                          There was an error loading your email templates. Please try again.
+                        </AlertDescription>
+                      </Alert>
+                    ) : !emailTemplates.length ? (
+                      <div className="text-center py-8">
+                        <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-medium">No Email Templates</h3>
+                        <p className="text-muted-foreground">
+                          You haven't created any email templates yet.
+                        </p>
+                        <Button 
+                          variant="outline" 
+                          className="mt-4"
+                          onClick={() => setTemplateDialogOpen(true)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Create Your First Template
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {emailTemplates.map((template: any) => (
+                          <EmailTemplateCard 
+                            key={template.id} 
+                            template={template} 
+                            onRefresh={refetchTemplates}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                
+                {/* Template Creation Dialog */}
+                <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
+                  <DialogContent className="max-w-3xl">
                     <DialogHeader>
-                      <DialogTitle>Create New Email Template</DialogTitle>
+                      <DialogTitle>Create Email Template</DialogTitle>
                       <DialogDescription>
-                        Create a reusable email template. Use {`{{variableName}}`} syntax to define placeholders.
+                        Create a reusable email template for your campaigns and communications.
                       </DialogDescription>
                     </DialogHeader>
+                    
                     <Form {...templateForm}>
                       <form onSubmit={templateForm.handleSubmit(onTemplateSubmit)} className="space-y-4">
-                        <FormField
-                          control={templateForm.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Template Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Welcome Email" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={templateForm.control}
-                          name="category"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Category</FormLabel>
-                              <Select 
-                                defaultValue={field.value} 
-                                onValueChange={field.onChange}
-                              >
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={templateForm.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Template Name</FormLabel>
                                 <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select category" />
-                                  </SelectTrigger>
+                                  <Input placeholder="Welcome Email" {...field} />
                                 </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="general">General</SelectItem>
-                                  <SelectItem value="welcome">Welcome</SelectItem>
-                                  <SelectItem value="notification">Notification</SelectItem>
-                                  <SelectItem value="marketing">Marketing</SelectItem>
-                                  <SelectItem value="transactional">Transactional</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={templateForm.control}
+                            name="category"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Category</FormLabel>
+                                <Select 
+                                  onValueChange={field.onChange} 
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select a category" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="general">General</SelectItem>
+                                    <SelectItem value="welcome">Welcome</SelectItem>
+                                    <SelectItem value="nurture">Nurture</SelectItem>
+                                    <SelectItem value="promotional">Promotional</SelectItem>
+                                    <SelectItem value="follow-up">Follow-up</SelectItem>
+                                    <SelectItem value="transactional">Transactional</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
                         <FormField
                           control={templateForm.control}
                           name="subject"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Subject</FormLabel>
+                              <FormLabel>Subject Line</FormLabel>
                               <FormControl>
-                                <Input placeholder="Welcome to Our Company!" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={templateForm.control}
-                          name="bodyHtml"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>HTML Content</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="<h1>Hello John</h1><p>Welcome to our service!</p>" 
-                                  className="min-h-[100px]"
-                                  {...field} 
-                                />
+                                <Input placeholder="Welcome to our platform!" {...field} />
                               </FormControl>
                               <FormDescription>
-                                HTML version of your email. Use {`{{variableName}}`} for dynamic content.
+                                The subject line of the email.
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={templateForm.control}
-                          name="bodyText"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Text Content</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Hello John, Welcome to our service!" 
-                                  className="min-h-[100px]"
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <FormDescription>
-                                Plain text version of your email for clients that don't support HTML.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                        
                         <FormField
                           control={templateForm.control}
                           name="variables"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Variables</FormLabel>
+                              <FormLabel>Template Variables</FormLabel>
                               <FormControl>
                                 <Input 
-                                  placeholder="name, companyName, productName" 
+                                  placeholder="firstName, lastName, company" 
                                   {...field} 
                                 />
                               </FormControl>
@@ -701,8 +748,58 @@ const EmailManagement: React.FC = () => {
                             </FormItem>
                           )}
                         />
+                        
+                        <FormField
+                          control={templateForm.control}
+                          name="bodyHtml"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>HTML Content</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="<p>Hello {{firstName}},</p><p>Welcome to our platform!</p>" 
+                                  className="min-h-[150px] font-mono"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                HTML content of the email. Use {{variableName}} for dynamic content.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={templateForm.control}
+                          name="bodyText"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Plain Text Content</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  placeholder="Hello {{firstName}}, Welcome to our platform!" 
+                                  className="min-h-[100px] font-mono"
+                                  {...field} 
+                                />
+                              </FormControl>
+                              <FormDescription>
+                                Plain text version of the email for clients that don't support HTML.
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
                         <DialogFooter>
                           <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setTemplateDialogOpen(false)}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
                             type="submit"
                             disabled={createTemplateMutation.isPending}
                           >
@@ -711,175 +808,10 @@ const EmailManagement: React.FC = () => {
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Creating...
                               </>
-                            ) : "Create Template"}
-                          </Button>
-                        </DialogFooter>
-                      </form>
-                    </Form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isTemplatesLoading ? (
-                <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span className="ml-2">Loading templates...</span>
-                </div>
-              ) : templatesError ? (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    Failed to load email templates. Please try again.
-                  </AlertDescription>
-                </Alert>
-              ) : !emailTemplates?.length ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">No Email Templates</h3>
-                  <p className="text-muted-foreground">
-                    You haven't created any email templates yet.
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => setTemplateDialogOpen(true)}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Your First Template
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {emailTemplates.map((template: any) => (
-                    <EmailTemplateCard 
-                      key={template.id} 
-                      template={template} 
-                      onRefresh={refetchTemplates}
-                    />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Campaign Integration Tab */}
-        <TabsContent value="campaigns" className="mt-4">
-          <EmailCampaignIntegration />
-        </TabsContent>
-
-        {/* Sequences Tab */}
-        <TabsContent value="sequences" className="mt-4">
-          <EmailSequenceManager />
-        </TabsContent>
-
-        {/* Analytics Tab */}
-        <TabsContent value="analytics" className="mt-4">
-          <EmailAnalytics />
-        </TabsContent>
-        
-        {/* Email Logs Tab */}
-        <TabsContent value="logs" className="mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between">
-                <div>
-                  <CardTitle className="flex items-center">
-                    <Clock className="mr-2" size={20} />
-                    Email Logs
-                  </CardTitle>
-                  <CardDescription>
-                    Track and monitor all sent emails and their status.
-                  </CardDescription>
-                </div>
-                <Dialog open={sendDialogOpen} onOpenChange={setSendDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Email
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                      <DialogTitle>Send New Email</DialogTitle>
-                      <DialogDescription>
-                        Send a one-off email directly from the application.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <Form {...sendEmailForm}>
-                      <form onSubmit={sendEmailForm.handleSubmit(onSendEmailSubmit)} className="space-y-4">
-                        <FormField
-                          control={sendEmailForm.control}
-                          name="from"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>From</FormLabel>
-                              <FormControl>
-                                <Input placeholder="sender@yourdomain.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={sendEmailForm.control}
-                          name="to"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>To</FormLabel>
-                              <FormControl>
-                                <Input placeholder="recipient@example.com" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={sendEmailForm.control}
-                          name="subject"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Subject</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Your email subject" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={sendEmailForm.control}
-                          name="body"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Body</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  placeholder="Your email content" 
-                                  className="min-h-[150px]"
-                                  {...field} 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <DialogFooter>
-                          <Button
-                            type="submit"
-                            disabled={sendEmailMutation.isPending || !apiStatus?.configured}
-                          >
-                            {sendEmailMutation.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Sending...
-                              </>
                             ) : (
                               <>
-                                <Send className="mr-2 h-4 w-4" />
-                                Send Email
+                                <Plus className="mr-2 h-4 w-4" />
+                                Create Template
                               </>
                             )}
                           </Button>
@@ -888,84 +820,65 @@ const EmailManagement: React.FC = () => {
                     </Form>
                   </DialogContent>
                 </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isLogsLoading ? (
-                <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span className="ml-2">Loading email logs...</span>
-                </div>
-              ) : logsError ? (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    Failed to load email logs. Please try again.
-                  </AlertDescription>
-                </Alert>
-              ) : !emailLogs?.length ? (
-                <div className="text-center py-8">
-                  <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">No Email Logs</h3>
-                  <p className="text-muted-foreground">
-                    No emails have been sent yet. Start by sending your first email.
-                  </p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => setSendDialogOpen(true)}
-                  >
-                    <Mail className="mr-2 h-4 w-4" />
-                    Send Your First Email
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>To</TableHead>
-                        <TableHead>Subject</TableHead>
-                        <TableHead>Template</TableHead>
-                        <TableHead>Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {emailLogs.map((log: any) => (
-                        <TableRow key={log.id}>
-                          <TableCell>{formatDate(log.sentAt)}</TableCell>
-                          <TableCell>{log.to}</TableCell>
-                          <TableCell>{log.subject}</TableCell>
-                          <TableCell>
-                            {log.templateId ? (
-                              <Badge variant="outline">Template #{log.templateId}</Badge>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">Custom</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(log.status)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button 
-                variant="outline" 
-                onClick={() => refetchLogs()}
-                disabled={isLogsLoading}
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${isLogsLoading ? "animate-spin" : ""}`} />
-                Refresh Logs
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </TabsContent>
+              
+              {/* Campaigns Tab */}
+              <TabsContent value="campaigns" className="mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Send className="mr-2" size={20} />
+                      Email Campaigns
+                    </CardTitle>
+                    <CardDescription>
+                      Use email templates in your marketing campaigns
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <EmailCampaignIntegration />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              {/* Sequences Tab */}
+              <TabsContent value="sequences" className="mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Clock className="mr-2" size={20} />
+                      Email Sequences
+                    </CardTitle>
+                    <CardDescription>
+                      Set up automated email sequences for lead nurturing
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <EmailSequenceManager />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              {/* Analytics Tab */}
+              <TabsContent value="analytics" className="mt-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <FileText className="mr-2" size={20} />
+                      Email Analytics
+                    </CardTitle>
+                    <CardDescription>
+                      Track the performance of your email campaigns
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <EmailAnalytics />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
