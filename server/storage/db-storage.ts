@@ -194,7 +194,7 @@ export class DbStorage implements IStorage {
             'id', 'email', 'firstName', 'lastName', 'name', 'phone', 'company', 
             'jobTitle', 'linkedinUrl', 'lifecycleStage', 'leadStatus',
             'contactIndustry', 'contactOwner', 'contactSource', 'contactType',
-            'country', 'legalBasis', 'createdAt', 'status'
+            'country', 'legalBasis', 'customFields', 'createdAt', 'status'
           ]
         }
       };
@@ -251,7 +251,8 @@ export class DbStorage implements IStorage {
           contactSource: data.contactSource || null,
           contactType: data.contactType || null,
           country: data.country || null,
-          legalBasis: data.legalBasis || null
+          legalBasis: data.legalBasis || null,
+          customFields: data.customFields || null
         };
         
         await this.createCustomer(insertCustomer);
@@ -365,6 +366,7 @@ export class DbStorage implements IStorage {
       score,
       tags: lead.tags || null,
       notes: lead.notes || null,
+      customFields: lead.customFields || null,
       initials,
       createdAt: new Date()
     };
