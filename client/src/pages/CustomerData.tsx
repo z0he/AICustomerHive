@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import AuthHeader from '@/components/auth/AuthHeader';
 import Sidebar from '@/components/layout/Sidebar';
+import FieldMapping from '@/components/data/FieldMapping';
 
 const CustomerData = () => {
   const { toast } = useToast();
@@ -21,6 +22,12 @@ const CustomerData = () => {
   const [importMethod, setImportMethod] = useState<'json' | 'csv'>('json');
   const [importResult, setImportResult] = useState<{imported: number; errors: any[]} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // State for CSV mapping
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
+  const [showFieldMapping, setShowFieldMapping] = useState(false);
+  const [parsedCsvData, setParsedCsvData] = useState<any[]>([]);
 
   // Query to get customer export data
   const { data: exportData, isLoading: isExportLoading, error: exportError } = useQuery({
@@ -226,8 +233,275 @@ const CustomerData = () => {
       return;
     }
     
-    // Start upload
-    importCSVMutation.mutate(file);
+    // Store the file for later use
+    setCsvFile(file);
+    
+    // Parse CSV headers for mapping
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const csvText = event.target?.result as string;
+        if (!csvText) {
+          throw new Error('Failed to read CSV file');
+        }
+        
+        // Get the first line (headers)
+        const lines = csvText.split('\n');
+        if (lines.length === 0) {
+          throw new Error('CSV file is empty');
+        }
+        
+        // Parse headers - handle quoted headers with commas inside
+        const headerLine = lines[0].trim();
+        const headers: string[] = [];
+        let currentHeader = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < headerLine.length; i++) {
+          const char = headerLine[i];
+          
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            headers.push(currentHeader.trim().replace(/^"|"$/g, ''));
+            currentHeader = '';
+          } else {
+            currentHeader += char;
+          }
+        }
+        
+        // Add the last header
+        if (currentHeader) {
+          headers.push(currentHeader.trim().replace(/^"|"$/g, ''));
+        }
+        
+        // Save headers for mapping
+        setCsvHeaders(headers);
+        
+        // Parse sample data for preview (up to 3 rows)
+        const dataRows = lines.slice(1, 4).filter(line => line.trim());
+        const parsedData: Record<string, string>[] = [];
+        
+        dataRows.forEach(row => {
+          const values: string[] = [];
+          let currentValue = '';
+          inQuotes = false;
+          
+          for (let i = 0; i < row.length; i++) {
+            const char = row[i];
+            
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              values.push(currentValue.trim().replace(/^"|"$/g, ''));
+              currentValue = '';
+            } else {
+              currentValue += char;
+            }
+          }
+          
+          // Add the last value
+          if (currentValue || values.length > 0) {
+            values.push(currentValue.trim().replace(/^"|"$/g, ''));
+            
+            // Create object with headers as keys
+            const rowData: Record<string, string> = {};
+            headers.forEach((header, index) => {
+              if (index < values.length) {
+                rowData[header] = values[index];
+              }
+            });
+            
+            parsedData.push(rowData);
+          }
+        });
+        
+        // Save parsed data
+        setParsedCsvData(parsedData);
+        
+        // Show field mapping UI
+        setShowFieldMapping(true);
+        
+      } catch (error) {
+        console.error('Error parsing CSV:', error);
+        toast({
+          title: 'Invalid CSV Format',
+          description: 'Failed to parse CSV headers. Please check your file format.',
+          variant: 'destructive',
+        });
+      }
+    };
+    
+    reader.onerror = () => {
+      toast({
+        title: 'Error Reading File',
+        description: 'Failed to read the CSV file. Please try again.',
+        variant: 'destructive',
+      });
+    };
+    
+    reader.readAsText(file);
+  };
+
+  // Mutation for importing customer data with mapped CSV file
+  const importMappedCSVMutation = useMutation({
+    mutationFn: async ({ 
+      data, 
+      mapping 
+    }: { 
+      data: any[]; 
+      mapping: Record<string, string> 
+    }) => {
+      // Transform data according to the mapping
+      const mappedData = data.map(record => {
+        const mappedRecord: Record<string, any> = {};
+        
+        // Apply mapping
+        Object.entries(mapping).forEach(([targetField, sourceField]) => {
+          if (sourceField && record[sourceField] !== undefined) {
+            mappedRecord[targetField] = record[sourceField];
+          }
+        });
+        
+        return mappedRecord;
+      });
+      
+      // Send the transformed data to the API
+      const response = await fetch('/api/customers/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ data: mappedData }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to import mapped CSV data');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setImportResult(data);
+      setShowFieldMapping(false);
+      setCsvFile(null);
+      setCsvHeaders([]);
+      setParsedCsvData([]);
+      
+      toast({
+        title: 'CSV Import Successful',
+        description: `Imported ${data.imported} customer records with ${data.errors.length} errors.`,
+        variant: 'default',
+      });
+      // Invalidate customer-related queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'CSV Import Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Handle completed field mapping
+  const handleFieldMappingComplete = (mapping: Record<string, string>) => {
+    // Read the entire CSV file and parse with mapping
+    if (!csvFile) {
+      toast({
+        title: 'Error',
+        description: 'No CSV file found. Please upload again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const csvText = event.target?.result as string;
+        if (!csvText) {
+          throw new Error('Failed to read CSV file');
+        }
+        
+        const lines = csvText.split('\n').filter(line => line.trim());
+        if (lines.length <= 1) {
+          throw new Error('CSV file has no data rows');
+        }
+        
+        // Skip header row, process data rows
+        const dataRows = lines.slice(1);
+        const parsedRecords: Record<string, string>[] = [];
+        
+        dataRows.forEach(row => {
+          const values: string[] = [];
+          let currentValue = '';
+          let inQuotes = false;
+          
+          for (let i = 0; i < row.length; i++) {
+            const char = row[i];
+            
+            if (char === '"') {
+              inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+              values.push(currentValue.trim().replace(/^"|"$/g, ''));
+              currentValue = '';
+            } else {
+              currentValue += char;
+            }
+          }
+          
+          // Add the last value
+          if (currentValue || values.length > 0) {
+            values.push(currentValue.trim().replace(/^"|"$/g, ''));
+            
+            // Create object with headers as keys
+            const rowData: Record<string, string> = {};
+            csvHeaders.forEach((header, index) => {
+              if (index < values.length) {
+                rowData[header] = values[index];
+              }
+            });
+            
+            parsedRecords.push(rowData);
+          }
+        });
+        
+        // Apply mapping and import
+        importMappedCSVMutation.mutate({ 
+          data: parsedRecords, 
+          mapping 
+        });
+        
+      } catch (error) {
+        console.error('Error parsing CSV:', error);
+        toast({
+          title: 'CSV Parsing Error',
+          description: error instanceof Error ? error.message : 'Failed to parse CSV data',
+          variant: 'destructive',
+        });
+      }
+    };
+    
+    reader.onerror = () => {
+      toast({
+        title: 'Error Reading File',
+        description: 'Failed to read the CSV file. Please try again.',
+        variant: 'destructive',
+      });
+    };
+    
+    reader.readAsText(csvFile);
+  };
+  
+  // Handle cancellation of field mapping
+  const handleFieldMappingCancel = () => {
+    setShowFieldMapping(false);
+    setCsvFile(null);
+    setCsvHeaders([]);
+    setParsedCsvData([]);
   };
 
   // Get user data for the header
@@ -386,92 +660,98 @@ const CustomerData = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Import Method Selection */}
-              <div className="mb-6">
-                <Label className="block text-sm font-medium mb-2">Import Method</Label>
-                <div className="flex space-x-4">
-                  <div 
-                    className={`flex-1 p-4 border rounded-md cursor-pointer flex flex-col items-center ${importMethod === 'json' ? 'border-primary bg-primary/5' : 'border-input'}`}
-                    onClick={() => setImportMethod('json')}
-                  >
-                    <FileText size={24} className={importMethod === 'json' ? 'text-primary' : 'text-muted-foreground'} />
-                    <span className="mt-2 font-medium">JSON</span>
-                    <span className="text-xs text-muted-foreground mt-1">Paste JSON data</span>
-                  </div>
-                  <div 
-                    className={`flex-1 p-4 border rounded-md cursor-pointer flex flex-col items-center ${importMethod === 'csv' ? 'border-primary bg-primary/5' : 'border-input'}`}
-                    onClick={() => setImportMethod('csv')}
-                  >
-                    <FileUp size={24} className={importMethod === 'csv' ? 'text-primary' : 'text-muted-foreground'} />
-                    <span className="mt-2 font-medium">CSV</span>
-                    <span className="text-xs text-muted-foreground mt-1">Upload CSV file</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* JSON Import Method */}
-              {importMethod === 'json' && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">
-                    JSON Data
-                  </label>
-                  <textarea
-                    className="min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    placeholder='[{ "firstName": "John", "lastName": "Doe", "email": "john@example.com" }, ...]'
-                    value={importData}
-                    onChange={(e) => setImportData(e.target.value)}
-                  />
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Paste JSON data containing an array of customer records. Each record must have at least firstName, lastName, and email fields.
-                  </p>
-                </div>
-              )}
-              
-              {/* CSV Import Method */}
-              {importMethod === 'csv' && (
-                <div className="mb-4">
-                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-8 text-center">
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleFileChange} 
-                      accept=".csv" 
-                      className="hidden" 
-                    />
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                      <div className="p-3 bg-primary/10 rounded-full">
-                        <FileUp size={28} className="text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          Click to upload or drag and drop
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          CSV file (max 5MB)
-                        </p>
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        onClick={handleFileUploadClick}
-                        disabled={importCSVMutation.isPending}
+              {showFieldMapping && csvHeaders.length > 0 ? (
+                <FieldMapping 
+                  sourceFields={csvHeaders}
+                  targetFields={exportData?.metadata?.fields || [
+                    'email', 'firstName', 'lastName', 'name', 'phone', 'company', 
+                    'jobTitle', 'linkedinUrl', 'lifecycleStage', 'leadStatus',
+                    'contactIndustry', 'contactOwner', 'contactSource', 'contactType',
+                    'country', 'legalBasis', 'status'
+                  ]}
+                  onComplete={handleFieldMappingComplete}
+                  onCancel={handleFieldMappingCancel}
+                />
+              ) : (
+                <>
+                  {/* Import Method Selection */}
+                  <div className="mb-6">
+                    <Label className="block text-sm font-medium mb-2">Import Method</Label>
+                    <div className="flex space-x-4">
+                      <div 
+                        className={`flex-1 p-4 border rounded-md cursor-pointer flex flex-col items-center ${importMethod === 'json' ? 'border-primary bg-primary/5' : 'border-input'}`}
+                        onClick={() => setImportMethod('json')}
                       >
-                        {importCSVMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            Select CSV File
-                          </>
-                        )}
-                      </Button>
+                        <FileText size={24} className={importMethod === 'json' ? 'text-primary' : 'text-muted-foreground'} />
+                        <span className="mt-2 font-medium">JSON</span>
+                        <span className="text-xs text-muted-foreground mt-1">Paste JSON data</span>
+                      </div>
+                      <div 
+                        className={`flex-1 p-4 border rounded-md cursor-pointer flex flex-col items-center ${importMethod === 'csv' ? 'border-primary bg-primary/5' : 'border-input'}`}
+                        onClick={() => setImportMethod('csv')}
+                      >
+                        <FileUp size={24} className={importMethod === 'csv' ? 'text-primary' : 'text-muted-foreground'} />
+                        <span className="mt-2 font-medium">CSV</span>
+                        <span className="text-xs text-muted-foreground mt-1">Upload CSV file</span>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Upload a CSV file with customer data. The first row should contain column headers matching the customer fields.
-                  </p>
-                </div>
+                  
+                  {/* JSON Import Method */}
+                  {importMethod === 'json' && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">
+                        JSON Data
+                      </label>
+                      <textarea
+                        className="min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        placeholder='[{ "firstName": "John", "lastName": "Doe", "email": "john@example.com" }, ...]'
+                        value={importData}
+                        onChange={(e) => setImportData(e.target.value)}
+                      />
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Paste JSON data containing an array of customer records. Each record must have at least firstName, lastName, and email fields.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* CSV Import Method */}
+                  {importMethod === 'csv' && (
+                    <div className="mb-4">
+                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-8 text-center">
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          onChange={handleFileChange} 
+                          accept=".csv" 
+                          className="hidden" 
+                        />
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <div className="p-3 bg-primary/10 rounded-full">
+                            <FileUp size={28} className="text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">
+                              Click to upload or drag and drop
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              CSV file (max 5MB)
+                            </p>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            onClick={handleFileUploadClick}
+                          >
+                            Select CSV File
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Upload a CSV file with customer data. Don't worry if your column names don't match exactly - you'll be able to map them in the next step.
+                      </p>
+                    </div>
+                  )}
+                </>
               )}
               
               {/* Import Results */}
