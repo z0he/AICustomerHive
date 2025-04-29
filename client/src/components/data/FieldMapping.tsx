@@ -60,7 +60,7 @@ const FieldMapping: React.FC<FieldMappingProps> = ({
   const handleMappingChange = (targetField: string, sourceField: string) => {
     setFieldMapping(prev => ({
       ...prev,
-      [targetField]: sourceField
+      [targetField]: sourceField === "_none_" ? "" : sourceField
     }));
   };
   
@@ -127,7 +127,7 @@ const FieldMapping: React.FC<FieldMappingProps> = ({
                     <SelectValue placeholder="Select a column" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Don't import</SelectItem>
+                    <SelectItem value="_none_">Don't import</SelectItem>
                     {sourceFields.map((sourceField) => (
                       <SelectItem key={sourceField} value={sourceField}>
                         {sourceField}
