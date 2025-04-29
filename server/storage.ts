@@ -48,6 +48,7 @@ export interface IStorage {
   getLeadsRequiringFollowUp(): Promise<Lead[]>;
   getLead(id: number): Promise<Lead | undefined>;
   createLead(lead: InsertLead): Promise<Lead>;
+  insertLead(lead: any): Promise<Lead>; // For import API
   updateLead(id: number, leadData: Partial<Lead>): Promise<Lead>;
   updateLeadScore(id: number, scoringData: any): Promise<Lead>;
   getTopLeads(limit?: number): Promise<Lead[]>;
@@ -430,6 +431,49 @@ export class MemStorage implements IStorage {
     };
     this.leads.set(id, lead);
     return lead;
+  }
+  
+  async insertLead(lead: any): Promise<Lead> {
+    const id = this.leadCurrentId++;
+    
+    // Ensure fullName is created from firstName and lastName
+    const fullName = `${lead.firstName} ${lead.lastName}`;
+    
+    // Calculate an initial lead score if not provided
+    let score = lead.score;
+    if (score === undefined) {
+      score = this.calculateLeadScore({
+        ...lead,
+        name: fullName
+      });
+    }
+    
+    // Create a Lead object from the imported data
+    const newLead: Lead = {
+      id,
+      name: fullName,
+      email: lead.email,
+      phone: lead.phone || null,
+      company: lead.company || null,
+      jobTitle: lead.jobTitle || null,
+      industry: lead.contactIndustry || lead.industry || null,
+      location: lead.location || lead.country || null,
+      leadSource: lead.leadSource || 'import',
+      leadStatus: lead.leadStatus || 'new',
+      leadOwner: lead.contactOwner || lead.leadOwner || null,
+      lastContactDate: lead.lastContactDate || null,
+      nextFollowUpDate: lead.nextFollowUpDate || null,
+      engagementLevel: lead.engagementLevel || 0,
+      conversionProbability: lead.conversionProbability || 0,
+      score,
+      tags: lead.tags || null,
+      notes: lead.notes || null,
+      initials: this.getInitials(fullName),
+      createdAt: new Date()
+    };
+    
+    this.leads.set(id, newLead);
+    return newLead;
   }
   
   async updateLead(id: number, leadData: Partial<Lead>): Promise<Lead> {
