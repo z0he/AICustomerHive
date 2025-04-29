@@ -715,6 +715,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.post("/api/leads/import", async (req: Request, res: Response) => {
+    try {
+      const contentType = req.headers['content-type'] || '';
+      let data;
+      
+      if (contentType.includes('multipart/form-data')) {
+        // Handle file upload for CSV
+        if (!req.files || !req.files.file) {
+          return res.status(400).json({ message: "No file uploaded" });
+        }
+        
+        const file = req.files.file as any;
+        const csvData = file.data.toString('utf8');
+        
+        // Parse CSV to JSON
+        try {
+          data = csvParse(csvData, {
+            columns: true,
+            skip_empty_lines: true,
+            trim: true
+          });
+        } catch (csvError) {
+          console.error("CSV parse error:", csvError);
+          return res.status(400).json({ message: "Invalid CSV format" });
+        }
+      } else {
+        // Handle JSON data
+        const { data: jsonData } = req.body;
+        
+        if (!jsonData || !Array.isArray(jsonData)) {
+          return res.status(400).json({ message: "Invalid import data. Expected array of lead records." });
+        }
+        
+        data = jsonData;
+      }
+      
+      // Process lead records:
+      // 1. Ensure they have required fields
+      // 2. Set default values for lead-specific fields if needed
+      const validRecords = [];
+      const errors = [];
+      const requiredFields = ['email', 'firstName', 'lastName'];
+      
+      for (let i = 0; i < data.length; i++) {
+        const record = data[i];
+        const missingFields = requiredFields.filter(field => !record[field]);
+        
+        if (missingFields.length > 0) {
+          errors.push({
+            record,
+            error: `Record at index ${i} is missing required fields: ${missingFields.join(', ')}`
+          });
+          continue;
+        }
+        
+        // Set default lead status and source if not provided
+        const leadData = {
+          ...record,
+          leadStatus: record.leadStatus || 'new',
+          leadSource: record.leadSource || 'import'
+        };
+        
+        validRecords.push(leadData);
+      }
+      
+      // Import valid records
+      let importedCount = 0;
+      
+      for (const record of validRecords) {
+        try {
+          await storage.insertLead(record);
+          importedCount++;
+        } catch (error) {
+          errors.push({
+            record,
+            error: error instanceof Error ? error.message : 'Unknown error during import'
+          });
+        }
+      }
+      
+      res.status(200).json({ 
+        imported: importedCount,
+        errors: errors
+      });
+      
+    } catch (error) {
+      console.error("Import leads error:", error);
+      return res.status(500).json({ 
+        message: "Failed to import lead data",
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
+    }
+  });
+  
   // ===== CALENDAR/SCHEDULING ROUTES =====
   
   app.get("/api/calendar/events", async (req: Request, res: Response) => {

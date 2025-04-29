@@ -366,21 +366,65 @@ const CustomerData = () => {
         return mappedRecord;
       });
       
-      // Send the transformed data to the API
-      const response = await fetch('/api/customers/import', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ data: mappedData }),
-      });
+      // Separate contacts into leads and customers based on lifecycleStage
+      const leads: Record<string, any>[] = [];
+      const customers: Record<string, any>[] = [];
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to import mapped CSV data');
+      mappedData.forEach(record => {
+        // Check lifecycleStage to determine if lead or customer
+        const stage = record.lifecycleStage?.toLowerCase();
+        if (stage && (stage === 'lead' || stage === 'prospect' || stage === 'opportunity')) {
+          leads.push(record);
+        } else {
+          customers.push(record);
+        }
+      });
+
+      // Import data via the appropriate endpoints
+      const results: { imported: number, errors: any[] } = { imported: 0, errors: [] };
+
+      // Import customers if any
+      if (customers.length > 0) {
+        const customerResponse = await fetch('/api/customers/import', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ data: customers }),
+        });
+        
+        if (!customerResponse.ok) {
+          const errorData = await customerResponse.json();
+          throw new Error(errorData.message || 'Failed to import customer data');
+        }
+        
+        const customerResult = await customerResponse.json();
+        results.imported += customerResult.imported;
+        results.errors = [...results.errors, ...customerResult.errors];
       }
       
-      return response.json();
+      // Import leads if any
+      if (leads.length > 0) {
+        const leadResponse = await fetch('/api/leads/import', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ data: leads }),
+        });
+        
+        if (!leadResponse.ok) {
+          const errorData = await leadResponse.json();
+          throw new Error(errorData.message || 'Failed to import lead data');
+        }
+        
+        const leadResult = await leadResponse.json();
+        results.imported += leadResult.imported;
+        results.errors = [...results.errors, ...leadResult.errors];
+      }
+      
+      // Return combined results
+      return results;
     },
     onSuccess: (data) => {
       setImportResult(data);
@@ -390,12 +434,13 @@ const CustomerData = () => {
       setParsedCsvData([]);
       
       toast({
-        title: 'CSV Import Successful',
-        description: `Imported ${data.imported} customer records with ${data.errors.length} errors.`,
+        title: 'Import Successful',
+        description: `Imported ${data.imported} records with ${data.errors.length} errors.`,
         variant: 'default',
       });
-      // Invalidate customer-related queries to refresh data
+      // Invalidate both customer and lead queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/leads'] });
     },
     onError: (error: Error) => {
       toast({
