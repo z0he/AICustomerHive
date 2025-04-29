@@ -78,8 +78,25 @@ const FieldMapping: React.FC<FieldMappingProps> = ({
     // Clear any errors
     setMappingErrors([]);
     
-    // Call the onComplete callback with the mapping
-    onComplete(fieldMapping);
+    // Add a special mapping entry for unmapped source fields
+    // These will be collected and stored in customFields
+    const usedSourceFields = Object.values(fieldMapping).filter(val => val !== "");
+    const unmappedSourceFields = sourceFields.filter(field => !usedSourceFields.includes(field));
+    
+    if (unmappedSourceFields.length > 0) {
+      const mappingWithUnmapped = {
+        ...fieldMapping,
+        // Add a special entry to indicate which source fields are unmapped
+        // This will be processed differently in the import function
+        "__unmapped_fields": unmappedSourceFields.join(',')
+      };
+      
+      // Call the onComplete callback with the enhanced mapping
+      onComplete(mappingWithUnmapped);
+    } else {
+      // Call the onComplete callback with the original mapping if no unmapped fields
+      onComplete(fieldMapping);
+    }
   };
   
   return (

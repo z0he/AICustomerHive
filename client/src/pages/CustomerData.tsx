@@ -352,16 +352,42 @@ const CustomerData = () => {
       data: any[]; 
       mapping: Record<string, string> 
     }) => {
+      // Extract unmapped fields if any were identified
+      const unmappedFieldsStr = mapping["__unmapped_fields"];
+      const unmappedFields = unmappedFieldsStr ? unmappedFieldsStr.split(',') : [];
+      
+      // Remove the special mapping entry before proceeding
+      const cleanMapping = { ...mapping };
+      if (unmappedFieldsStr) {
+        delete cleanMapping["__unmapped_fields"];
+      }
+      
       // Transform data according to the mapping
       const mappedData = data.map(record => {
         const mappedRecord: Record<string, any> = {};
         
         // Apply mapping - skip empty source fields (which means "Don't import")
-        Object.entries(mapping).forEach(([targetField, sourceField]) => {
+        Object.entries(cleanMapping).forEach(([targetField, sourceField]) => {
           if (sourceField && sourceField !== "" && record[sourceField] !== undefined) {
             mappedRecord[targetField] = record[sourceField];
           }
         });
+        
+        // If there are unmapped fields, collect them into customFields
+        if (unmappedFields.length > 0) {
+          const customFieldsObj: Record<string, any> = {};
+          
+          unmappedFields.forEach(field => {
+            if (record[field] !== undefined) {
+              customFieldsObj[field] = record[field];
+            }
+          });
+          
+          // Only add customFields if there are any values
+          if (Object.keys(customFieldsObj).length > 0) {
+            mappedRecord.customFields = customFieldsObj;
+          }
+        }
         
         return mappedRecord;
       });
