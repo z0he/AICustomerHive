@@ -332,6 +332,49 @@ export class DbStorage implements IStorage {
     return result[0];
   }
   
+  async insertLead(lead: any): Promise<Lead> {
+    // Ensure fullName is created from firstName and lastName
+    const fullName = `${lead.firstName} ${lead.lastName}`;
+    const initials = this.getInitials(fullName);
+    
+    // Calculate an initial lead score if not provided
+    let score = lead.score;
+    if (score === undefined) {
+      score = this.calculateLeadScore({
+        ...lead,
+        name: fullName
+      });
+    }
+    
+    // Create a Lead object from the imported data
+    const leadData = {
+      name: fullName,
+      email: lead.email,
+      phone: lead.phone || null,
+      company: lead.company || null,
+      jobTitle: lead.jobTitle || null,
+      industry: lead.contactIndustry || lead.industry || null,
+      location: lead.location || lead.country || null,
+      leadSource: lead.leadSource || 'import',
+      leadStatus: lead.leadStatus || 'new',
+      leadOwner: lead.contactOwner || lead.leadOwner || null,
+      lastContactDate: lead.lastContactDate || null,
+      nextFollowUpDate: lead.nextFollowUpDate || null,
+      engagementLevel: lead.engagementLevel || 0,
+      conversionProbability: lead.conversionProbability || 0,
+      score,
+      tags: lead.tags || null,
+      notes: lead.notes || null,
+      initials,
+      createdAt: new Date()
+    };
+    
+    // Use type assertion for the insert
+    const result = await db.insert(leads).values(leadData as any).returning();
+    
+    return result[0];
+  }
+  
   async updateLead(id: number, leadData: Partial<Lead>): Promise<Lead> {
     const result = await db
       .update(leads)
