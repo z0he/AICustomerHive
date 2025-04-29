@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Download, Upload, AlertCircle, CheckCircle, FilePlus, FileText, FileUp } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
+import AuthHeader from '@/components/auth/AuthHeader';
+import Sidebar from '@/components/layout/Sidebar';
 
 const CustomerData = () => {
   const { toast } = useToast();
@@ -228,11 +230,55 @@ const CustomerData = () => {
     importCSVMutation.mutate(file);
   };
 
+  // Get user data for the header
+  const { data: userData } = useQuery({
+    queryKey: ['/api/auth/user'],
+  });
+
+  // Get notifications for the header
+  const { data: notifications = [] } = useQuery({
+    queryKey: ['/api/notifications'],
+    queryFn: async () => {
+      // Default empty array if API not available
+      return [];
+    }
+  });
+
+  // Get recent campaigns for sidebar
+  const { data: recentCampaigns = [] } = useQuery({
+    queryKey: ['/api/campaigns/recent'],
+    queryFn: async () => {
+      // Default empty array if API not available
+      return [];
+    }
+  });
+
+  // Handle logout
+  const handleLogout = () => {
+    // Clear token and redirect to login
+    localStorage.removeItem('auth_token');
+    window.location.href = '/auth';
+  };
+
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Customer Data Management</h1>
+    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
+      {/* Header */}
+      <AuthHeader 
+        user={userData?.user || { id: 1, name: "User", initials: "U" }} 
+        notifications={notifications} 
+        onLogout={handleLogout} 
+      />
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar recentCampaigns={recentCampaigns} />
+        
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
+          <div className="container mx-auto py-4">
+            <h1 className="text-3xl font-bold mb-6">Customer Data Management</h1>
+            
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="export">Export</TabsTrigger>
           <TabsTrigger value="import">Import</TabsTrigger>
@@ -508,6 +554,9 @@ const CustomerData = () => {
           </Card>
         </TabsContent>
       </Tabs>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
