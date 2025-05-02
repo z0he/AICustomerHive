@@ -20,6 +20,265 @@ import {
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {
+  // ----- Marketing Forms methods -----
+  
+  async getMarketingForms(): Promise<MarketingForm[]> {
+    return await db.select().from(marketingForms).orderBy(desc(marketingForms.createdAt));
+  }
+  
+  async getMarketingForm(id: number): Promise<MarketingForm | undefined> {
+    const result = await db.select().from(marketingForms).where(eq(marketingForms.id, id));
+    return result[0];
+  }
+  
+  async createMarketingForm(form: InsertMarketingForm): Promise<MarketingForm> {
+    const formData = {
+      ...form,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      views: 0,
+      submissions: 0,
+      conversionRate: 0
+    };
+    
+    const result = await db.insert(marketingForms).values(formData as any).returning();
+    return result[0];
+  }
+  
+  async updateMarketingForm(id: number, form: Partial<InsertMarketingForm>): Promise<MarketingForm> {
+    const updateData = {
+      ...form,
+      updatedAt: new Date()
+    };
+    
+    const result = await db.update(marketingForms)
+      .set(updateData)
+      .where(eq(marketingForms.id, id))
+      .returning();
+      
+    if (result.length === 0) {
+      throw new Error(`Marketing form with ID ${id} not found`);
+    }
+    
+    return result[0];
+  }
+  
+  async deleteMarketingForm(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(marketingForms)
+        .where(eq(marketingForms.id, id))
+        .returning();
+        
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Error deleting marketing form ${id}:`, error);
+      return false;
+    }
+  }
+  
+  async getFormSubmissions(formId: number): Promise<FormSubmission[]> {
+    return await db.select()
+      .from(formSubmissions)
+      .where(eq(formSubmissions.formId, formId))
+      .orderBy(desc(formSubmissions.submittedAt));
+  }
+  
+  async createFormSubmission(submission: InsertFormSubmission): Promise<FormSubmission> {
+    const submissionData = {
+      ...submission,
+      contactId: null  // Set contactId to null if not provided
+    };
+    
+    const result = await db.insert(formSubmissions)
+      .values(submissionData as any)
+      .returning();
+      
+    return result[0];
+  }
+  
+  async incrementFormViews(formId: number): Promise<void> {
+    const form = await this.getMarketingForm(formId);
+    
+    if (!form) {
+      throw new Error(`Marketing form with ID ${formId} not found`);
+    }
+    
+    // Calculate views
+    const views = (form.views || 0) + 1;
+    
+    // Calculate conversion rate
+    let conversionRate = 0;
+    if (views > 0) {
+      conversionRate = Math.round(((form.submissions || 0) / views) * 100);
+    }
+    
+    // Update the form with new stats
+    await db.update(marketingForms)
+      .set({ 
+        views: views,
+        conversionRate: conversionRate
+      })
+      .where(eq(marketingForms.id, formId));
+  }
+  
+  async incrementFormSubmissions(formId: number): Promise<void> {
+    const form = await this.getMarketingForm(formId);
+    
+    if (!form) {
+      throw new Error(`Marketing form with ID ${formId} not found`);
+    }
+    
+    // Calculate submissions
+    const submissions = (form.submissions || 0) + 1;
+    
+    // Calculate conversion rate
+    let conversionRate = 0;
+    if (form.views && form.views > 0) {
+      conversionRate = Math.round((submissions / form.views) * 100);
+    }
+    
+    // Update the form with new stats
+    await db.update(marketingForms)
+      .set({ 
+        submissions: submissions,
+        conversionRate: conversionRate
+      })
+      .where(eq(marketingForms.id, formId));
+  }
+  
+  async generateFormEmbedCode(formId: number): Promise<string> {
+    const form = await this.getMarketingForm(formId);
+    
+    if (!form) {
+      throw new Error(`Marketing form with ID ${formId} not found`);
+    }
+    
+    // Generate embed code
+    const embedCode = `
+<!-- CRM Form Embed Code -->
+<div id="form-container-${formId}"></div>
+<script src="${process.env.PUBLIC_URL || ''}/api/marketing/forms/embed/${formId}.js"></script>
+<!-- End CRM Form Embed Code -->
+`;
+    
+    // Store the embed code in the form record
+    await db.update(marketingForms)
+      .set({ embedCode })
+      .where(eq(marketingForms.id, formId));
+    
+    return embedCode;
+  }
+  
+  async getWebVisitorByVisitorId(visitorId: string): Promise<WebVisitor | undefined> {
+    const result = await db.select()
+      .from(webVisitors)
+      .where(eq(webVisitors.visitorId, visitorId));
+      
+    return result[0];
+  }
+  
+  async createWebVisitor(visitor: InsertWebVisitor): Promise<WebVisitor> {
+    const visitorData = {
+      ...visitor,
+      contactId: null, // Set contactId to null if not provided
+      firstVisitAt: new Date(),
+      lastVisitAt: new Date(),
+      convertedAt: null,
+      totalVisits: 1,
+      totalPageviews: 1
+    };
+    
+    const result = await db.insert(webVisitors)
+      .values(visitorData as any)
+      .returning();
+      
+    return result[0];
+  }
+  
+  async updateWebVisitor(visitorId: string, data: Partial<WebVisitor>): Promise<WebVisitor> {
+    const result = await db.update(webVisitors)
+      .set(data)
+      .where(eq(webVisitors.visitorId, visitorId))
+      .returning();
+      
+    if (result.length === 0) {
+      throw new Error(`Web visitor with ID ${visitorId} not found`);
+    }
+    
+    return result[0];
+  }
+  
+  async createPageView(pageView: InsertPageView): Promise<PageView> {
+    const pageViewData = {
+      ...pageView,
+      timestamp: new Date(),
+      contactId: null // Set contactId to null if not provided
+    };
+    
+    const result = await db.insert(pageViews)
+      .values(pageViewData as any)
+      .returning();
+      
+    return result[0];
+  }
+  
+  async generateTrackingCode(websiteUrl: string, options: {owner: number}): Promise<string> {
+    // Create or update tracking installation record
+    const existing = await db.select()
+      .from(trackingInstallations)
+      .where(eq(trackingInstallations.websiteUrl, websiteUrl));
+      
+    let trackingCode = '';
+    
+    if (existing.length > 0) {
+      // Update existing tracking installation
+      const result = await db.update(trackingInstallations)
+        .set({ 
+          lastPingAt: new Date(), 
+          owner: options.owner,
+          status: 'active'
+        })
+        .where(eq(trackingInstallations.websiteUrl, websiteUrl))
+        .returning();
+        
+      trackingCode = result[0].trackingCode;
+    } else {
+      // Create new tracking installation
+      const installationData = {
+        websiteUrl,
+        status: 'active',
+        installationDate: new Date(),
+        trackingCode: `CRM-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        owner: options.owner,
+        settings: {},
+        notes: null
+      };
+      
+      const result = await db.insert(trackingInstallations)
+        .values(installationData as any)
+        .returning();
+        
+      trackingCode = result[0].trackingCode;
+    }
+    
+    // Generate JavaScript tracking code
+    const jsTrackingCode = `
+<!-- CRM Tracking Code -->
+<script type="text/javascript">
+  (function(w, d, s, tc) {
+    let scriptTag = d.createElement(s);
+    scriptTag.async = true;
+    scriptTag.src = '${process.env.PUBLIC_URL || ''}/api/marketing/tracking/' + tc + '.js';
+    let firstScriptTag = d.getElementsByTagName(s)[0];
+    firstScriptTag.parentNode.insertBefore(scriptTag, firstScriptTag);
+  })(window, document, 'script', '${trackingCode}');
+</script>
+<!-- End CRM Tracking Code -->
+`;
+    
+    return jsTrackingCode;
+  }
+  
   // ----- User methods -----
   
   async getUser(id: number): Promise<User | undefined> {
