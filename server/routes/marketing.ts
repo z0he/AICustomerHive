@@ -135,10 +135,11 @@ router.get('/forms/analytics', checkAuth, async (req: Request, res: Response) =>
   try {
     const timeRange = req.query.timeRange as string || '30d';
     
-    // Fetch actual analytics data from database
-    // This will be replaced with real data queries in the future
-    // For now we still use example data but ensure it's sanitized properly
+    // In a real implementation, we would query the database for analytics data
+    // For now, we'll simulate this with example data
     
+    // Create static analytics data that doesn't require database access
+    // This avoids any NaN errors from database queries
     const analyticsData = {
       timeData: [
         { date: 'Apr 1', views: 120, submissions: 18, conversionRate: 15 },
