@@ -28,12 +28,16 @@ interface Notification {
 }
 
 interface AuthHeaderProps {
-  user: User;
-  notifications: Notification[];
-  onLogout: () => void;
+  user?: User;
+  notifications?: Notification[];
+  onLogout?: () => void;
 }
 
-const AuthHeader: FC<AuthHeaderProps> = ({ user, notifications, onLogout }) => {
+const AuthHeader: FC<AuthHeaderProps> = ({ 
+  user = { id: 1, name: "User", initials: "U" },
+  notifications = [],
+  onLogout = () => {} 
+}) => {
   const unreadCount = notifications.filter(n => !n.read).length;
   
   return (

@@ -28,10 +28,10 @@ interface RecentCampaign {
 
 interface SidebarProps {
   activeItem?: string;
-  recentCampaigns: RecentCampaign[];
+  recentCampaigns?: RecentCampaign[];
 }
 
-const Sidebar: FC<SidebarProps> = ({ recentCampaigns }) => {
+const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
   const [location] = useLocation();
   
   const mainNavItems: SidebarItem[] = [
