@@ -130,44 +130,39 @@ router.delete('/forms/:id', checkAuth, async (req: Request, res: Response) => {
   }
 });
 
-// Get form analytics
-router.get('/forms/analytics', checkAuth, async (req: Request, res: Response) => {
-  try {
-    const timeRange = req.query.timeRange as string || '30d';
-    
-    // In a real implementation, we would query the database for analytics data
-    // For now, we'll simulate this with example data
-    
-    // Create static analytics data that doesn't require database access
-    // This avoids any NaN errors from database queries
-    const analyticsData = {
-      timeData: [
-        { date: 'Apr 1', views: 120, submissions: 18, conversionRate: 15 },
-        { date: 'Apr 8', views: 140, submissions: 24, conversionRate: 17.1 },
-        { date: 'Apr 15', views: 135, submissions: 27, conversionRate: 20 },
-        { date: 'Apr 22', views: 180, submissions: 36, conversionRate: 20 },
-        { date: 'Apr 29', views: 210, submissions: 48, conversionRate: 22.9 },
-        { date: 'May 1', views: 160, submissions: 35, conversionRate: 21.9 },
-      ],
-      deviceData: [
-        { name: 'Desktop', value: 55 },
-        { name: 'Mobile', value: 40 },
-        { name: 'Tablet', value: 5 },
-      ],
-      sourceData: [
-        { name: 'Direct Traffic', value: 30 },
-        { name: 'Organic Search', value: 25 },
-        { name: 'Social Media', value: 20 },
-        { name: 'Email Campaigns', value: 15 },
-        { name: 'Referrals', value: 10 },
-      ],
-    };
-    
-    return res.json(analyticsData);
-  } catch (error) {
-    console.error('Error fetching form analytics:', error);
-    return res.status(500).json({ message: 'Failed to fetch form analytics' });
-  }
+// Get form analytics - completely static implementation
+router.get('/forms/analytics', checkAuth, (req: Request, res: Response) => {
+  // Note: This is a synchronous function now (not async) to avoid any database calls
+  
+  // Use a static timeRange parameter (client parameter is ignored for now)
+  const timeRange = '30d';
+  
+  // Static analytics data that doesn't require database access at all
+  const analyticsData = {
+    timeData: [
+      { date: 'Apr 1', views: 120, submissions: 18, conversionRate: 15 },
+      { date: 'Apr 8', views: 140, submissions: 24, conversionRate: 17.1 },
+      { date: 'Apr 15', views: 135, submissions: 27, conversionRate: 20 },
+      { date: 'Apr 22', views: 180, submissions: 36, conversionRate: 20 },
+      { date: 'Apr 29', views: 210, submissions: 48, conversionRate: 22.9 },
+      { date: 'May 1', views: 160, submissions: 35, conversionRate: 21.9 },
+    ],
+    deviceData: [
+      { name: 'Desktop', value: 55 },
+      { name: 'Mobile', value: 40 },
+      { name: 'Tablet', value: 5 },
+    ],
+    sourceData: [
+      { name: 'Direct Traffic', value: 30 },
+      { name: 'Organic Search', value: 25 },
+      { name: 'Social Media', value: 20 },
+      { name: 'Email Campaigns', value: 15 },
+      { name: 'Referrals', value: 10 },
+    ],
+  };
+  
+  // Return the static data
+  return res.json(analyticsData);
 });
 
 // Get form submissions
