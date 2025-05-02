@@ -18,10 +18,14 @@ import {
   insertEmailLogSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
+import marketingRoutes from "./routes/marketing";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
+  
+  // Mount marketing routes
+  app.use("/api/marketing", marketingRoutes);
   
   // Legacy compatibility redirect for user current route
   app.get("/api/user/current", (req, res) => {

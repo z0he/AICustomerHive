@@ -28,6 +28,25 @@ export interface IStorage {
   
   // Campaign methods
   getCampaigns(period?: string): Promise<Campaign[]>;
+  
+  // Marketing Forms methods
+  getMarketingForms(): Promise<MarketingForm[]>;
+  getMarketingForm(id: number): Promise<MarketingForm | undefined>;
+  createMarketingForm(form: InsertMarketingForm): Promise<MarketingForm>;
+  updateMarketingForm(id: number, form: Partial<InsertMarketingForm>): Promise<MarketingForm>;
+  deleteMarketingForm(id: number): Promise<boolean>;
+  getFormSubmissions(formId: number): Promise<FormSubmission[]>;
+  createFormSubmission(submission: InsertFormSubmission): Promise<FormSubmission>;
+  incrementFormViews(formId: number): Promise<void>;
+  incrementFormSubmissions(formId: number): Promise<void>;
+  generateFormEmbedCode(formId: number): Promise<string>;
+  
+  // Web Visitor Tracking methods
+  getWebVisitorByVisitorId(visitorId: string): Promise<WebVisitor | undefined>;
+  createWebVisitor(visitor: InsertWebVisitor): Promise<WebVisitor>;
+  updateWebVisitor(visitorId: string, data: Partial<WebVisitor>): Promise<WebVisitor>;
+  createPageView(pageView: InsertPageView): Promise<PageView>;
+  generateTrackingCode(websiteUrl: string, options: {owner: number}): Promise<string>;
   getCampaign(id: number): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
   getRecentCampaigns(limit?: number): Promise<Campaign[]>;
@@ -142,6 +161,11 @@ export class MemStorage implements IStorage {
   private calendarEvents: Map<number, CalendarEvent>;
   private emailTemplates: Map<number, EmailTemplate>;
   private emailLogs: Map<number, EmailLog>;
+  private marketingForms: Map<number, MarketingForm>;
+  private formSubmissions: Map<number, FormSubmission>;
+  private webVisitors: Map<string, WebVisitor>;
+  private pageViews: Map<number, PageView>;
+  private trackingInstallations: Map<number, TrackingInstallation>;
   
   private userCurrentId: number;
   private campaignCurrentId: number;
@@ -153,6 +177,10 @@ export class MemStorage implements IStorage {
   private calendarEventCurrentId: number;
   private emailTemplateCurrentId: number;
   private emailLogCurrentId: number;
+  private marketingFormCurrentId: number;
+  private formSubmissionCurrentId: number;
+  private pageViewCurrentId: number;
+  private trackingInstallationCurrentId: number;
 
   constructor() {
     this.users = new Map();
