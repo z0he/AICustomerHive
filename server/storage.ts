@@ -151,6 +151,341 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  // ----- Marketing Forms methods -----
+  async getMarketingForms(folder?: string): Promise<MarketingForm[]> {
+    let forms = Array.from(this.marketingForms.values());
+    
+    if (folder) {
+      forms = forms.filter(form => form.folder === folder);
+    }
+    
+    return forms.sort((a, b) => b.id - a.id);
+  }
+  
+  async getMarketingForm(id: number): Promise<MarketingForm | undefined> {
+    return this.marketingForms.get(id);
+  }
+  
+  async createMarketingForm(form: InsertMarketingForm): Promise<MarketingForm> {
+    const id = this.marketingFormCurrentId++;
+    
+    const marketingForm: MarketingForm = {
+      ...form,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      embedCode: '', // Will be generated separately
+      views: 0,
+      submissions: 0,
+      conversionRate: 0
+    };
+    
+    this.marketingForms.set(id, marketingForm);
+    
+    // Generate and update the embed code
+    const embedCode = await this.generateFormEmbedCode(id);
+    marketingForm.embedCode = embedCode;
+    
+    return marketingForm;
+  }
+  
+  async updateMarketingForm(id: number, formData: Partial<MarketingForm>): Promise<MarketingForm> {
+    const existingForm = this.marketingForms.get(id);
+    
+    if (!existingForm) {
+      throw new Error(`Marketing form with ID ${id} not found`);
+    }
+    
+    const updatedForm: MarketingForm = {
+      ...existingForm,
+      ...formData,
+      id,
+      updatedAt: new Date()
+    };
+    
+    this.marketingForms.set(id, updatedForm);
+    
+    // If form fields were updated, regenerate the embed code
+    if (formData.formFields || formData.formType || formData.formStyle) {
+      updatedForm.embedCode = await this.generateFormEmbedCode(id);
+    }
+    
+    return updatedForm;
+  }
+  
+  async deleteMarketingForm(id: number): Promise<boolean> {
+    return this.marketingForms.delete(id);
+  }
+  
+  async incrementFormViews(formId: number): Promise<MarketingForm> {
+    const form = this.marketingForms.get(formId);
+    
+    if (!form) {
+      throw new Error(`Marketing form with ID ${formId} not found`);
+    }
+    
+    const updatedForm = {
+      ...form,
+      views: form.views + 1
+    };
+    
+    // Update conversion rate
+    if (updatedForm.views > 0 && updatedForm.submissions > 0) {
+      updatedForm.conversionRate = Math.round((updatedForm.submissions / updatedForm.views) * 100);
+    }
+    
+    this.marketingForms.set(formId, updatedForm);
+    return updatedForm;
+  }
+  
+  async incrementFormSubmissions(formId: number): Promise<MarketingForm> {
+    const form = this.marketingForms.get(formId);
+    
+    if (!form) {
+      throw new Error(`Marketing form with ID ${formId} not found`);
+    }
+    
+    const updatedForm = {
+      ...form,
+      submissions: form.submissions + 1
+    };
+    
+    // Update conversion rate
+    if (updatedForm.views > 0) {
+      updatedForm.conversionRate = Math.round((updatedForm.submissions / updatedForm.views) * 100);
+    }
+    
+    this.marketingForms.set(formId, updatedForm);
+    return updatedForm;
+  }
+  
+  async getFormSubmissions(formId?: number): Promise<FormSubmission[]> {
+    let submissions = Array.from(this.formSubmissions.values());
+    
+    if (formId !== undefined) {
+      submissions = submissions.filter(sub => sub.formId === formId);
+    }
+    
+    return submissions.sort((a, b) => 
+      new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    );
+  }
+  
+  async getFormSubmission(id: number): Promise<FormSubmission | undefined> {
+    return this.formSubmissions.get(id);
+  }
+  
+  async createFormSubmission(submission: InsertFormSubmission): Promise<FormSubmission> {
+    const id = this.formSubmissionCurrentId++;
+    
+    const formSubmission: FormSubmission = {
+      ...submission,
+      id,
+      submittedAt: new Date()
+    };
+    
+    this.formSubmissions.set(id, formSubmission);
+    return formSubmission;
+  }
+  
+  async getFormSubmissionsByContact(contactId: number): Promise<FormSubmission[]> {
+    return Array.from(this.formSubmissions.values())
+      .filter(sub => sub.contactId === contactId)
+      .sort((a, b) => 
+        new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+      );
+  }
+  
+  async generateFormEmbedCode(formId: number): Promise<string> {
+    // Generate JavaScript embed code for the form
+    const embedCode = `<script src="https://yourcrm.com/api/marketing/forms/embed/${formId}.js"></script>
+<div id="crm-form-${formId}"></div>`;
+    
+    return embedCode;
+  }
+  
+  // ----- Web Visitor Tracking methods -----
+  async getWebVisitors(): Promise<WebVisitor[]> {
+    return Array.from(this.webVisitors.values())
+      .sort((a, b) => 
+        new Date(b.lastVisitAt).getTime() - new Date(a.lastVisitAt).getTime()
+      );
+  }
+  
+  async getWebVisitor(id: number): Promise<WebVisitor | undefined> {
+    return Array.from(this.webVisitors.values())
+      .find(visitor => visitor.id === id);
+  }
+  
+  async getWebVisitorByVisitorId(visitorId: string): Promise<WebVisitor | undefined> {
+    return this.webVisitors.get(visitorId);
+  }
+  
+  async createWebVisitor(visitor: InsertWebVisitor): Promise<WebVisitor> {
+    // For web visitors, we use the visitorId as the key in the map
+    // But we still assign a numeric id for API consistency
+    const id = this.webVisitors.size + 1;
+    
+    const webVisitor: WebVisitor = {
+      ...visitor,
+      id,
+      totalVisits: 1,
+      totalPageviews: 1
+    };
+    
+    this.webVisitors.set(visitor.visitorId, webVisitor);
+    return webVisitor;
+  }
+  
+  async updateWebVisitor(visitorId: string, visitorData: Partial<WebVisitor>): Promise<WebVisitor> {
+    const existingVisitor = this.webVisitors.get(visitorId);
+    
+    if (!existingVisitor) {
+      throw new Error(`Web visitor with ID ${visitorId} not found`);
+    }
+    
+    const updatedVisitor: WebVisitor = {
+      ...existingVisitor,
+      ...visitorData
+    };
+    
+    this.webVisitors.set(visitorId, updatedVisitor);
+    return updatedVisitor;
+  }
+  
+  async identifyVisitor(visitorId: string, contactId: number): Promise<WebVisitor> {
+    const visitor = this.webVisitors.get(visitorId);
+    
+    if (!visitor) {
+      throw new Error(`Web visitor with ID ${visitorId} not found`);
+    }
+    
+    const updatedVisitor: WebVisitor = {
+      ...visitor,
+      contactId
+    };
+    
+    this.webVisitors.set(visitorId, updatedVisitor);
+    return updatedVisitor;
+  }
+  
+  async getPageViews(visitorId?: string): Promise<PageView[]> {
+    let pageViews = Array.from(this.pageViews.values());
+    
+    if (visitorId) {
+      pageViews = pageViews.filter(view => view.visitorId === visitorId);
+    }
+    
+    return pageViews.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }
+  
+  async createPageView(pageView: InsertPageView): Promise<PageView> {
+    const id = this.pageViewCurrentId++;
+    
+    const newPageView: PageView = {
+      ...pageView,
+      id
+    };
+    
+    this.pageViews.set(id, newPageView);
+    return newPageView;
+  }
+  
+  async getVisitorPageViews(visitorId: string): Promise<PageView[]> {
+    return Array.from(this.pageViews.values())
+      .filter(view => view.visitorId === visitorId)
+      .sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+  }
+  
+  async getContactPageViews(contactId: number): Promise<PageView[]> {
+    // First get all visitors associated with this contact
+    const visitors = Array.from(this.webVisitors.values())
+      .filter(visitor => visitor.contactId === contactId)
+      .map(visitor => visitor.visitorId);
+    
+    // Then get all page views from these visitors
+    return Array.from(this.pageViews.values())
+      .filter(view => visitors.includes(view.visitorId))
+      .sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+  }
+  
+  async getTrackingInstallations(): Promise<TrackingInstallation[]> {
+    return Array.from(this.trackingInstallations.values());
+  }
+  
+  async getTrackingInstallation(id: number): Promise<TrackingInstallation | undefined> {
+    return this.trackingInstallations.get(id);
+  }
+  
+  async createTrackingInstallation(installation: InsertTrackingInstallation): Promise<TrackingInstallation> {
+    const id = this.trackingInstallationCurrentId++;
+    
+    const trackingInstallation: TrackingInstallation = {
+      ...installation,
+      id,
+      installDate: new Date(),
+      lastPing: new Date(),
+      status: 'active'
+    };
+    
+    this.trackingInstallations.set(id, trackingInstallation);
+    return trackingInstallation;
+  }
+  
+  async updateTrackingInstallation(id: number, data: Partial<TrackingInstallation>): Promise<TrackingInstallation> {
+    const installation = this.trackingInstallations.get(id);
+    
+    if (!installation) {
+      throw new Error(`Tracking installation with ID ${id} not found`);
+    }
+    
+    const updatedInstallation: TrackingInstallation = {
+      ...installation,
+      ...data
+    };
+    
+    this.trackingInstallations.set(id, updatedInstallation);
+    return updatedInstallation;
+  }
+  
+  async updateTrackingLastPing(id: number): Promise<TrackingInstallation> {
+    return this.updateTrackingInstallation(id, { lastPing: new Date() });
+  }
+  
+  async generateTrackingCode(websiteUrl: string, settings?: any): Promise<string> {
+    // Create a new tracking installation
+    const installation = await this.createTrackingInstallation({
+      websiteUrl,
+      settings: settings || {},
+      domain: new URL(websiteUrl).hostname
+    });
+    
+    // Generate JavaScript tracking code
+    const trackingCode = `<!-- CRM Tracking Code -->
+<script>
+  (function(w,d,s,l,i){
+    w[l]=w[l]||[];w[l].push({'installationId':i});
+    var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';
+    j.async=true;j.src='https://yourcrm.com/api/marketing/tracking/script.js?id='+i+dl;
+    f.parentNode.insertBefore(j,f);
+  })(window,document,'script','crmTracker','${installation.id}');
+</script>
+<!-- End CRM Tracking Code -->`;
+    
+    // Update the installation with the generated code
+    await this.updateTrackingInstallation(installation.id, { 
+      trackingCode, 
+      status: 'pending' 
+    });
+    
+    return trackingCode;
+  }
   private users: Map<number, User>;
   private campaigns: Map<number, Campaign>;
   private customers: Map<number, Customer>;
@@ -1124,9 +1459,13 @@ export class MemStorage implements IStorage {
       username: "johndoe",
       password: "password",
       name: "John Doe",
-      initials: "JD"
+      initials: "JD",
+      googleId: null
     });
     this.userCurrentId = 2;
+    
+    // Seed marketing forms
+    this.seedMarketingForms();
     
     // Seed campaigns
     const campaigns = [
@@ -1390,6 +1729,173 @@ export class MemStorage implements IStorage {
     
     // Initialize empty email logs
     this.emailLogCurrentId = 1;
+    
+    // Initialize marketing forms collections
+    this.marketingForms = new Map();
+    this.formSubmissions = new Map();
+    this.webVisitors = new Map();
+    this.pageViews = new Map();
+    this.trackingInstallations = new Map();
+    
+    this.marketingFormCurrentId = 1;
+    this.formSubmissionCurrentId = 1;
+    this.pageViewCurrentId = 1;
+    this.trackingInstallationCurrentId = 1;
+  }
+  
+  // ----- Seed Marketing Forms data -----
+  private seedMarketingForms() {
+    // Create sample marketing forms
+    const contactForm: MarketingForm = {
+      id: this.marketingFormCurrentId++,
+      name: "Contact Us Form",
+      title: "Contact Us",
+      description: "Get in touch with our team",
+      submitButtonText: "Send Message",
+      successMessage: "Thank you for contacting us! We'll be in touch soon.",
+      redirectUrl: null,
+      formFields: [
+        { 
+          id: "name", 
+          type: "text", 
+          label: "Full Name", 
+          placeholder: "Enter your full name",
+          required: true,
+          order: 1
+        },
+        { 
+          id: "email", 
+          type: "email", 
+          label: "Email Address", 
+          placeholder: "your@email.com",
+          required: true,
+          order: 2
+        },
+        { 
+          id: "company", 
+          type: "text", 
+          label: "Company", 
+          placeholder: "Your company name",
+          required: false,
+          order: 3
+        },
+        { 
+          id: "message", 
+          type: "textarea", 
+          label: "Message", 
+          placeholder: "How can we help you?",
+          required: true,
+          order: 4
+        }
+      ],
+      formStyle: {
+        theme: "light",
+        borderRadius: "4px",
+        primaryColor: "#4F46E5",
+        buttonStyle: "filled",
+        width: "100%"
+      },
+      formType: "inline",
+      status: "active",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: 1,
+      folder: "Website Forms",
+      campaignId: null,
+      trackingEnabled: true,
+      captchaEnabled: false,
+      customCss: null,
+      customJs: null,
+      embedCode: '<script src="https://yourcrm.com/api/marketing/forms/embed/1.js"></script>\n<div id="crm-form-1"></div>',
+      views: 156,
+      submissions: 23,
+      conversionRate: 14
+    };
+    
+    const leadMagnetForm: MarketingForm = {
+      id: this.marketingFormCurrentId++,
+      name: "Whitepaper Download",
+      title: "Get Our Free Guide",
+      description: "Download our comprehensive guide to increasing sales",
+      submitButtonText: "Get The Guide",
+      successMessage: "Thank you! Your download link has been sent to your email.",
+      redirectUrl: "/thank-you",
+      formFields: [
+        { 
+          id: "firstName", 
+          type: "text", 
+          label: "First Name", 
+          placeholder: "John",
+          required: true,
+          order: 1
+        },
+        { 
+          id: "lastName", 
+          type: "text", 
+          label: "Last Name", 
+          placeholder: "Doe",
+          required: true,
+          order: 2
+        },
+        { 
+          id: "email", 
+          type: "email", 
+          label: "Work Email", 
+          placeholder: "you@company.com",
+          required: true,
+          order: 3
+        },
+        { 
+          id: "company", 
+          type: "text", 
+          label: "Company", 
+          placeholder: "Your company",
+          required: true,
+          order: 4
+        },
+        { 
+          id: "jobTitle", 
+          type: "text", 
+          label: "Job Title", 
+          placeholder: "Your role",
+          required: false,
+          order: 5
+        },
+        { 
+          id: "consent", 
+          type: "checkbox", 
+          label: "I agree to receive marketing communications", 
+          required: true,
+          order: 6
+        }
+      ],
+      formStyle: {
+        theme: "light",
+        borderRadius: "8px",
+        primaryColor: "#2563EB",
+        buttonStyle: "gradient",
+        width: "400px",
+        boxShadow: true
+      },
+      formType: "popup",
+      status: "active",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: 1,
+      folder: "Lead Magnets",
+      campaignId: 2,
+      trackingEnabled: true,
+      captchaEnabled: true,
+      customCss: null,
+      customJs: null,
+      embedCode: '<script src="https://yourcrm.com/api/marketing/forms/embed/2.js"></script>\n<div id="crm-form-2"></div>',
+      views: 428,
+      submissions: 112,
+      conversionRate: 26
+    };
+    
+    this.marketingForms.set(contactForm.id, contactForm);
+    this.marketingForms.set(leadMagnetForm.id, leadMagnetForm);
   }
 }
 
