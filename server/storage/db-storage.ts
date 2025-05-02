@@ -11,7 +11,12 @@ import {
   messageVariants, type MessageVariant, type InsertMessageVariant,
   emailTemplates, type EmailTemplate, type InsertEmailTemplate,
   emailLogs, type EmailLog, type InsertEmailLog,
-  calendarEvents, type CalendarEvent, type InsertCalendarEvent
+  calendarEvents, type CalendarEvent, type InsertCalendarEvent,
+  marketingForms, type MarketingForm, type InsertMarketingForm,
+  formSubmissions, type FormSubmission, type InsertFormSubmission,
+  webVisitors, type WebVisitor, type InsertWebVisitor,
+  pageViews, type PageView, type InsertPageView,
+  trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {

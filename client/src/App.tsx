@@ -16,6 +16,7 @@ import NotFound from "@/pages/not-found";
 import CustomerData from "@/pages/CustomerData";
 import EmailManagement from "@/pages/EmailManagement";
 import CalendarManagement from "@/pages/CalendarManagement";
+import MarketingForms from "@/pages/MarketingForms";
 
 // Custom placeholder page for routes under development
 const UnderDevelopment = ({ title }: { title: string }) => {
@@ -43,6 +44,7 @@ function Router() {
       <ProtectedRoute path="/customer-data" component={CustomerData} />
       <ProtectedRoute path="/email" component={EmailManagement} />
       <ProtectedRoute path="/calendar" component={CalendarManagement} />
+      <ProtectedRoute path="/marketing-forms" component={MarketingForms} />
       
       {/* Campaign detail route */}
       <ProtectedRoute path="/campaigns/:id" component={CampaignDetail} />
