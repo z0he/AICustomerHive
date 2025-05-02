@@ -108,8 +108,8 @@ export class DbStorage implements IStorage {
     
     // Calculate conversion rate
     let conversionRate = 0;
-    if (views > 0) {
-      conversionRate = Math.round(((form.submissions || 0) / views) * 100);
+    if (views > 0 && form.submissions && form.submissions > 0) {
+      conversionRate = Math.round((form.submissions / views) * 100);
     }
     
     // Update the form with new stats
