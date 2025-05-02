@@ -8,7 +8,12 @@ import {
   messageVariants, type MessageVariant, type InsertMessageVariant,
   calendarEvents, type CalendarEvent, type InsertCalendarEvent,
   emailTemplates, type EmailTemplate, type InsertEmailTemplate,
-  emailLogs, type EmailLog, type InsertEmailLog
+  emailLogs, type EmailLog, type InsertEmailLog,
+  marketingForms, type MarketingForm, type InsertMarketingForm,
+  formSubmissions, type FormSubmission, type InsertFormSubmission,
+  webVisitors, type WebVisitor, type InsertWebVisitor,
+  pageViews, type PageView, type InsertPageView,
+  trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
 
@@ -86,6 +91,44 @@ export interface IStorage {
   createEmailLog(log: InsertEmailLog): Promise<EmailLog>;
   sendEmail(from: string, to: string, subject: string, body: string, options?: any): Promise<EmailLog>;
   sendEmailWithTemplate(templateId: number, to: string, data: any, options?: any): Promise<EmailLog>;
+  
+  // Marketing Forms
+  getMarketingForms(folder?: string): Promise<MarketingForm[]>;
+  getMarketingForm(id: number): Promise<MarketingForm | undefined>;
+  createMarketingForm(form: InsertMarketingForm): Promise<MarketingForm>;
+  updateMarketingForm(id: number, formData: Partial<MarketingForm>): Promise<MarketingForm>;
+  deleteMarketingForm(id: number): Promise<boolean>;
+  generateFormEmbedCode(formId: number): Promise<string>;
+  incrementFormViews(formId: number): Promise<MarketingForm>;
+  incrementFormSubmissions(formId: number): Promise<MarketingForm>;
+  
+  // Form Submissions
+  getFormSubmissions(formId?: number): Promise<FormSubmission[]>;
+  getFormSubmission(id: number): Promise<FormSubmission | undefined>;
+  createFormSubmission(submission: InsertFormSubmission): Promise<FormSubmission>;
+  getFormSubmissionsByContact(contactId: number): Promise<FormSubmission[]>;
+  
+  // Web Visitor Tracking
+  getWebVisitors(): Promise<WebVisitor[]>;
+  getWebVisitor(id: number): Promise<WebVisitor | undefined>;
+  getWebVisitorByVisitorId(visitorId: string): Promise<WebVisitor | undefined>;
+  createWebVisitor(visitor: InsertWebVisitor): Promise<WebVisitor>;
+  updateWebVisitor(visitorId: string, visitorData: Partial<WebVisitor>): Promise<WebVisitor>;
+  identifyVisitor(visitorId: string, contactId: number): Promise<WebVisitor>;
+  
+  // Page Views
+  getPageViews(visitorId?: string): Promise<PageView[]>;
+  createPageView(pageView: InsertPageView): Promise<PageView>;
+  getVisitorPageViews(visitorId: string): Promise<PageView[]>;
+  getContactPageViews(contactId: number): Promise<PageView[]>;
+  
+  // Tracking Installations
+  getTrackingInstallations(): Promise<TrackingInstallation[]>;
+  getTrackingInstallation(id: number): Promise<TrackingInstallation | undefined>;
+  createTrackingInstallation(installation: InsertTrackingInstallation): Promise<TrackingInstallation>;
+  updateTrackingInstallation(id: number, data: Partial<TrackingInstallation>): Promise<TrackingInstallation>;
+  generateTrackingCode(websiteUrl: string, settings?: any): Promise<string>;
+  updateTrackingLastPing(id: number): Promise<TrackingInstallation>;
 }
 
 export class MemStorage implements IStorage {

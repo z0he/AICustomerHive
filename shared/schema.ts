@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, json, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -326,3 +326,226 @@ export const insertEmailLogSchema = createInsertSchema(emailLogs).pick({
 
 export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
 export type EmailLog = typeof emailLogs.$inferSelect;
+
+// Marketing Forms table
+export const marketingForms = pgTable("marketing_forms", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  submitButtonText: text("submit_button_text").default("Submit"),
+  successMessage: text("success_message").default("Thank you for your submission!"),
+  redirectUrl: text("redirect_url"),
+  formFields: jsonb("form_fields").notNull(), // Array of field definitions with types, labels, etc.
+  formStyle: jsonb("form_style"), // CSS styling options
+  formType: text("form_type").default("inline"), // inline, popup, slide-in, etc.
+  status: text("status").default("active"), // active, inactive, draft
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at"),
+  createdBy: integer("created_by"), // reference to user
+  folder: text("folder").default("Default"),
+  campaignId: integer("campaign_id"), // Optional association with a campaign
+  trackingEnabled: boolean("tracking_enabled").default(true),
+  captchaEnabled: boolean("captcha_enabled").default(false),
+  customCss: text("custom_css"),
+  customJs: text("custom_js"),
+  embedCode: text("embed_code"), // Generated embed code
+  views: integer("views").default(0),
+  submissions: integer("submissions").default(0),
+  conversionRate: integer("conversion_rate").default(0),
+});
+
+export const insertMarketingFormSchema = createInsertSchema(marketingForms).pick({
+  name: true,
+  title: true,
+  description: true,
+  submitButtonText: true,
+  successMessage: true,
+  redirectUrl: true,
+  formFields: true,
+  formStyle: true,
+  formType: true,
+  status: true,
+  createdBy: true,
+  folder: true,
+  campaignId: true,
+  trackingEnabled: true,
+  captchaEnabled: true,
+  customCss: true,
+  customJs: true,
+});
+
+export type InsertMarketingForm = z.infer<typeof insertMarketingFormSchema>;
+export type MarketingForm = typeof marketingForms.$inferSelect;
+
+// Form Submissions table
+export const formSubmissions = pgTable("form_submissions", {
+  id: serial("id").primaryKey(),
+  formId: integer("form_id").notNull(),
+  data: jsonb("data").notNull(), // The form submission data
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  submittedAt: timestamp("submitted_at").notNull(),
+  contactId: integer("contact_id"), // Link to customer or lead if identified
+  pageUrl: text("page_url"), // URL where form was submitted
+  referrer: text("referrer"), // Referring URL
+  formSource: text("form_source").default("website"), // Where form was embedded: website, landing page, etc.
+  originalSource: text("original_source"), // Direct Traffic, Organic Search, etc.
+  originalSourceDetail: text("original_source_detail"), // More specific source info
+  deviceType: text("device_type"), // mobile, desktop, tablet
+  geoLocation: jsonb("geo_location"), // Geolocation data if available
+  conversionPath: jsonb("conversion_path"), // Array of touchpoints before conversion
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  utmTerm: text("utm_term"),
+  utmContent: text("utm_content"),
+});
+
+export const insertFormSubmissionSchema = createInsertSchema(formSubmissions).pick({
+  formId: true,
+  data: true,
+  ipAddress: true,
+  userAgent: true,
+  pageUrl: true,
+  referrer: true,
+  formSource: true,
+  originalSource: true,
+  originalSourceDetail: true,
+  deviceType: true,
+  geoLocation: true,
+  conversionPath: true,
+  utmSource: true,
+  utmMedium: true,
+  utmCampaign: true,
+  utmTerm: true,
+  utmContent: true,
+});
+
+export type InsertFormSubmission = z.infer<typeof insertFormSubmissionSchema>;
+export type FormSubmission = typeof formSubmissions.$inferSelect;
+
+// Web Visitor table for tracking website visitors
+export const webVisitors = pgTable("web_visitors", {
+  id: serial("id").primaryKey(),
+  visitorId: text("visitor_id").notNull().unique(), // Anonymous cookie ID
+  firstVisitAt: timestamp("first_visit_at").notNull(),
+  lastVisitAt: timestamp("last_visit_at").notNull(),
+  totalVisits: integer("total_visits").default(1),
+  totalPageviews: integer("total_pageviews").default(1),
+  contactId: integer("contact_id"), // Link to customer or lead if identified
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  deviceType: text("device_type"), // mobile, desktop, tablet
+  browser: text("browser"),
+  operatingSystem: text("operating_system"),
+  country: text("country"),
+  region: text("region"),
+  city: text("city"),
+  firstReferrer: text("first_referrer"),
+  latestReferrer: text("latest_referrer"),
+  originalSource: text("original_source"), // Direct Traffic, Organic Search, etc.
+  originalSourceDetail: text("original_source_detail"), // More specific source info
+  firstPageSeen: text("first_page_seen"),
+  lastPageSeen: text("last_page_seen"),
+  convertedAt: timestamp("converted_at"), // When visitor became a contact 
+  conversionSource: text("conversion_source"), // Form submission, chat, etc.
+});
+
+export const insertWebVisitorSchema = createInsertSchema(webVisitors).pick({
+  visitorId: true,
+  ipAddress: true,
+  userAgent: true,
+  deviceType: true,
+  browser: true,
+  operatingSystem: true,
+  country: true,
+  region: true,
+  city: true,
+  firstReferrer: true,
+  latestReferrer: true,
+  originalSource: true,
+  originalSourceDetail: true,
+  firstPageSeen: true,
+  lastPageSeen: true,
+  conversionSource: true,
+});
+
+export type InsertWebVisitor = z.infer<typeof insertWebVisitorSchema>;
+export type WebVisitor = typeof webVisitors.$inferSelect;
+
+// Page Views table to track individual page visits
+export const pageViews = pgTable("page_views", {
+  id: serial("id").primaryKey(),
+  visitorId: text("visitor_id").notNull(), // References webVisitors.visitorId
+  contactId: integer("contact_id"), // Link to customer or lead if identified
+  pageUrl: text("page_url").notNull(),
+  pageTitle: text("page_title"),
+  timestamp: timestamp("timestamp").notNull(),
+  duration: integer("duration"), // Time spent on page in seconds
+  exitPage: boolean("exit_page").default(false), // Whether this was the exit page for the session
+  entryPage: boolean("entry_page").default(false), // Whether this was the entry page for the session
+  referrer: text("referrer"),
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  utmTerm: text("utm_term"),
+  utmContent: text("utm_content"),
+  deviceType: text("device_type"),
+  browser: text("browser"),
+  operatingSystem: text("operating_system"),
+  ipAddress: text("ip_address"),
+  country: text("country"),
+  region: text("region"),
+  city: text("city"),
+});
+
+export const insertPageViewSchema = createInsertSchema(pageViews).pick({
+  visitorId: true,
+  contactId: true,
+  pageUrl: true,
+  pageTitle: true,
+  duration: true,
+  exitPage: true,
+  entryPage: true,
+  referrer: true,
+  utmSource: true,
+  utmMedium: true,
+  utmCampaign: true,
+  utmTerm: true,
+  utmContent: true,
+  deviceType: true,
+  browser: true,
+  operatingSystem: true,
+  ipAddress: true,
+  country: true,
+  region: true,
+  city: true,
+});
+
+export type InsertPageView = z.infer<typeof insertPageViewSchema>;
+export type PageView = typeof pageViews.$inferSelect;
+
+// Tracking Code Installations table
+export const trackingInstallations = pgTable("tracking_installations", {
+  id: serial("id").primaryKey(),
+  websiteUrl: text("website_url").notNull().unique(),
+  installationDate: timestamp("installation_date").notNull(),
+  status: text("status").default("active"), // active, inactive, pending
+  trackingCode: text("tracking_code").notNull(), // Generated tracking code
+  lastPingAt: timestamp("last_ping_at"), // Last time the tracking code was detected
+  settings: jsonb("settings"), // Tracking settings like anonymization, cookie consent, etc.
+  owner: integer("owner"), // User who created/owns this installation
+  notes: text("notes"),
+});
+
+export const insertTrackingInstallationSchema = createInsertSchema(trackingInstallations).pick({
+  websiteUrl: true,
+  status: true,
+  settings: true,
+  owner: true,
+  notes: true,
+});
+
+export type InsertTrackingInstallation = z.infer<typeof insertTrackingInstallationSchema>;
+export type TrackingInstallation = typeof trackingInstallations.$inferSelect;
