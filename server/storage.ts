@@ -193,6 +193,11 @@ export class MemStorage implements IStorage {
     this.calendarEvents = new Map();
     this.emailTemplates = new Map();
     this.emailLogs = new Map();
+    this.marketingForms = new Map();
+    this.formSubmissions = new Map();
+    this.webVisitors = new Map();
+    this.pageViews = new Map();
+    this.trackingInstallations = new Map();
     
     this.userCurrentId = 1;
     this.campaignCurrentId = 1;
@@ -204,6 +209,10 @@ export class MemStorage implements IStorage {
     this.calendarEventCurrentId = 1;
     this.emailTemplateCurrentId = 1;
     this.emailLogCurrentId = 1;
+    this.marketingFormCurrentId = 1;
+    this.formSubmissionCurrentId = 1;
+    this.pageViewCurrentId = 1;
+    this.trackingInstallationCurrentId = 1;
     
     this.seedData();
   }
