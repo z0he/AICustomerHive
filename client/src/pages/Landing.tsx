@@ -227,19 +227,19 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Everything You Get Section */}
-      <section className="py-20 bg-white">
+      <BrandGradient className="py-20 text-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">EVERYTHING YOU GET (ALL-IN)</h2>
-            <p className="text-slate-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4">EVERYTHING YOU GET (ALL-IN)</h2>
+            <p className="text-white/90 max-w-2xl mx-auto">
               We built this CRM from the ground up to solve every single complaint we heard from frustrated users like you.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             {/* Feature 1 */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
+            <div className="bg-white p-6 rounded-lg shadow-md border border-white/10">
+              <div className="w-12 h-12 bg-[#0082AE]/20 rounded-lg flex items-center justify-center mb-4">
                 <BrainCircuit className="text-[#0082AE]" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-slate-900">Intelligent Lead Management</h3>
@@ -250,8 +250,8 @@ const Landing: React.FC = () => {
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
+            <div className="bg-white p-6 rounded-lg shadow-md border border-white/10">
+              <div className="w-12 h-12 bg-[#0082AE]/20 rounded-lg flex items-center justify-center mb-4">
                 <Mail className="text-[#0082AE]" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-slate-900">AI-Powered Campaigns & Content</h3>
@@ -262,8 +262,8 @@ const Landing: React.FC = () => {
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
+            <div className="bg-white p-6 rounded-lg shadow-md border border-white/10">
+              <div className="w-12 h-12 bg-[#0082AE]/20 rounded-lg flex items-center justify-center mb-4">
                 <LineChart className="text-[#0082AE]" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-slate-900">Advanced Dashboards & Analytics</h3>
@@ -274,8 +274,8 @@ const Landing: React.FC = () => {
             </div>
 
             {/* Feature 4 */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
+            <div className="bg-white p-6 rounded-lg shadow-md border border-white/10">
+              <div className="w-12 h-12 bg-[#0082AE]/20 rounded-lg flex items-center justify-center mb-4">
                 <Calendar className="text-[#0082AE]" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-slate-900">Scheduling & Coordination Built-In</h3>
@@ -286,8 +286,8 @@ const Landing: React.FC = () => {
             </div>
             
             {/* Security */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
+            <div className="bg-white p-6 rounded-lg shadow-md border border-white/10">
+              <div className="w-12 h-12 bg-[#0082AE]/20 rounded-lg flex items-center justify-center mb-4">
                 <Shield className="text-[#0082AE]" />
               </div>
               <h3 className="text-xl font-semibold mb-2 text-slate-900">Enterprise-Grade Security</h3>
@@ -298,7 +298,7 @@ const Landing: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+      </BrandGradient>
 
       {/* Objection Killers */}
       <section className="py-20 bg-slate-50">
