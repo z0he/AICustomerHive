@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey } from "./lib/openai";
+import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey, getCrmAssistantResponse } from "./lib/openai";
 import { sendEmail, sendTemplateEmail, isMailgunConfigured, reinitializeMailgunClient } from "./lib/mailgun";
 import { z } from "zod";
 import { parse as csvParse } from 'csv-parse/sync';
@@ -15,7 +15,9 @@ import {
   insertMessageVariantSchema,
   insertCalendarEventSchema,
   insertEmailTemplateSchema,
-  insertEmailLogSchema
+  insertEmailLogSchema,
+  insertChatConversationSchema,
+  insertChatMessageSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import marketingRoutes from "./routes/marketing";
@@ -583,6 +585,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Generate campaign suggestions error:", error);
       return res.status(500).json({ message: "Failed to generate campaign suggestions" });
+    }
+  });
+  
+  // CRM AI Assistant endpoints
+  app.post("/api/ai/assistant/chat", async (req: Request, res: Response) => {
+    try {
+      const { message, conversationId, crmContext } = req.body;
+      const userId = req.user?.id;
+      
+      if (!message || !userId) {
+        return res.status(400).json({ message: "Message and user authentication are required" });
+      }
+      
+      // Get existing conversation or create a new one
+      let conversation;
+      let conversationHistory = [];
+      
+      if (conversationId) {
+        // Get existing conversation
+        conversation = await storage.getChatConversationById(conversationId);
+        if (!conversation) {
+          return res.status(404).json({ message: "Conversation not found" });
+        }
+        
+        // Get conversation history
+        const messages = await storage.getChatMessagesByConversationId(conversationId);
+        conversationHistory = messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+      } else {
+        // Create a new conversation
+        const title = `Conversation ${new Date().toLocaleDateString()}`;
+        const newConversation = {
+          userId,
+          title,
+          context: crmContext || {},
+          createdAt: new Date(),
+        };
+        
+        conversation = await storage.createChatConversation(newConversation);
+      }
+      
+      // Save user message
+      const userMessage = {
+        conversationId: conversation.id,
+        content: message,
+        role: "user",
+        createdAt: new Date()
+      };
+      await storage.createChatMessage(userMessage);
+      
+      // Add the current message to the history for the AI
+      conversationHistory.push({
+        role: "user",
+        content: message
+      });
+      
+      // Get AI response
+      const assistantResponse = await getCrmAssistantResponse(message, conversationHistory, crmContext || {});
+      
+      // Save assistant message
+      const assistantMessage = {
+        conversationId: conversation.id,
+        content: assistantResponse.response,
+        role: "assistant",
+        createdAt: new Date(),
+        metadata: { suggestedActions: assistantResponse.suggestedActions }
+      };
+      await storage.createChatMessage(assistantMessage);
+      
+      return res.json({
+        ...assistantResponse,
+        conversationId: conversation.id
+      });
+    } catch (error) {
+      console.error("CRM Assistant chat error:", error);
+      return res.status(500).json({ message: "Failed to process chat message" });
+    }
+  });
+  
+  app.get("/api/ai/assistant/conversations", async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const conversations = await storage.getChatConversationsByUserId(userId);
+      return res.json(conversations);
+    } catch (error) {
+      console.error("Get conversations error:", error);
+      return res.status(500).json({ message: "Failed to get conversations" });
+    }
+  });
+  
+  app.get("/api/ai/assistant/conversations/:id", async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const conversation = await storage.getChatConversationById(parseInt(id));
+      
+      if (!conversation || conversation.userId !== userId) {
+        return res.status(404).json({ message: "Conversation not found" });
+      }
+      
+      const messages = await storage.getChatMessagesByConversationId(parseInt(id));
+      
+      return res.json({
+        conversation,
+        messages
+      });
+    } catch (error) {
+      console.error("Get conversation messages error:", error);
+      return res.status(500).json({ message: "Failed to get conversation messages" });
     }
   });
   

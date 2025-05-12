@@ -13,7 +13,9 @@ import {
   formSubmissions, type FormSubmission, type InsertFormSubmission,
   webVisitors, type WebVisitor, type InsertWebVisitor,
   pageViews, type PageView, type InsertPageView,
-  trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation
+  trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation,
+  chatConversations, type ChatConversation, type InsertChatConversation,
+  chatMessages, type ChatMessage, type InsertChatMessage
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
 
