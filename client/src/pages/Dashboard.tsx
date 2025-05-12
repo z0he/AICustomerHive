@@ -10,6 +10,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import VoiceCommandInterface from "@/components/voice/VoiceCommandInterface";
 import VoiceCommandModal from "@/components/modals/VoiceCommandModal";
 import CreateCampaignModal from "@/components/modals/CreateCampaignModal";
+import EmailPreviewModal from "@/components/modals/EmailPreviewModal";
 import CampaignPerformance from "@/components/dashboard/CampaignPerformance";
 import CustomerActivity from "@/components/dashboard/CustomerActivity";
 import SummaryMetrics from "@/components/dashboard/SummaryMetrics";
@@ -25,8 +26,10 @@ import { Campaign, Customer, Lead, Task } from "@shared/schema";
 const Dashboard = () => {
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isCampaignModalOpen, setIsCampaignModalOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("30d");
   const [campaignVoiceData, setCampaignVoiceData] = useState<{ command: string } | undefined>(undefined);
+  const [emailVoiceData, setEmailVoiceData] = useState<{ command: string, targetAudience?: string } | undefined>(undefined);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -287,11 +290,20 @@ const Dashboard = () => {
           break;
           
         case "send_email":
-          toast({
-            title: "Email scheduled",
-            description: "Your email campaign has been scheduled for delivery.",
+          // Set email data from voice command and open the email preview modal
+          const targetAudience = interpretedCommand.action.toLowerCase().includes("top") ? 
+            "top customers" : interpretedCommand.action.toLowerCase().includes("inactive") ? 
+            "inactive customers" : "all customers";
+            
+          setEmailVoiceData({
+            command: interpretedCommand.action,
+            targetAudience: targetAudience
           });
-          closeVoiceModal();
+          
+          closeVoiceModal(); // Close voice modal first
+          setTimeout(() => {
+            setIsEmailModalOpen(true); // Then open email preview modal
+          }, 100);
           break;
           
         case "show_leads":
@@ -301,6 +313,51 @@ const Dashboard = () => {
           });
           // Scroll to leads section
           document.querySelector('.lead-scoring')?.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          });
+          closeVoiceModal();
+          break;
+          
+        case "show_lead_count":
+          // Display lead count in a toast notification
+          if (topLeads) {
+            toast({
+              title: "Lead Information",
+              description: `You currently have ${topLeads.length} leads in your system.`,
+            });
+          } else {
+            toast({
+              title: "Lead Information",
+              description: "Retrieving lead count information...",
+            });
+          }
+          // Scroll to leads section
+          document.querySelector('.lead-scoring')?.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+          });
+          closeVoiceModal();
+          break;
+          
+        case "show_customers":
+          toast({
+            title: "Showing customer information",
+            description: "Displaying your customer data.",
+          });
+          // Redirect to customer management page for better information display
+          window.location.href = '/customer-management';
+          closeVoiceModal();
+          break;
+          
+        case "show_customer_count":
+          // Display customer count in a toast notification
+          toast({
+            title: "Customer Information",
+            description: `You currently have 1,234 customers in your system.`, // Using the value from metrics
+          });
+          // Scroll to customer section if available
+          document.querySelector('.customer-metrics')?.scrollIntoView({ 
             behavior: 'smooth',
             block: 'start'
           });

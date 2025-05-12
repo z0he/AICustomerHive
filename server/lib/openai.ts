@@ -74,6 +74,7 @@ export async function interpretVoiceCommand(text: string): Promise<{
       // Fallback for demo without API key
       const textLower = text.toLowerCase();
       
+      // Enhanced pattern matching with more flexibility for natural language
       if (textLower.includes("create") && textLower.includes("campaign")) {
         return {
           intent: "create_campaign",
@@ -94,11 +95,34 @@ export async function interpretVoiceCommand(text: string): Promise<{
           intent: "send_email",
           action: "Send email to targeted customers"
         };
-      } else if (textLower.includes("leads")) {
-        return {
-          intent: "show_leads",
-          action: "Show me top leads"
-        };
+      } else if ((textLower.includes("show") || textLower.includes("view") || textLower.includes("display")) && 
+                 (textLower.includes("leads") || textLower.includes("lead"))) {
+        // More specific for lead queries
+        if (textLower.includes("how many") || textLower.includes("count") || textLower.includes("number of")) {
+          return {
+            intent: "show_lead_count",
+            action: "Show me the total number of leads"
+          };
+        } else {
+          return {
+            intent: "show_leads",
+            action: "Show me top leads"
+          };
+        }
+      } else if ((textLower.includes("show") || textLower.includes("view") || textLower.includes("display")) && 
+                 (textLower.includes("customer") || textLower.includes("customers"))) {
+        // More specific for customer queries
+        if (textLower.includes("how many") || textLower.includes("count") || textLower.includes("number of")) {
+          return {
+            intent: "show_customer_count",
+            action: "Show me the total number of customers"
+          };
+        } else {
+          return {
+            intent: "show_customers",
+            action: "Show me my customers"
+          };
+        }
       } else {
         return {
           intent: "unknown",
