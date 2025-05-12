@@ -316,13 +316,14 @@ export async function getCrmAssistantResponse(
           "Include information about leads, campaigns, email sequences, and other CRM functionality when relevant. " +
           "Provide specific, actionable advice rather than generic statements. " +
           "If you're not sure about something, be honest about limitations but try to point the user in the right direction. " +
-          "When useful, you can return 2-3 suggested actions the user might want to take next."
+          "When useful, you can return 2-3 suggested actions the user might want to take next. " +
+          "Format your response as a JSON object with the following structure: { \"response\": \"Your helpful message here\", \"suggestedActions\": [{ \"label\": \"Action description\", \"action\": \"action_code\" }] }"
       };
       
       // Add any context about the CRM system
       const contextMessage = {
         role: "system" as const,
-        content: `Current CRM context: ${JSON.stringify(crmContext)}`
+        content: `Current CRM context: ${JSON.stringify(crmContext)}. Remember to provide your response in JSON format.`
       };
       
       // Prepare messages array with context, history and the current user input

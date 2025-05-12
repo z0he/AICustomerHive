@@ -612,7 +612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get conversation history
         const messages = await storage.getChatMessagesByConversationId(conversationId);
         conversationHistory = messages.map(msg => ({
-          role: msg.role,
+          role: msg.role === 'user' ? 'user' : 'assistant',
           content: msg.content
         }));
       } else {
@@ -639,7 +639,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add the current message to the history for the AI
       conversationHistory.push({
-        role: "user",
+        role: "user" as const,
         content: message
       });
       
