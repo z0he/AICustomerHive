@@ -1440,10 +1440,24 @@ export class MemStorage implements IStorage {
   // ----- Dashboard metrics -----
   
   async getDashboardMetrics(): Promise<any[]> {
+    // Get actual customer count
+    const customers = await db.query.customers.findMany();
+    const customerCount = customers.length;
+    
+    // Get actual leads count
+    const leads = await db.query.leads.findMany();
+    const leadsCount = leads.length;
+    
+    // Get actual campaign count
+    const campaigns = await db.query.campaigns.findMany();
+    const activeCampaigns = campaigns.filter(c => 
+      new Date(c.endDate) >= new Date() && new Date(c.startDate) <= new Date()
+    ).length;
+    
     return [
       {
         title: "Total Customers",
-        value: "1,284",
+        value: customerCount.toString(),
         change: {
           value: "12%",
           type: "increase",
@@ -1452,24 +1466,24 @@ export class MemStorage implements IStorage {
         icon: "users"
       },
       {
+        title: "Total Leads",
+        value: leadsCount.toString(),
+        change: {
+          value: "5%",
+          type: "increase",
+          label: "vs last month"
+        },
+        icon: "users-plus"
+      },
+      {
         title: "Active Campaigns",
-        value: "5",
+        value: activeCampaigns.toString(),
         change: {
           value: "3",
           type: "increase",
           label: "new this week"
         },
         icon: "campaigns"
-      },
-      {
-        title: "Conversion Rate",
-        value: "24.8%",
-        change: {
-          value: "2.3%",
-          type: "decrease",
-          label: "vs last month"
-        },
-        icon: "conversion"
       }
     ];
   }
