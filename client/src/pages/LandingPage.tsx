@@ -13,9 +13,9 @@ export default function LandingPage() {
       <header className="container mx-auto py-6 px-4 md:px-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl">C</span>
+            <span className="text-primary-foreground font-bold text-xl">A</span>
           </div>
-          <h1 className="text-xl font-bold">CRM.ai</h1>
+          <h1 className="text-xl font-bold">AICRM</h1>
         </div>
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={() => navigate("/auth")}>
@@ -280,9 +280,9 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-6 md:mb-0">
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">C</span>
+                <span className="text-primary-foreground font-bold text-sm">A</span>
               </div>
-              <h2 className="text-lg font-bold">CRM.ai</h2>
+              <h2 className="text-lg font-bold">AICRM</h2>
             </div>
             
             <div className="flex gap-8 mb-6 md:mb-0">

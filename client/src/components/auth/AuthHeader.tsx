@@ -48,7 +48,7 @@ const AuthHeader: FC<AuthHeaderProps> = ({
           <div className="text-accent-600 text-2xl font-bold mr-1">
             <Users size={24} />
           </div>
-          <h1 className="text-xl font-bold text-primary-700">AI CRM</h1>
+          <h1 className="text-xl font-bold text-primary-700">AICRM</h1>
         </div>
         <div className="ml-8 hidden md:flex items-center space-x-4">
           <Link href="/dashboard" className="text-slate-600 hover:text-primary-600 font-medium text-sm">Dashboard</Link>
