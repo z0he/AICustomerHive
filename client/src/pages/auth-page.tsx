@@ -124,9 +124,19 @@ export default function AuthPage() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-slate-100">
+                <TabsTrigger 
+                  value="login" 
+                  className="data-[state=active]:bg-brand-blue data-[state=active]:text-white"
+                >
+                  Login
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="register" 
+                  className="data-[state=active]:bg-brand-blue data-[state=active]:text-white"
+                >
+                  Register
+                </TabsTrigger>
               </TabsList>
 
               {/* Login Form */}
@@ -161,7 +171,7 @@ export default function AuthPage() {
                     />
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full bg-brand-blue hover:bg-brand-teal text-white"
                       disabled={loginMutation.isPending}
                     >
                       {loginMutation.isPending ? (
@@ -183,7 +193,7 @@ export default function AuthPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full"
+                      className="w-full border-brand-blue text-brand-blue hover:bg-brand-blue/10"
                       onClick={handleGoogleSignIn}
                       disabled={googleAuthMutation.isPending}
                     >
@@ -266,7 +276,7 @@ export default function AuthPage() {
                     />
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full bg-brand-blue hover:bg-brand-teal text-white"
                       disabled={registerMutation.isPending}
                     >
                       {registerMutation.isPending ? (
@@ -288,7 +298,7 @@ export default function AuthPage() {
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full"
+                      className="w-full border-brand-blue text-brand-blue hover:bg-brand-blue/10"
                       onClick={handleGoogleSignIn}
                       disabled={googleAuthMutation.isPending}
                     >
