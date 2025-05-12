@@ -62,6 +62,7 @@ export default function LeadManagement() {
   
   // States
   const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterSource, setFilterSource] = useState<string>("all");
@@ -326,6 +327,7 @@ export default function LeadManagement() {
   // Handle lead selection
   const handleLeadClick = (lead: Lead) => {
     setSelectedLeadId(lead.id);
+    setIsDetailsOpen(true);
   };
   
   // Create mock lead owners for demo
@@ -761,6 +763,27 @@ export default function LeadManagement() {
           </div>
         </main>
       </div>
+
+      {/* Lead Details Dialog */}
+      {selectedLead && (
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Lead Details</DialogTitle>
+            </DialogHeader>
+            
+            <LeadDetails 
+              lead={selectedLead}
+              onUpdateScore={(scoringData) => updateLeadScoreMutation.mutate({ id: selectedLead.id, scoringData })}
+              onUpdateLead={(leadData) => updateLeadMutation.mutate({ id: selectedLead.id, leadData })}
+              onAddNote={(note) => addLeadNoteMutation.mutate({ id: selectedLead.id, note })}
+              onAssignOwner={(ownerName) => assignLeadOwnerMutation.mutate({ id: selectedLead.id, ownerName })}
+              isUpdating={updateLeadMutation.isPending || updateLeadScoreMutation.isPending}
+              leadOwners={leadOwners}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
