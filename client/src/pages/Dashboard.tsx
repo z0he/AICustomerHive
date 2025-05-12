@@ -321,17 +321,11 @@ const Dashboard = () => {
           
         case "show_lead_count":
           // Display lead count in a toast notification
-          if (topLeads) {
-            toast({
-              title: "Lead Information",
-              description: `You currently have ${topLeads.length} leads in your system.`,
-            });
-          } else {
-            toast({
-              title: "Lead Information",
-              description: "Retrieving lead count information...",
-            });
-          }
+          const leadCount = metrics?.find((m: any) => m.title === 'Total Leads')?.value || '0';
+          toast({
+            title: "Lead Information",
+            description: `You currently have ${leadCount} leads in your system.`,
+          });
           // Scroll to leads section
           document.querySelector('.lead-scoring')?.scrollIntoView({ 
             behavior: 'smooth',
@@ -351,7 +345,7 @@ const Dashboard = () => {
           break;
         case "show_customer_count":
           // Display customer count in a toast notification
-          const customerCount = metrics?.find(m => m.title === 'Total Customers')?.value || '0';
+          const customerCount = metrics?.find((m: any) => m.title === 'Total Customers')?.value || '0';
           toast({
             title: "Customer Information",
             description: `You currently have ${customerCount} customers in your system.`,
