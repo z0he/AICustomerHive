@@ -119,10 +119,15 @@ const EmailPreviewModal: FC<EmailPreviewModalProps> = ({
     try {
       const recipientEmails = recipients.map(recipient => recipient.email).join(',');
       
-      // Use the template-based sending endpoint
-      const response = await apiRequest('/api/email/send-template', {
+      // Use standard fetch instead of apiRequest to ensure proper method handling
+      const response = await fetch('/api/email/send-template', {
         method: 'POST',
-        data: {
+        headers: {
+          'Content-Type': 'application/json',
+          // Include credentials for authenticated requests
+          credentials: 'include'
+        },
+        body: JSON.stringify({
           templateId: parseInt(selectedTemplateId),
           to: recipientEmails,
           data: {
@@ -130,15 +135,18 @@ const EmailPreviewModal: FC<EmailPreviewModalProps> = ({
             company: "Your Company",
             senderName: "Marketing Team"
           }
-        }
+        })
       });
       
-      if (response) {
+      if (response.ok) {
         toast({
           title: "Email Scheduled",
           description: `Your email has been scheduled to ${recipients.length} recipients.`,
         });
         onClose();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to schedule email');
       }
     } catch (error) {
       console.error("Error sending email:", error);
