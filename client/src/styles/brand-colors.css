@@ -1,0 +1,17 @@
+:root {
+  /* Primary brand colors */
+  --brand-azure-blue: #0082AE;
+  --brand-lime-green: #8AC33E;
+  --brand-dark-teal: #00556E;
+  --brand-soft-lime: #C4E27E;
+
+  /* UI colors */
+  --brand-white: #FFFFFF;
+  --brand-black: #121212;
+  --brand-light-gray: #F5F7FA;
+  --brand-gray: #94A3B8;
+  
+  /* Utility variables for gradients */
+  --brand-gradient: linear-gradient(135deg, var(--brand-azure-blue), var(--brand-dark-teal));
+  --brand-accent-gradient: linear-gradient(135deg, var(--brand-lime-green), var(--brand-soft-lime));
+}

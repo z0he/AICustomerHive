@@ -358,28 +358,28 @@ export default function AuthPage() {
       </div>
 
       {/* Right side - Hero Section */}
-      <div className="hidden md:flex md:w-1/2 bg-primary/10 flex-col items-center justify-center p-8 space-y-6">
-        <div className="text-center max-w-md">
+      <div className="hidden md:flex md:w-1/2 bg-brand-gradient flex-col items-center justify-center p-8 space-y-6">
+        <div className="text-center max-w-md text-white">
           <h1 className="text-4xl font-bold mb-4">Smart CRM for Modern Businesses</h1>
-          <p className="text-lg mb-6">
+          <p className="text-lg mb-6 text-white/90">
             Manage contacts, track leads, and gain AI-powered insights to grow your business faster.
           </p>
           <div className="grid grid-cols-2 gap-4 text-left">
-            <div className="p-4 bg-card rounded-lg border">
-              <h3 className="font-semibold mb-2">AI Insights</h3>
-              <p>Get smart recommendations and predictions for your business growth.</p>
+            <div className="p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+              <h3 className="font-semibold mb-2 text-white">AI Insights</h3>
+              <p className="text-white/80">Get smart recommendations and predictions for your business growth.</p>
             </div>
-            <div className="p-4 bg-card rounded-lg border">
-              <h3 className="font-semibold mb-2">Voice Commands</h3>
-              <p>Interact with your CRM using natural language voice commands.</p>
+            <div className="p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+              <h3 className="font-semibold mb-2 text-white">Voice Commands</h3>
+              <p className="text-white/80">Interact with your CRM using natural language voice commands.</p>
             </div>
-            <div className="p-4 bg-card rounded-lg border">
-              <h3 className="font-semibold mb-2">Contact Management</h3>
-              <p>Organize and manage all your customer interactions in one place.</p>
+            <div className="p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+              <h3 className="font-semibold mb-2 text-white">Contact Management</h3>
+              <p className="text-white/80">Organize and manage all your customer interactions in one place.</p>
             </div>
-            <div className="p-4 bg-card rounded-lg border">
-              <h3 className="font-semibold mb-2">Analytics Dashboard</h3>
-              <p>Visualize your business metrics with interactive charts and reports.</p>
+            <div className="p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20">
+              <h3 className="font-semibold mb-2 text-white">Analytics Dashboard</h3>
+              <p className="text-white/80">Visualize your business metrics with interactive charts and reports.</p>
             </div>
           </div>
         </div>
