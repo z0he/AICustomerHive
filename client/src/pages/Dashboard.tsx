@@ -350,6 +350,8 @@ const Dashboard = () => {
           closeVoiceModal();
           break;
           
+
+          
         case "show_customer_count":
           // Display customer count in a toast notification
           toast({
