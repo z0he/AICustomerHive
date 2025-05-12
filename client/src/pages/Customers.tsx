@@ -100,7 +100,10 @@ type CustomerFormValues = z.infer<typeof customerFormSchema>;
 // Customer card component
 const CustomerCard = ({ customer, onViewDetails }: { customer: Customer, onViewDetails: (customer: Customer) => void }) => {
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card 
+      className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer" 
+      onClick={() => onViewDetails(customer)}
+    >
       <CardHeader className="bg-slate-50 p-4 flex flex-row items-center justify-between">
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10 bg-primary-100 text-primary-700">
@@ -139,7 +142,10 @@ const CustomerCard = ({ customer, onViewDetails }: { customer: Customer, onViewD
               variant="ghost" 
               size="sm" 
               className="flex items-center space-x-1"
-              onClick={() => onViewDetails(customer)}
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent the card click event
+                onViewDetails(customer);
+              }}
             >
               <span>View Details</span>
               <ChevronRight size={16} />
