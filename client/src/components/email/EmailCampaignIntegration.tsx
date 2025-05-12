@@ -465,14 +465,22 @@ const EmailCampaignIntegration = () => {
                   <span className="ml-2">Loading scheduled emails...</span>
                 </div>
               ) : campaignEmailsError ? (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    Failed to load scheduled emails. Please try again.
-                  </AlertDescription>
-                </Alert>
-              ) : campaignEmails.length === 0 ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">Error Loading Emails</h3>
+                  <p className="text-muted-foreground">
+                    We couldn't load your scheduled emails.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => refetchCampaignEmails()}
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    Try Again
+                  </Button>
+                </div>
+              ) : !campaignEmails || campaignEmails.length === 0 ? (
                 <div className="text-center py-8">
                   <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium">No Scheduled Emails</h3>

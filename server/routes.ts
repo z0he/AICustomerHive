@@ -1558,6 +1558,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get email logs from the database
       const emailLogs = await storage.getEmailLogs();
       
+      // If no email logs exist, return empty array instead of error
+      if (!emailLogs || emailLogs.length === 0) {
+        return res.json([]);
+      }
+      
       // Get campaigns and templates for supplementary info
       const campaigns = await storage.getCampaigns();
       const templates = await storage.getEmailTemplates();
@@ -1576,14 +1581,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         return {
           id: log.id,
-          campaignId: log.campaignId,
+          campaignId: log.campaignId || 0,
           campaignName: campaign ? campaign.name : "Direct Email",
           templateId: log.templateId,
           templateName: template ? template.name : "Custom Template",
-          subject: log.subject,
+          subject: log.subject || "Email Campaign",
           segmentId: null, // No segment data in the logs yet
           segmentName: null,
-          status: log.status,
+          status: log.status || "scheduled",
           scheduledFor: log.sentAt, // Using sentAt as scheduledFor for now
           sentAt: log.status === 'sent' ? log.sentAt : null
         };
