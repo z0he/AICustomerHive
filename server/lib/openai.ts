@@ -308,7 +308,7 @@ export async function getCrmAssistantResponse(
     if (hasValidApiKey()) {
       // Build the conversation history with system message
       const systemMessage = {
-        role: "system",
+        role: "system" as const,
         content: 
           "You are an expert CRM Assistant providing guidance on using the CRM system. " +
           "Your role is to help users navigate the CRM, understand features, and optimize their customer relationship management. " +
@@ -321,7 +321,7 @@ export async function getCrmAssistantResponse(
       
       // Add any context about the CRM system
       const contextMessage = {
-        role: "system",
+        role: "system" as const,
         content: `Current CRM context: ${JSON.stringify(crmContext)}`
       };
       
@@ -329,8 +329,11 @@ export async function getCrmAssistantResponse(
       const messages = [
         systemMessage,
         contextMessage,
-        ...conversationHistory,
-        { role: "user", content: userInput }
+        ...conversationHistory.map(msg => ({
+          role: msg.role as "system" | "user" | "assistant",
+          content: msg.content
+        })),
+        { role: "user" as const, content: userInput }
       ];
       
       const response = await openai.chat.completions.create({
