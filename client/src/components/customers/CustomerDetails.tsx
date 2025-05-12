@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Customer } from "@shared/schema";
+import CustomerForm from "./CustomerForm";
 
 import {
   CalendarClock,
@@ -138,7 +139,25 @@ export default function CustomerDetails({
                 <DialogHeader>
                   <DialogTitle>Edit Customer</DialogTitle>
                 </DialogHeader>
-                {/* We'll implement the edit form integration separately */}
+                <CustomerForm
+                  onSubmit={onUpdateCustomer}
+                  isSubmitting={isUpdating}
+                  defaultValues={{
+                    firstName: customer.firstName || "",
+                    lastName: customer.lastName || "",
+                    email: customer.email || "",
+                    phone: customer.phone || "",
+                    company: customer.company || "",
+                    jobTitle: customer.jobTitle || "",
+                    industry: customer.contactIndustry || "",
+                    country: customer.country || "",
+                    contactSource: customer.contactSource || "website",
+                    contactStage: customer.status || "lead",
+                    website: customer.websiteUrl || "",
+                    linkedin: customer.linkedinUrl || "",
+                    twitter: customer.twitterHandle || ""
+                  }}
+                />
               </DialogContent>
             </Dialog>
           </div>

@@ -12,6 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
@@ -126,7 +129,7 @@ export default function LeadDetails({
         return "success";
       case "proposal":
       case "negotiation":
-        return "warning";
+        return "outline";
       case "won":
         return "success";
       case "lost":
@@ -181,7 +184,7 @@ export default function LeadDetails({
               </Badge>
             )}
             {lead.score !== undefined && (
-              <Badge variant={lead.score >= 70 ? "success" : lead.score >= 40 ? "warning" : "default"}>
+              <Badge variant={lead.score >= 70 ? "success" : lead.score >= 40 ? "outline" : "default"}>
                 Score: {lead.score}
               </Badge>
             )}
@@ -195,6 +198,7 @@ export default function LeadDetails({
               <TabsTrigger value="notes" className="flex-1">Notes</TabsTrigger>
               <TabsTrigger value="activity" className="flex-1">Activity</TabsTrigger>
               <TabsTrigger value="scoring" className="flex-1">Scoring</TabsTrigger>
+              <TabsTrigger value="marketing" className="flex-1">Marketing</TabsTrigger>
             </TabsList>
           </CardContent>
           
@@ -377,6 +381,118 @@ export default function LeadDetails({
                 onUpdateScore={onUpdateScore}
                 isUpdating={isUpdating}
               />
+            </TabsContent>
+            
+            <TabsContent value="marketing" className="mt-2">
+              <div className="space-y-4">
+                <div className="bg-white p-6 rounded-md border">
+                  <h3 className="text-lg font-medium mb-4">Marketing Preferences</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Email Marketing</p>
+                        <p className="text-sm text-slate-500">Receive promotional emails and newsletters</p>
+                      </div>
+                      <Switch defaultChecked={lead.marketingEmail ?? false} />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">SMS Marketing</p>
+                        <p className="text-sm text-slate-500">Receive promotional text messages</p>
+                      </div>
+                      <Switch defaultChecked={lead.marketingSms ?? false} />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Phone Calls</p>
+                        <p className="text-sm text-slate-500">Receive promotional phone calls</p>
+                      </div>
+                      <Switch defaultChecked={lead.marketingCall ?? false} />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white p-6 rounded-md border">
+                  <h3 className="text-lg font-medium mb-4">Communication Preferences</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="preferredTime">Preferred Contact Time</Label>
+                        <Select defaultValue={lead.preferredContactTime || "business_hours"}>
+                          <SelectTrigger id="preferredTime">
+                            <SelectValue placeholder="Select preferred time" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="business_hours">Business Hours (9am-5pm)</SelectItem>
+                            <SelectItem value="morning">Morning (9am-12pm)</SelectItem>
+                            <SelectItem value="afternoon">Afternoon (12pm-5pm)</SelectItem>
+                            <SelectItem value="evening">Evening (5pm-8pm)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="preferredChannel">Preferred Contact Method</Label>
+                        <Select defaultValue={lead.preferredContactMethod || "email"}>
+                          <SelectTrigger id="preferredChannel">
+                            <SelectValue placeholder="Select preferred channel" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="email">Email</SelectItem>
+                            <SelectItem value="phone">Phone</SelectItem>
+                            <SelectItem value="sms">SMS</SelectItem>
+                            <SelectItem value="social">Social Media</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-white p-6 rounded-md border">
+                  <h3 className="text-lg font-medium mb-4">Consent Management</h3>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center">
+                      <Checkbox id="consent-gdpr" defaultChecked={lead.gdprConsent} />
+                      <label
+                        htmlFor="consent-gdpr"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ml-2"
+                      >
+                        GDPR Consent
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <Checkbox id="consent-casl" defaultChecked={lead.caslConsent} />
+                      <label
+                        htmlFor="consent-casl"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ml-2"
+                      >
+                        CASL Consent (Canada)
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <Checkbox id="consent-ccpa" defaultChecked={lead.ccpaConsent} />
+                      <label
+                        htmlFor="consent-ccpa"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ml-2"
+                      >
+                        CCPA Consent (California)
+                      </label>
+                    </div>
+                    
+                    <div className="mt-6">
+                      <Button variant="outline" className="w-full">
+                        Save Marketing Preferences
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </TabsContent>
           </CardContent>
         </Tabs>
