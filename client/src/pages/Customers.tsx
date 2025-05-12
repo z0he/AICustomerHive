@@ -273,6 +273,8 @@ const Customers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [activeTab, setActiveTab] = useState("grid");
   const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
   const [isAllSelected, setIsAllSelected] = useState(false);
@@ -393,6 +395,28 @@ const Customers = () => {
   // Form submit handler
   const onSubmit = (data: CustomerFormValues) => {
     createCustomerMutation.mutate(data);
+  };
+  
+  // Customer detail handlers
+  const handleViewCustomerDetails = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsDetailsOpen(true);
+  };
+  
+  const handleUpdateCustomer = (customerData: any) => {
+    // TODO: Implement update customer mutation
+    toast({
+      title: "Update functionality",
+      description: "Customer update functionality will be implemented soon"
+    });
+  };
+  
+  const handleAddNote = (note: string) => {
+    // TODO: Implement add note to customer
+    toast({
+      title: "Note added",
+      description: "Note functionality will be implemented soon"
+    });
   };
   
   // Dialog handlers
@@ -1238,6 +1262,26 @@ const Customers = () => {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Customer Details Dialog */}
+      {selectedCustomer && (
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Customer Details</DialogTitle>
+              <DialogDescription>
+                View and manage customer information
+              </DialogDescription>
+            </DialogHeader>
+            
+            <CustomerDetails 
+              customer={selectedCustomer}
+              onUpdateCustomer={handleUpdateCustomer}
+              onAddNote={handleAddNote}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
