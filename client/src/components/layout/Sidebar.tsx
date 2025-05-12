@@ -47,14 +47,14 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
   ];
 
   return (
-    <aside className="w-16 md:w-64 bg-white border-r border-slate-200 flex flex-col">
+    <aside className="w-16 md:w-64 bg-gradient-to-b from-brand-blue to-brand-teal text-white border-r border-brand-teal flex flex-col">
       <div className="p-4 overflow-y-auto flex-1">
         <div className="space-y-1">
           {mainNavItems.map((item) => (
             <div key={item.path}>
               <Link href={item.path}>
                 <div className={`flex items-center space-x-3 px-3 py-2 rounded-lg cursor-pointer ${
-                  location === item.path ? 'text-[#0082AE] bg-[#0082AE]/10' : 'text-slate-600 hover:bg-slate-50 hover:text-[#0082AE]'
+                  location === item.path ? 'text-white bg-brand-teal' : 'text-white hover:bg-brand-teal/50'
                 }`}>
                   {item.icon}
                   <span className="font-medium text-sm hidden md:inline-block">{item.label}</span>
@@ -72,7 +72,7 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
             {recentCampaigns.map((campaign) => (
               <div key={campaign.id}>
                 <Link href={campaign.path}>
-                  <div className="flex items-center space-x-3 text-slate-600 hover:bg-slate-50 hover:text-[#0082AE] px-3 py-2 rounded-lg cursor-pointer">
+                  <div className="flex items-center space-x-3 text-white hover:bg-brand-teal/50 px-3 py-2 rounded-lg cursor-pointer">
                     <Tag size={18} />
                     <span className="text-sm hidden md:inline-block truncate">{campaign.name}</span>
                   </div>
@@ -83,10 +83,10 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
         </div>
       </div>
       
-      <div className="p-4 border-t border-slate-200">
+      <div className="p-4 border-t border-brand-teal/30">
         <div>
           <Link href="/settings">
-            <div className="flex items-center space-x-3 text-slate-600 hover:bg-slate-50 hover:text-[#0082AE] px-3 py-2 rounded-lg cursor-pointer">
+            <div className="flex items-center space-x-3 text-white hover:bg-brand-teal/50 px-3 py-2 rounded-lg cursor-pointer">
               <Settings size={20} />
               <span className="font-medium text-sm hidden md:inline-block">Settings</span>
             </div>
