@@ -45,7 +45,8 @@ export async function interpretVoiceCommand(text: string): Promise<{
             role: "system",
             content: 
               "You are an AI assistant for a CRM system. Analyze the voice command and determine the user's intent. " +
-              "Valid intents are: create_campaign, show_campaign_performance, show_campaign_status, send_email, create_lead_list, show_leads. " +
+              "Valid intents are: create_campaign, show_campaign_performance, show_campaign_status, send_email, create_lead_list, show_leads, show_lead_count, show_customer_count. " +
+              "For commands asking about how many leads or customers exist, use show_lead_count or show_customer_count intents. " +
               "Return the result as JSON with intent and action fields. The action field should contain a clean version of the command."
           },
           {
@@ -107,6 +108,18 @@ export async function interpretVoiceCommand(text: string): Promise<{
         return {
           intent: "send_email",
           action: action
+        };
+      } else if (textLower.includes("how many") && textLower.includes("leads")) {
+        // Direct question about lead counts
+        return {
+          intent: "show_lead_count",
+          action: "Show me the total number of leads"
+        };
+      } else if (textLower.includes("how many") && (textLower.includes("customer") || textLower.includes("customers"))) {
+        // Direct question about customer counts
+        return {
+          intent: "show_customer_count",
+          action: "Show me the total number of customers"
         };
       } else if ((textLower.includes("show") || textLower.includes("view") || textLower.includes("display")) && 
                  (textLower.includes("leads") || textLower.includes("lead"))) {
