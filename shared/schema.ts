@@ -549,3 +549,44 @@ export const insertTrackingInstallationSchema = createInsertSchema(trackingInsta
 
 export type InsertTrackingInstallation = z.infer<typeof insertTrackingInstallationSchema>;
 export type TrackingInstallation = typeof trackingInstallations.$inferSelect;
+
+// Chat conversations table for the AI Assistant
+export const chatConversations = pgTable("chat_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // The user who started the conversation
+  title: text("title").notNull(), // Generated title for the conversation
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at"),
+  context: jsonb("context"), // Additional context data about the conversation
+  status: text("status").default("active"), // active, archived
+});
+
+export const insertChatConversationSchema = createInsertSchema(chatConversations).pick({
+  userId: true,
+  title: true,
+  context: true,
+  status: true,
+});
+
+export type InsertChatConversation = z.infer<typeof insertChatConversationSchema>;
+export type ChatConversation = typeof chatConversations.$inferSelect;
+
+// Chat messages within a conversation
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").notNull(), // Reference to the conversation
+  content: text("content").notNull(), // The message content
+  role: text("role").notNull(), // user, assistant, system
+  createdAt: timestamp("created_at").notNull(),
+  metadata: jsonb("metadata"), // Any additional data, like referenced entities
+});
+
+export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
+  conversationId: true,
+  content: true,
+  role: true,
+  metadata: true,
+});
+
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;

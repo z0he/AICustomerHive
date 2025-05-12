@@ -288,4 +288,136 @@ export async function analyzeCustomerData(customerData: any[]): Promise<{
   }
 }
 
+/**
+ * CRM Assistant - Handle chat functionality for the CRM guidance assistant
+ * @param userInput The user's message
+ * @param conversationHistory Previous messages in the conversation
+ * @param crmContext Additional context about the user's CRM data and state
+ * @returns AI assistant's response
+ */
+export async function getCrmAssistantResponse(
+  userInput: string,
+  conversationHistory: { role: string; content: string }[] = [],
+  crmContext: Record<string, any> = {}
+): Promise<{
+  response: string;
+  suggestedActions?: { label: string; action: string }[];
+}> {
+  try {
+    // Check if we have a valid API key before making OpenAI call
+    if (hasValidApiKey()) {
+      // Build the conversation history with system message
+      const systemMessage = {
+        role: "system",
+        content: 
+          "You are an expert CRM Assistant providing guidance on using the CRM system. " +
+          "Your role is to help users navigate the CRM, understand features, and optimize their customer relationship management. " +
+          "Be concise, helpful, and tailored to the user's specific CRM needs. " +
+          "Include information about leads, campaigns, email sequences, and other CRM functionality when relevant. " +
+          "Provide specific, actionable advice rather than generic statements. " +
+          "If you're not sure about something, be honest about limitations but try to point the user in the right direction. " +
+          "When useful, you can return 2-3 suggested actions the user might want to take next."
+      };
+      
+      // Add any context about the CRM system
+      const contextMessage = {
+        role: "system",
+        content: `Current CRM context: ${JSON.stringify(crmContext)}`
+      };
+      
+      // Prepare messages array with context, history and the current user input
+      const messages = [
+        systemMessage,
+        contextMessage,
+        ...conversationHistory,
+        { role: "user", content: userInput }
+      ];
+      
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: messages,
+        temperature: 0.7,
+        response_format: { type: "json_object" }
+      });
+      
+      const responseText = response.choices[0].message.content;
+      const parsedResponse = safeJsonParse(responseText);
+      
+      if (parsedResponse && parsedResponse.response) {
+        return {
+          response: parsedResponse.response,
+          suggestedActions: parsedResponse.suggestedActions || []
+        };
+      }
+      
+      // Fallback in case JSON parsing fails
+      return {
+        response: responseText || "I'm not sure how to help with that right now."
+      };
+    } else {
+      // Fallback responses for demo without API key
+      const lowercaseInput = userInput.toLowerCase();
+      
+      // Provide relevant fallback responses based on user input keywords
+      if (lowercaseInput.includes("campaign") || lowercaseInput.includes("marketing")) {
+        return {
+          response: "To create a new marketing campaign, go to the Campaigns section and click the 'New Campaign' button. You can select the target audience, customize your message, and set a schedule for the campaign.",
+          suggestedActions: [
+            { label: "Create new campaign", action: "navigate_to_campaigns_new" },
+            { label: "View campaign performance", action: "navigate_to_campaigns_performance" }
+          ]
+        };
+      } else if (lowercaseInput.includes("lead") || lowercaseInput.includes("prospect")) {
+        return {
+          response: "You can manage your leads in the Leads section. Add new leads manually or import them from a CSV file. Each lead can be assigned to a team member and tracked through the sales pipeline.",
+          suggestedActions: [
+            { label: "View lead dashboard", action: "navigate_to_leads" },
+            { label: "Import leads", action: "open_import_leads_modal" }
+          ]
+        };
+      } else if (lowercaseInput.includes("email") || lowercaseInput.includes("message")) {
+        return {
+          response: "The Email section allows you to create and manage email templates, track open rates, and set up automated email sequences for lead nurturing. You can personalize emails with customer data fields.",
+          suggestedActions: [
+            { label: "Create email template", action: "navigate_to_email_templates_new" },
+            { label: "View email analytics", action: "navigate_to_email_analytics" }
+          ]
+        };
+      } else if (lowercaseInput.includes("report") || lowercaseInput.includes("analytics")) {
+        return {
+          response: "The Analytics dashboard gives you insights into campaign performance, lead conversion rates, and sales pipeline metrics. You can filter data by date range, campaign type, or team member.",
+          suggestedActions: [
+            { label: "View analytics dashboard", action: "navigate_to_analytics" }
+          ]
+        };
+      } else if (lowercaseInput.includes("task") || lowercaseInput.includes("reminder")) {
+        return {
+          response: "You can create tasks and reminders in the Tasks section. Assign tasks to team members, set due dates, and track completion status. Tasks can be linked to specific leads or campaigns.",
+          suggestedActions: [
+            { label: "View tasks", action: "navigate_to_tasks" },
+            { label: "Create new task", action: "open_create_task_modal" }
+          ]
+        };
+      } else {
+        return {
+          response: "I'm here to help you use the CRM more effectively. You can ask me about campaigns, leads, email templates, analytics, or any other CRM feature.",
+          suggestedActions: [
+            { label: "Show feature overview", action: "show_feature_overview" },
+            { label: "View quick start guide", action: "view_quick_start_guide" }
+          ]
+        };
+      }
+    }
+  } catch (error) {
+    console.error("Error in CRM Assistant:", error);
+    // Provide fallback so the feature works even without API key
+    return {
+      response: "I'm having trouble processing your request right now. Please try again in a moment.",
+      suggestedActions: [
+        { label: "View help documentation", action: "view_help_docs" }
+      ]
+    };
+  }
+}
+
 export default openai;
