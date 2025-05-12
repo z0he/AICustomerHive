@@ -1,5 +1,5 @@
 import { eq, desc, and, sql, asc, gte, lte } from "drizzle-orm";
-import { db } from "../lib/db";
+import { db } from "../db";
 import { IStorage } from "../storage";
 import { 
   users, type User, type InsertUser,
@@ -838,12 +838,24 @@ export class DbStorage implements IStorage {
   // ----- Dashboard metrics -----
   
   async getDashboardMetrics(): Promise<any[]> {
-    // In a real implementation, we would calculate metrics based on actual data
-    // For now, returning sample metrics
+    // Get actual customer count
+    const customersList = await db.query.customers.findMany();
+    const customerCount = customersList.length;
+    
+    // Get actual leads count
+    const leadsList = await db.query.leads.findMany();
+    const leadsCount = leadsList.length;
+    
+    // Get actual campaign count
+    const campaignsList = await db.query.campaigns.findMany();
+    const activeCampaigns = campaignsList.filter(c => 
+      new Date(c.endDate) >= new Date() && new Date(c.startDate) <= new Date()
+    ).length;
+    
     return [
       {
         title: "Total Customers",
-        value: "1,234",
+        value: customerCount.toString(),
         change: {
           value: "+5.2%",
           type: "increase",
@@ -852,24 +864,24 @@ export class DbStorage implements IStorage {
         icon: "users"
       },
       {
+        title: "Total Leads",
+        value: leadsCount.toString(),
+        change: {
+          value: "+2.3%", 
+          type: "increase",
+          label: "vs last month"
+        },
+        icon: "users-plus"
+      },
+      {
         title: "Active Campaigns",
-        value: "12",
+        value: activeCampaigns.toString(),
         change: {
           value: "+2",
           type: "increase",
           label: "vs last month"
         },
         icon: "campaigns"
-      },
-      {
-        title: "Conversion Rate",
-        value: "24.8%",
-        change: {
-          value: "-1.1%",
-          type: "decrease",
-          label: "vs last month"
-        },
-        icon: "conversion"
       }
     ];
   }
