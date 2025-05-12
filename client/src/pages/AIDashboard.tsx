@@ -150,12 +150,26 @@ export function AIDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4 pb-0">
-              <div className="h-[400px] flex items-center justify-center">
-                <div className="text-center p-8 max-w-lg">
-                  <ChatAssistant />
-                  <p className="text-sm text-muted-foreground mt-4">
+              <div className="h-[400px]">
+                <div className="text-center p-4">
+                  <p className="text-sm text-muted-foreground mb-4">
                     The CRM Assistant can help you with understanding features, creating campaigns, managing leads, and much more.
                   </p>
+                  <Button 
+                    variant="default" 
+                    size="lg" 
+                    className="mt-4"
+                    onClick={() => {
+                      // Find the ChatAssistant component and trigger its dialog to open
+                      const button = document.querySelector('[data-chat-assistant-trigger]');
+                      if (button) {
+                        (button as HTMLButtonElement).click();
+                      }
+                    }}
+                  >
+                    <MessageSquare className="h-5 w-5 mr-2" />
+                    Open Chat Assistant
+                  </Button>
                 </div>
               </div>
             </CardContent>

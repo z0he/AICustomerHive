@@ -175,6 +175,7 @@ export function ChatAssistant() {
       <Button
         onClick={() => setIsOpen(true)}
         className="fixed bottom-4 right-4 rounded-full w-12 h-12 p-0 shadow-lg hover:shadow-xl transition-all duration-300"
+        data-chat-assistant-trigger
       >
         <Bot className="h-6 w-6" />
       </Button>
