@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { 
   Users, 
@@ -638,9 +638,15 @@ const Customers = () => {
                         {filteredCustomers.map((customer) => (
                           <div 
                             key={customer.id} 
-                            className={`grid grid-cols-12 gap-1 px-4 py-3 hover:bg-slate-50 transition-colors ${
+                            className={`grid grid-cols-12 gap-1 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer ${
                               selectedCustomers.includes(customer.id) ? 'bg-primary-50' : ''
                             }`}
+                            onClick={(e) => {
+                              // Prevent triggering when clicking on checkbox
+                              if ((e.target as HTMLElement).tagName !== 'INPUT') {
+                                handleViewCustomerDetails(customer);
+                              }
+                            }}
                           >
                             <div className="col-span-1 flex items-center space-x-2">
                               <input
