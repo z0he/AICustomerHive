@@ -58,9 +58,12 @@ const EmailPreviewModal: FC<EmailPreviewModalProps> = ({
     enabled: isOpen,
   });
   
-  // Fetch top leads/customers data
-  const { data: topLeads } = useQuery({
-    queryKey: ['/api/leads/top'],
+  // Fetch top leads or customers data based on target audience
+  const isCustomerTarget = targetAudience.toLowerCase().includes('customer');
+  
+  // Use the appropriate endpoint based on the target audience
+  const { data: recipientData } = useQuery({
+    queryKey: [isCustomerTarget ? '/api/customers' : '/api/leads/top'],
     enabled: isOpen,
   });
   
@@ -80,12 +83,12 @@ const EmailPreviewModal: FC<EmailPreviewModalProps> = ({
       }
       
       // Set recipients based on the target audience
-      if (topLeads && topLeads.length > 0) {
+      if (recipientData && recipientData.length > 0) {
         // Limit to 5 recipients for preview
-        setRecipients(topLeads.slice(0, 5));
+        setRecipients(recipientData.slice(0, 5));
       }
     }
-  }, [voiceCommand, isOpen, templates, topLeads]);
+  }, [voiceCommand, isOpen, templates, recipientData]);
   
   // Handle template selection
   const handleTemplateChange = (templateId: string) => {
