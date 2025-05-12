@@ -3,11 +3,14 @@ import { Link } from "wouter";
 import { 
   ArrowRight, 
   Check, 
-  Zap, 
-  LineChart, 
-  Users, 
+  AlertTriangle, 
+  DollarSign, 
+  FrownIcon, 
   Mail,
-  BrainCircuit 
+  BrainCircuit,
+  LineChart,
+  Calendar,
+  Shield 
 } from "lucide-react";
 import AIcrmLogo from "@/components/logo/AIcrmLogo";
 import { AccentButton } from "@/components/ui/accent-button";
@@ -40,19 +43,20 @@ const Landing: React.FC = () => {
           <div className="max-w-3xl mx-auto text-center">
             <BrandBadge variant="accentLight" className="mb-4">AI-POWERED CRM</BrandBadge>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              The CRM Built for Humans, Powered by AI
+              CRMs Weren't Built for You. So We Built One That Was.
             </h1>
             <p className="text-xl mb-8 text-white/90">
-              CRMs weren't built for you—until now. AICRM finally delivers what every business deserves: simplicity that drives results.
+              Ditch the bloated dashboards, shady pricing traps, and endless integrations.
+              Welcome to a CRM that's fast, friendly, and freaking smart.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <AccentButton className="px-8 py-3 text-base">
-                Get Started Free
+                Try it FREE
                 <ArrowRight className="ml-2 h-5 w-5" />
               </AccentButton>
               <Link href="/demo">
                 <button className="bg-white text-[#0082AE] hover:bg-white/90 px-8 py-3 rounded-md font-medium text-base">
-                  Watch Demo
+                  Watch a 3-minute demo
                 </button>
               </Link>
             </div>
@@ -60,78 +64,267 @@ const Landing: React.FC = () => {
         </div>
       </BrandGradient>
 
-      {/* Features Section */}
+      {/* Section Headers */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-3">"No More Upsells. No More Excel."</h2>
+              <p className="text-slate-600">Everything you need, powered by AI. Nothing you don't.</p>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-3">"Actually Use Every Feature You're Paying For."</h2>
+              <p className="text-slate-600">Our tools don't just sit there. They work. Automatically.</p>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-3">"Setup in Minutes. Results in Days. Not Months."</h2>
+              <p className="text-slate-600">Your CRM shouldn't feel like a second job. Ours doesn't.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pain Points Section */}
       <section className="py-20 bg-slate-50">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 mb-4">Features Built for Growth</h2>
+          <h2 className="text-3xl font-bold text-center text-slate-900 mb-16">TOP 3 PAIN POINTS (AND HOW YOU FIX THEM)</h2>
+
+          {/* Problem 1 */}
+          <div className="max-w-4xl mx-auto mb-16 bg-white p-8 rounded-lg shadow-sm">
+            <div className="flex items-start">
+              <div className="mr-4 mt-1">
+                <AlertTriangle className="text-[#8AC33E]" size={32} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-2">Problem #1: Feature Bloat, Locked Behind Paywalls</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-slate-50 p-4 rounded-md">
+                    <p className="font-semibold text-slate-900 mb-1">Their CRM:</p>
+                    <p className="text-slate-700">Traps you in freemium hell, hiding critical tools behind upgrade prompts.</p>
+                  </div>
+                  <div className="bg-[#0082AE]/10 p-4 rounded-md">
+                    <p className="font-semibold text-[#0082AE] mb-1">Ours:</p>
+                    <p className="text-slate-700">Gives you the whole toolkit from day one—with smart defaults and zero clutter.</p>
+                  </div>
+                </div>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">Your Fix:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white border border-slate-200 p-4 rounded-md">
+                    <div className="flex items-center mb-2">
+                      <Check className="text-[#8AC33E] mr-2" size={20} />
+                      <span className="font-medium">Smart Lead Scoring & Qualification</span>
+                    </div>
+                    <p className="text-slate-600 text-sm">Done for you via AI.</p>
+                  </div>
+                  <div className="bg-white border border-slate-200 p-4 rounded-md">
+                    <div className="flex items-center mb-2">
+                      <Check className="text-[#8AC33E] mr-2" size={20} />
+                      <span className="font-medium">360° Customer Profiles</span>
+                    </div>
+                    <p className="text-slate-600 text-sm">Tag, filter, sort, segment however you want.</p>
+                  </div>
+                  <div className="bg-white border border-slate-200 p-4 rounded-md">
+                    <div className="flex items-center mb-2">
+                      <Check className="text-[#8AC33E] mr-2" size={20} />
+                      <span className="font-medium">Campaigns, Emails, A/B Tests</span>
+                    </div>
+                    <p className="text-slate-600 text-sm">No add-ons, no BS.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Problem 2 */}
+          <div className="max-w-4xl mx-auto mb-16 bg-white p-8 rounded-lg shadow-sm">
+            <div className="flex items-start">
+              <div className="mr-4 mt-1">
+                <DollarSign className="text-[#8AC33E]" size={32} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-2">Problem #2: Punishing Pricing, Tricky Contracts</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-slate-50 p-4 rounded-md">
+                    <p className="font-semibold text-slate-900 mb-1">Their CRM:</p>
+                    <p className="text-slate-700">Forces you to "level up" every time you hit an arbitrary limit.</p>
+                  </div>
+                  <div className="bg-[#0082AE]/10 p-4 rounded-md">
+                    <p className="font-semibold text-[#0082AE] mb-1">Ours:</p>
+                    <p className="text-slate-700">Flat pricing. No hidden fees. Unlimited contacts.</p>
+                  </div>
+                </div>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">Your Fix:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white border border-slate-200 p-4 rounded-md">
+                    <div className="flex items-center mb-2">
+                      <Check className="text-[#8AC33E] mr-2" size={20} />
+                      <span className="font-medium">Automated Email Sequences & Drip Campaigns</span>
+                    </div>
+                  </div>
+                  <div className="bg-white border border-slate-200 p-4 rounded-md">
+                    <div className="flex items-center mb-2">
+                      <Check className="text-[#8AC33E] mr-2" size={20} />
+                      <span className="font-medium">Integrated Calendar, Meeting Links, and Reminders</span>
+                    </div>
+                  </div>
+                  <div className="bg-white border border-slate-200 p-4 rounded-md">
+                    <div className="flex items-center mb-2">
+                      <Check className="text-[#8AC33E] mr-2" size={20} />
+                      <span className="font-medium">Real-time Dashboards & Performance Reports</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Problem 3 */}
+          <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-sm">
+            <div className="flex items-start">
+              <div className="mr-4 mt-1">
+                <FrownIcon className="text-[#8AC33E]" size={32} />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-2">Problem #3: Bad UX, Clunky Integrations, Zero Support</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-slate-50 p-4 rounded-md">
+                    <p className="font-semibold text-slate-900 mb-1">Their CRM:</p>
+                    <p className="text-slate-700">Needs a dedicated admin. Or a PhD. Or therapy.</p>
+                  </div>
+                  <div className="bg-[#0082AE]/10 p-4 rounded-md">
+                    <p className="font-semibold text-[#0082AE] mb-1">Ours:</p>
+                    <p className="text-slate-700">Works out of the box, even with Outlook, Gmail, LinkedIn & Office365.</p>
+                  </div>
+                </div>
+                <h4 className="text-lg font-semibold text-slate-900 mb-3">Your Fix:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white border border-slate-200 p-4 rounded-md">
+                    <div className="flex items-center mb-2">
+                      <Check className="text-[#8AC33E] mr-2" size={20} />
+                      <span className="font-medium">Voice-Activated AI Assistant</span>
+                    </div>
+                    <p className="text-slate-600 text-sm">Operate your CRM hands-free.</p>
+                  </div>
+                  <div className="bg-white border border-slate-200 p-4 rounded-md">
+                    <div className="flex items-center mb-2">
+                      <Check className="text-[#8AC33E] mr-2" size={20} />
+                      <span className="font-medium">AI-Powered Guidance</span>
+                    </div>
+                    <p className="text-slate-600 text-sm">Get campaign tips, follow-up suggestions, and messaging help.</p>
+                  </div>
+                  <div className="bg-white border border-slate-200 p-4 rounded-md">
+                    <div className="flex items-center mb-2">
+                      <Check className="text-[#8AC33E] mr-2" size={20} />
+                      <span className="font-medium">Smart Tasks & Nudges</span>
+                    </div>
+                    <p className="text-slate-600 text-sm">AI sets your to-do list based on real customer actions.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Everything You Get Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-slate-900 mb-4">EVERYTHING YOU GET (ALL-IN)</h2>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              Everything you need to manage leads, nurture relationships, and close more deals—without the complexity.
+              We built this CRM from the ground up to solve every single complaint we heard from frustrated users like you.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Feature Card 1 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+            {/* Feature 1 */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
               <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
                 <BrainCircuit className="text-[#0082AE]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-slate-900">AI Assistant</h3>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">Intelligent Lead Management</h3>
               <p className="text-slate-600 mb-4">
-                Get instant insights and recommendations based on your customer data.
+                Smart scoring, auto-qualification, tags, ownership, activity history
               </p>
-              <ul className="space-y-2">
-                <li className="flex items-center">
-                  <Check className="text-[#8AC33E] mr-2 h-5 w-5" />
-                  <span className="text-slate-700">Voice & chat assistants</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="text-[#8AC33E] mr-2 h-5 w-5" />
-                  <span className="text-slate-700">Automated insights</span>
-                </li>
-              </ul>
+              <p className="text-[#0082AE] italic">Works like magic. Feels like common sense.</p>
             </div>
 
-            {/* Feature Card 2 */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
-              <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
-                <LineChart className="text-[#0082AE]" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-slate-900">Smart Analytics</h3>
-              <p className="text-slate-600 mb-4">
-                Track performance and identify opportunities with real-time data.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-center">
-                  <Check className="text-[#8AC33E] mr-2 h-5 w-5" />
-                  <span className="text-slate-700">Custom dashboards</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="text-[#8AC33E] mr-2 h-5 w-5" />
-                  <span className="text-slate-700">Conversion tracking</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Feature Card 3 */}
+            {/* Feature 2 */}
             <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
               <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
                 <Mail className="text-[#0082AE]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-slate-900">Email Campaigns</h3>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">AI-Powered Campaigns & Content</h3>
               <p className="text-slate-600 mb-4">
-                Create, send, and analyze email campaigns that convert.
+                Email & drip campaigns with A/B testing
               </p>
-              <ul className="space-y-2">
-                <li className="flex items-center">
-                  <Check className="text-[#8AC33E] mr-2 h-5 w-5" />
-                  <span className="text-slate-700">AI-generated templates</span>
-                </li>
-                <li className="flex items-center">
-                  <Check className="text-[#8AC33E] mr-2 h-5 w-5" />
-                  <span className="text-slate-700">A/B testing</span>
-                </li>
-              </ul>
+              <p className="text-[#0082AE] italic">Natural language AI helps write, segment, and optimise</p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
+              <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
+                <LineChart className="text-[#0082AE]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">Advanced Dashboards & Analytics</h3>
+              <p className="text-slate-600 mb-4">
+                Funnel views, growth tracking, interactive graphs
+              </p>
+              <p className="text-[#0082AE] italic">Replace 5 tabs and 3 tools with 1 clear command centre</p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
+              <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
+                <Calendar className="text-[#0082AE]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">Scheduling & Coordination Built-In</h3>
+              <p className="text-slate-600 mb-4">
+                Events, calls, video links, categories, colour codes
+              </p>
+              <p className="text-[#0082AE] italic">No more juggling external tools just to book a meeting</p>
+            </div>
+            
+            {/* Security */}
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100">
+              <div className="w-12 h-12 bg-[#0082AE]/10 rounded-lg flex items-center justify-center mb-4">
+                <Shield className="text-[#0082AE]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-slate-900">Enterprise-Grade Security</h3>
+              <p className="text-slate-600 mb-4">
+                Role-based permissions, encrypted data, full audit trails
+              </p>
+              <p className="text-[#0082AE] italic">GDPR-compliant, secure APIs—no compromises</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Objection Killers */}
+      <section className="py-20 bg-slate-50">
+        <div className="container mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">OBJECTION KILLERS</h2>
+          
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h3 className="text-xl font-bold text-slate-900 mb-3">"Switching CRMs is painful."</h3>
+              <p className="text-slate-600 mb-4">We agree. That's why we do the hard part.</p>
+              <p className="flex items-start">
+                <ArrowRight className="text-[#8AC33E] mr-2 mt-1 flex-shrink-0" size={16} />
+                <span className="text-slate-800">Free migration. Smart field-mapping. CSV import that actually works.</span>
+              </p>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h3 className="text-xl font-bold text-slate-900 mb-3">"What if this doesn't work?"</h3>
+              <p className="text-slate-600 mb-4">Try it free. Full features. No time limits.</p>
+              <p className="text-slate-800">If you've been burned before, this one's built to earn your trust back.</p>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h3 className="text-xl font-bold text-slate-900 mb-3">"Why is this better than HubSpot/Salesforce?"</h3>
+              <p className="text-slate-600 mb-4">Because our CRM works for you—not the other way around.</p>
+              <p className="text-slate-800">Simple UX. Real AI. Transparent pricing. Built for small teams, not massive org charts.</p>
             </div>
           </div>
         </div>
@@ -140,13 +333,22 @@ const Landing: React.FC = () => {
       {/* Call to Action */}
       <section className="bg-[#00556E] text-white py-16">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to transform your customer relationships?</h2>
-          <p className="text-white/80 max-w-2xl mx-auto mb-8">
-            Join thousands of businesses using AICRM to grow faster and smarter.
-          </p>
-          <AccentButton className="px-8 py-3 text-base">
-            Start Your Free Trial
-          </AccentButton>
+          <h2 className="text-3xl font-bold mb-4">Let Go of the CRM Bloat. Embrace Growth Without the Guesswork.</h2>
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row mt-8">
+            <AccentButton className="px-8 py-3 text-base">
+              Try it FREE — No credit card required
+            </AccentButton>
+            <Link href="/demo">
+              <button className="bg-white text-[#0082AE] hover:bg-white/90 px-8 py-3 rounded-md font-medium text-base">
+                Watch a 3-minute demo
+              </button>
+            </Link>
+            <Link href="/contact">
+              <button className="bg-transparent border border-white text-white hover:bg-white/10 px-8 py-3 rounded-md font-medium text-base">
+                Book a call with our team
+              </button>
+            </Link>
+          </div>
         </div>
       </section>
 
