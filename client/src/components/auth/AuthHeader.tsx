@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import LogoutButton from "@/components/auth/LogoutButton";
 
 interface User {
   id: number;
@@ -103,7 +104,9 @@ const AuthHeader: FC<AuthHeaderProps> = ({
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onLogout}>Logout</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <LogoutButton variant="ghost" className="w-full justify-start p-2 cursor-pointer" showIcon={true} />
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
