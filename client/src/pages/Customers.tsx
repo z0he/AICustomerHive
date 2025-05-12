@@ -7,6 +7,7 @@ import { apiRequest } from "@/lib/queryClient";
 import AuthHeader from "@/components/auth/AuthHeader";
 import Sidebar from "@/components/layout/Sidebar";
 import CustomerSegments from "@/components/customers/CustomerSegments";
+import CustomerDetails from "@/components/customers/CustomerDetails";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -97,7 +98,7 @@ const customerFormSchema = z.object({
 type CustomerFormValues = z.infer<typeof customerFormSchema>;
 
 // Customer card component
-const CustomerCard = ({ customer }: { customer: Customer }) => {
+const CustomerCard = ({ customer, onViewDetails }: { customer: Customer, onViewDetails: (customer: Customer) => void }) => {
   return (
     <Card className="overflow-hidden hover:shadow-md transition-shadow">
       <CardHeader className="bg-slate-50 p-4 flex flex-row items-center justify-between">
@@ -119,7 +120,7 @@ const CustomerCard = ({ customer }: { customer: Customer }) => {
           <div className="grid grid-cols-1 gap-2 text-sm">
             <div className="flex items-center space-x-2 text-slate-600">
               <Phone size={14} />
-              <span>{customer.phone}</span>
+              <span>{customer.phone || "No phone"}</span>
             </div>
             {customer.company && (
               <div className="flex items-center space-x-2 text-slate-600">
@@ -134,7 +135,12 @@ const CustomerCard = ({ customer }: { customer: Customer }) => {
           </div>
           
           <div className="mt-2 flex justify-end">
-            <Button variant="ghost" size="sm" className="flex items-center space-x-1">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center space-x-1"
+              onClick={() => onViewDetails(customer)}
+            >
               <span>View Details</span>
               <ChevronRight size={16} />
             </Button>
