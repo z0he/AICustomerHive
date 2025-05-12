@@ -761,10 +761,22 @@ export default function LeadManagement() {
             
             <LeadDetails 
               lead={selectedLead}
-              onUpdateScore={(scoringData) => updateLeadScoreMutation.mutate({ id: selectedLead.id, scoringData })}
-              onUpdateLead={(leadData) => updateLeadMutation.mutate({ id: selectedLead.id, leadData })}
-              onAddNote={(note) => addLeadNoteMutation.mutate({ id: selectedLead.id, note })}
-              onAssignOwner={(ownerName) => assignLeadOwnerMutation.mutate({ id: selectedLead.id, ownerName })}
+              onUpdateScore={(scoringData) => updateLeadScoreMutation.mutate({ 
+                id: typeof selectedLead === 'object' && selectedLead !== null ? (selectedLead as any).id : 0, 
+                scoringData 
+              })}
+              onUpdateLead={(leadData) => updateLeadMutation.mutate({ 
+                id: typeof selectedLead === 'object' && selectedLead !== null ? (selectedLead as any).id : 0, 
+                leadData 
+              })}
+              onAddNote={(note) => addLeadNoteMutation.mutate({ 
+                id: typeof selectedLead === 'object' && selectedLead !== null ? (selectedLead as any).id : 0, 
+                note 
+              })}
+              onAssignOwner={(ownerName) => assignLeadOwnerMutation.mutate({ 
+                id: typeof selectedLead === 'object' && selectedLead !== null ? (selectedLead as any).id : 0, 
+                ownerName 
+              })}
               isUpdating={updateLeadMutation.isPending || updateLeadScoreMutation.isPending}
               leadOwners={leadOwners}
             />
