@@ -1563,35 +1563,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json([]);
       }
       
+      // For debugging purpose
+      console.log('Email logs found:', emailLogs.length);
+      
       // Get campaigns and templates for supplementary info
       const campaigns = await storage.getCampaigns();
       const templates = await storage.getEmailTemplates();
       
-      // Transform email logs into campaign emails format
+      // Transform email logs into campaign emails format with added error handling
       const campaignEmails = emailLogs.map(log => {
-        // Find related campaign if exists
-        const campaign = log.campaignId 
-          ? campaigns.find(c => c.id === log.campaignId) 
-          : null;
-        
-        // Find related template if exists
-        const template = log.templateId 
-          ? templates.find(t => t.id === log.templateId) 
-          : null;
-        
-        return {
-          id: log.id,
-          campaignId: log.campaignId || 0,
-          campaignName: campaign ? campaign.name : "Direct Email",
-          templateId: log.templateId,
-          templateName: template ? template.name : "Custom Template",
-          subject: log.subject || "Email Campaign",
-          segmentId: null, // No segment data in the logs yet
-          segmentName: null,
-          status: log.status || "scheduled",
-          scheduledFor: log.sentAt, // Using sentAt as scheduledFor for now
-          sentAt: log.status === 'sent' ? log.sentAt : null
-        };
+        try {
+          // Find related campaign if exists (but don't error if not found)
+          const campaign = log.campaignId 
+            ? campaigns.find(c => c.id === log.campaignId) 
+            : null;
+          
+          // Find related template if exists (but don't error if not found)
+          const template = log.templateId 
+            ? templates.find(t => t.id === log.templateId) 
+            : null;
+          
+          return {
+            id: log.id,
+            campaignId: log.campaignId || 0,
+            campaignName: campaign ? campaign.name : "Direct Email",
+            templateId: log.templateId || 0,
+            templateName: template ? template.name : "Custom Template",
+            subject: log.subject || "Email Campaign",
+            segmentId: null, // No segment data in the logs yet
+            segmentName: null,
+            status: log.status || "scheduled",
+            scheduledFor: log.sentAt, // Using sentAt as scheduledFor for now
+            sentAt: log.status === 'sent' ? log.sentAt : null
+          };
+        } catch (error) {
+          console.error("Error processing email log:", error, log);
+          // Return a default object if there's an error
+          return {
+            id: log.id || 0,
+            campaignId: 0,
+            campaignName: "Direct Email",
+            templateId: 0,
+            templateName: "Custom Template",
+            subject: "Email Campaign",
+            segmentId: null,
+            segmentName: null,
+            status: "scheduled",
+            scheduledFor: new Date(),
+            sentAt: null
+          };
+        }
       });
       
       return res.json(campaignEmails);
