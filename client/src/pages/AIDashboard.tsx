@@ -4,9 +4,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Mic, BrainCircuit, Lightbulb, Info, Settings, Key } from 'lucide-react';
+import { Sparkles, Mic, BrainCircuit, Lightbulb, Info, Settings, Key, MessageSquare } from 'lucide-react';
 import CampaignSuggestions from '@/components/ai/CampaignSuggestions';
 import CustomerInsights from '@/components/ai/CustomerInsights';
+import ChatAssistant from '@/components/ai/ChatAssistant';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -27,10 +28,7 @@ export function AIDashboard() {
 
   const handleSaveApiKey = async () => {
     try {
-      await apiRequest('/api/config/openai', {
-        method: 'POST',
-        data: { apiKey }
-      });
+      await apiRequest('/api/config/openai', 'POST', { apiKey });
       setIsSettingsOpen(false);
       
       // Force a refresh to update the API key status
@@ -119,7 +117,7 @@ export function AIDashboard() {
 
       {/* AI Features Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="campaign-suggestions" className="flex items-center gap-2">
             <Lightbulb className="h-4 w-4" />
             Campaign Suggestions
@@ -129,12 +127,39 @@ export function AIDashboard() {
             Customer Insights
             <Badge variant="outline" className="ml-2 hidden md:inline-flex">Premium</Badge>
           </TabsTrigger>
+          <TabsTrigger value="chat-assistant" className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            CRM Assistant
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="campaign-suggestions">
           <CampaignSuggestions />
         </TabsContent>
         <TabsContent value="customer-insights">
           <CustomerInsights />
+        </TabsContent>
+        <TabsContent value="chat-assistant" className="min-h-[500px]">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-primary" />
+                CRM Assistant Chat
+              </CardTitle>
+              <CardDescription>
+                Get instant help and guidance for using your CRM system
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4 pb-0">
+              <div className="h-[400px] flex items-center justify-center">
+                <div className="text-center p-8 max-w-lg">
+                  <ChatAssistant />
+                  <p className="text-sm text-muted-foreground mt-4">
+                    The CRM Assistant can help you with understanding features, creating campaigns, managing leads, and much more.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
