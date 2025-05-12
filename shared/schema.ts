@@ -1,7 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, varchar, json, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { type Json } from "drizzle-orm/pg-core";
+import type { Json } from "drizzle-orm/pg-core";
 
 // Users table
 export const users = pgTable("users", {

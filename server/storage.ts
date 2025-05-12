@@ -43,6 +43,18 @@ export interface IStorage {
   incrementFormSubmissions(formId: number): Promise<void>;
   generateFormEmbedCode(formId: number): Promise<string>;
   
+  // Chat Assistant methods
+  getChatConversations(): Promise<ChatConversation[]>;
+  getChatConversationsByUserId(userId: number): Promise<ChatConversation[]>;
+  getChatConversationById(id: number): Promise<ChatConversation | undefined>;
+  createChatConversation(conversation: InsertChatConversation & { createdAt: Date }): Promise<ChatConversation>;
+  updateChatConversation(id: number, conversationData: Partial<ChatConversation>): Promise<ChatConversation>;
+  deleteChatConversation(id: number): Promise<void>;
+  getChatMessages(): Promise<ChatMessage[]>;
+  getChatMessagesByConversationId(conversationId: number): Promise<ChatMessage[]>;
+  getChatMessageById(id: number): Promise<ChatMessage | undefined>;
+  createChatMessage(message: InsertChatMessage & { createdAt: Date }): Promise<ChatMessage>;
+  
   // Web Visitor Tracking methods
   getWebVisitorByVisitorId(visitorId: string): Promise<WebVisitor | undefined>;
   createWebVisitor(visitor: InsertWebVisitor): Promise<WebVisitor>;
