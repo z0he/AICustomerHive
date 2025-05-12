@@ -120,10 +120,7 @@ export default function LeadManagement() {
   // Mutations
   const createLeadMutation = useMutation({
     mutationFn: (leadData: any) => {
-      return apiRequest("/api/leads", {
-        method: "POST",
-        data: leadData
-      });
+      return apiRequest('POST', '/api/leads', leadData);
     },
     onSuccess: () => {
       toast({
@@ -148,10 +145,7 @@ export default function LeadManagement() {
   
   const updateLeadScoreMutation = useMutation({
     mutationFn: ({ id, scoringData }: { id: number, scoringData: any }) => {
-      return apiRequest(`/api/leads/${id}/score`, {
-        method: "POST",
-        data: scoringData
-      });
+      return apiRequest('POST', `/api/leads/${id}/score`, scoringData);
     },
     onSuccess: () => {
       toast({
@@ -178,10 +172,7 @@ export default function LeadManagement() {
   
   const updateLeadMutation = useMutation({
     mutationFn: ({ id, leadData }: { id: number, leadData: any }) => {
-      return apiRequest(`/api/leads/${id}`, {
-        method: "PATCH",
-        data: leadData
-      });
+      return apiRequest('PATCH', `/api/leads/${id}`, leadData);
     },
     onSuccess: () => {
       toast({
@@ -207,10 +198,7 @@ export default function LeadManagement() {
   
   const addLeadNoteMutation = useMutation({
     mutationFn: ({ id, note }: { id: number, note: string }) => {
-      return apiRequest(`/api/leads/${id}/notes`, {
-        method: "POST",
-        data: { note }
-      });
+      return apiRequest('POST', `/api/leads/${id}/notes`, { note });
     },
     onSuccess: () => {
       toast({
@@ -235,10 +223,7 @@ export default function LeadManagement() {
   
   const assignLeadOwnerMutation = useMutation({
     mutationFn: ({ id, ownerName }: { id: number, ownerName: string }) => {
-      return apiRequest(`/api/leads/${id}/owner`, {
-        method: "POST",
-        data: { ownerName }
-      });
+      return apiRequest('POST', `/api/leads/${id}/owner`, { ownerName });
     },
     onSuccess: () => {
       toast({
@@ -337,6 +322,8 @@ export default function LeadManagement() {
     { id: 3, name: "Robert Johnson" },
     { id: 4, name: "Emily Williams" },
   ];
+  
+  // We already have selectedLead from the query above
   
   // Create lead sources for dropdown
   const leadSources = [
