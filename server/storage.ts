@@ -150,6 +150,22 @@ export interface IStorage {
   updateTrackingInstallation(id: number, data: Partial<TrackingInstallation>): Promise<TrackingInstallation>;
   generateTrackingCode(websiteUrl: string, settings?: any): Promise<string>;
   updateTrackingLastPing(id: number): Promise<TrackingInstallation>;
+  
+  // Chat Conversation methods
+  getChatConversations(): Promise<ChatConversation[]>;
+  getChatConversationsByUserId(userId: number): Promise<ChatConversation[]>;
+  getChatConversationById(id: number): Promise<ChatConversation | undefined>;
+  createChatConversation(conversation: InsertChatConversation & { createdAt: Date }): Promise<ChatConversation>;
+  updateChatConversation(id: number, conversationData: Partial<ChatConversation>): Promise<ChatConversation>;
+  deleteChatConversation(id: number): Promise<void>;
+  
+  // Chat Message methods
+  getChatMessages(): Promise<ChatMessage[]>;
+  getChatMessagesByConversationId(conversationId: number): Promise<ChatMessage[]>;
+  getChatMessageById(id: number): Promise<ChatMessage | undefined>;
+  createChatMessage(message: InsertChatMessage & { createdAt: Date }): Promise<ChatMessage>;
+  updateChatMessage(id: number, messageData: Partial<ChatMessage>): Promise<ChatMessage>;
+  deleteChatMessage(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -503,6 +519,8 @@ export class MemStorage implements IStorage {
   private webVisitors: Map<string, WebVisitor>;
   private pageViews: Map<number, PageView>;
   private trackingInstallations: Map<number, TrackingInstallation>;
+  private chatConversations: Map<number, ChatConversation>;
+  private chatMessages: Map<number, ChatMessage>;
   
   private userCurrentId: number;
   private campaignCurrentId: number;
@@ -518,6 +536,8 @@ export class MemStorage implements IStorage {
   private formSubmissionCurrentId: number;
   private pageViewCurrentId: number;
   private trackingInstallationCurrentId: number;
+  private chatConversationCurrentId: number;
+  private chatMessageCurrentId: number;
 
   constructor() {
     this.users = new Map();
