@@ -555,6 +555,8 @@ export class MemStorage implements IStorage {
     this.webVisitors = new Map();
     this.pageViews = new Map();
     this.trackingInstallations = new Map();
+    this.chatConversations = new Map();
+    this.chatMessages = new Map();
     
     this.userCurrentId = 1;
     this.campaignCurrentId = 1;
@@ -570,6 +572,8 @@ export class MemStorage implements IStorage {
     this.formSubmissionCurrentId = 1;
     this.pageViewCurrentId = 1;
     this.trackingInstallationCurrentId = 1;
+    this.chatConversationCurrentId = 1;
+    this.chatMessageCurrentId = 1;
     
     this.seedData();
   }
@@ -1918,6 +1922,123 @@ export class MemStorage implements IStorage {
     
     this.marketingForms.set(contactForm.id, contactForm);
     this.marketingForms.set(leadMagnetForm.id, leadMagnetForm);
+  }
+  
+  // ----- Chat Conversation methods -----
+  
+  async getChatConversations(): Promise<ChatConversation[]> {
+    return Array.from(this.chatConversations.values());
+  }
+  
+  async getChatConversationsByUserId(userId: number): Promise<ChatConversation[]> {
+    return Array.from(this.chatConversations.values())
+      .filter(conversation => conversation.userId === userId);
+  }
+  
+  async getChatConversationById(id: number): Promise<ChatConversation | undefined> {
+    return this.chatConversations.get(id);
+  }
+  
+  async createChatConversation(conversation: InsertChatConversation & { createdAt: Date }): Promise<ChatConversation> {
+    const newConversation: ChatConversation = {
+      id: this.chatConversationCurrentId++,
+      ...conversation
+    };
+    
+    this.chatConversations.set(newConversation.id, newConversation);
+    return newConversation;
+  }
+  
+  async updateChatConversation(id: number, conversationData: Partial<ChatConversation>): Promise<ChatConversation> {
+    const conversation = await this.getChatConversationById(id);
+    
+    if (!conversation) {
+      throw new Error(`Chat conversation with id ${id} not found`);
+    }
+    
+    const updatedConversation = {
+      ...conversation,
+      ...conversationData,
+      id: conversation.id, // Ensure ID doesn't change
+    };
+    
+    this.chatConversations.set(id, updatedConversation);
+    return updatedConversation;
+  }
+  
+  async deleteChatConversation(id: number): Promise<void> {
+    if (!this.chatConversations.has(id)) {
+      throw new Error(`Chat conversation with id ${id} not found`);
+    }
+    
+    // Delete all messages related to this conversation
+    const messages = await this.getChatMessagesByConversationId(id);
+    messages.forEach(message => {
+      this.chatMessages.delete(message.id);
+    });
+    
+    this.chatConversations.delete(id);
+  }
+  
+  // ----- Chat Message methods -----
+  
+  async getChatMessages(): Promise<ChatMessage[]> {
+    return Array.from(this.chatMessages.values());
+  }
+  
+  async getChatMessagesByConversationId(conversationId: number): Promise<ChatMessage[]> {
+    return Array.from(this.chatMessages.values())
+      .filter(message => message.conversationId === conversationId)
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+  
+  async getChatMessageById(id: number): Promise<ChatMessage | undefined> {
+    return this.chatMessages.get(id);
+  }
+  
+  async createChatMessage(message: InsertChatMessage & { createdAt: Date }): Promise<ChatMessage> {
+    const newMessage: ChatMessage = {
+      id: this.chatMessageCurrentId++,
+      ...message
+    };
+    
+    this.chatMessages.set(newMessage.id, newMessage);
+    
+    // Update lastMessageAt in the conversation
+    const conversation = await this.getChatConversationById(newMessage.conversationId);
+    if (conversation) {
+      await this.updateChatConversation(conversation.id, {
+        lastMessageAt: newMessage.createdAt
+      });
+    }
+    
+    return newMessage;
+  }
+  
+  async updateChatMessage(id: number, messageData: Partial<ChatMessage>): Promise<ChatMessage> {
+    const message = await this.getChatMessageById(id);
+    
+    if (!message) {
+      throw new Error(`Chat message with id ${id} not found`);
+    }
+    
+    const updatedMessage = {
+      ...message,
+      ...messageData,
+      id: message.id, // Ensure ID doesn't change
+      conversationId: message.conversationId // Ensure conversation ID doesn't change
+    };
+    
+    this.chatMessages.set(id, updatedMessage);
+    return updatedMessage;
+  }
+  
+  async deleteChatMessage(id: number): Promise<void> {
+    if (!this.chatMessages.has(id)) {
+      throw new Error(`Chat message with id ${id} not found`);
+    }
+    
+    this.chatMessages.delete(id);
   }
 }
 
