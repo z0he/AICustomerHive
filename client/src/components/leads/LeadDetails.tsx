@@ -422,7 +422,7 @@ export default function LeadDetails({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="preferredTime">Preferred Contact Time</Label>
-                        <Select defaultValue={lead.preferredContactTime || "business_hours"}>
+                        <Select defaultValue={(lead.preferredContactTime as string) ?? "business_hours"}>
                           <SelectTrigger id="preferredTime">
                             <SelectValue placeholder="Select preferred time" />
                           </SelectTrigger>
@@ -437,7 +437,7 @@ export default function LeadDetails({
                       
                       <div>
                         <Label htmlFor="preferredChannel">Preferred Contact Method</Label>
-                        <Select defaultValue={lead.preferredContactMethod || "email"}>
+                        <Select defaultValue={(lead.preferredContactMethod as string) ?? "email"}>
                           <SelectTrigger id="preferredChannel">
                             <SelectValue placeholder="Select preferred channel" />
                           </SelectTrigger>
@@ -458,7 +458,7 @@ export default function LeadDetails({
                   
                   <div className="space-y-4">
                     <div className="flex items-center">
-                      <Checkbox id="consent-gdpr" defaultChecked={lead.gdprConsent} />
+                      <Checkbox id="consent-gdpr" defaultChecked={lead.gdprConsent ?? false} />
                       <label
                         htmlFor="consent-gdpr"
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ml-2"
@@ -467,7 +467,7 @@ export default function LeadDetails({
                       </label>
                     </div>
                     <div className="flex items-center">
-                      <Checkbox id="consent-casl" defaultChecked={lead.caslConsent} />
+                      <Checkbox id="consent-casl" defaultChecked={lead.caslConsent ?? false} />
                       <label
                         htmlFor="consent-casl"
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ml-2"
@@ -476,7 +476,7 @@ export default function LeadDetails({
                       </label>
                     </div>
                     <div className="flex items-center">
-                      <Checkbox id="consent-ccpa" defaultChecked={lead.ccpaConsent} />
+                      <Checkbox id="consent-ccpa" defaultChecked={lead.ccpaConsent ?? false} />
                       <label
                         htmlFor="consent-ccpa"
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ml-2"
