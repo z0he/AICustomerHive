@@ -1,12 +1,12 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Customer } from "@shared/schema";
-import { createInsertSchema } from "drizzle-zod";
 
 // Use a simplified version of the form schema
 const customerFormSchema = z.object({
@@ -16,13 +16,16 @@ const customerFormSchema = z.object({
   phone: z.string().optional(),
   company: z.string().optional(),
   jobTitle: z.string().optional(),
+  location: z.string().optional(),
   industry: z.string().optional(),
   country: z.string().optional(),
   contactSource: z.string().optional(),
-  contactStage: z.string().optional(),
-  website: z.string().optional(),
+  contactType: z.string().optional(),
+  lifecycleStage: z.string().optional(),
+  leadStatus: z.string().optional(),
+  legalBasis: z.string().optional(),
   linkedin: z.string().optional(),
-  twitter: z.string().optional()
+  notes: z.string().optional()
 });
 
 type CustomerFormValues = z.infer<typeof customerFormSchema>;
@@ -38,131 +41,178 @@ export default function CustomerForm({
   onSubmit, 
   isSubmitting = false 
 }: CustomerFormProps) {
+  const [engagementLevel, setEngagementLevel] = useState(defaultValues?.engagementLevel || 0);
+  
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerFormSchema),
-    defaultValues: defaultValues || {
+    defaultValues: {
       firstName: "",
       lastName: "",
       email: "",
       phone: "",
       company: "",
       jobTitle: "",
+      location: "",
       industry: "",
       country: "",
       contactSource: "website",
-      contactStage: "lead",
-      website: "",
+      contactType: "",
+      lifecycleStage: "lead",
+      leadStatus: "new",
+      legalBasis: "",
       linkedin: "",
-      twitter: ""
+      notes: "",
+      ...defaultValues
     }
   });
 
+  const handleSubmit = (data: CustomerFormValues) => {
+    // Add engagement level from slider
+    const completeData = {
+      ...data,
+      engagementLevel
+    };
+    
+    onSubmit(completeData);
+  };
+
   // Available options for dropdowns
-  const industries = [
+  const industrySuggestions = [
     "Technology",
-    "Healthcare",
     "Finance",
+    "Healthcare",
     "Education",
     "Retail",
     "Manufacturing",
+    "Consulting",
+    "Entertainment",
+    "Real Estate",
+    "Transportation",
+    "Agriculture",
+    "Energy",
+    "Hospitality",
     "Government",
-    "Nonprofit",
-    "Media",
-    "Other"
+    "Non-profit",
   ];
 
+  const leadSources = [
+    { id: "website", name: "Website" },
+    { id: "referral", name: "Referral" },
+    { id: "advertisement", name: "Advertisement" },
+    { id: "social_media", name: "Social Media" },
+    { id: "email", name: "Email" },
+    { id: "event", name: "Event" },
+    { id: "partner", name: "Partner" },
+    { id: "other", name: "Other" },
+  ];
+  
+  const leadStatuses = [
+    { id: "new", name: "New" },
+    { id: "contacted", name: "Contacted" },
+    { id: "qualified", name: "Qualified" },
+    { id: "proposal", name: "Proposal" },
+    { id: "negotiation", name: "Negotiation" },
+    { id: "won", name: "Won" },
+    { id: "lost", name: "Lost" },
+  ];
+  
+  const contactTypes = [
+    { id: "business", name: "Business" },
+    { id: "individual", name: "Individual" },
+  ];
+  
+  const lifecycleStages = [
+    { id: "lead", name: "Lead" },
+    { id: "customer", name: "Customer" },
+    { id: "opportunity", name: "Opportunity" },
+    { id: "subscriber", name: "Subscriber" },
+  ];
+  
+  const legalBases = [
+    { id: "consent", name: "Consent" },
+    { id: "contract", name: "Contract" },
+    { id: "legitimate_interest", name: "Legitimate Interest" },
+    { id: "legal_obligation", name: "Legal Obligation" },
+  ];
+  
   const countries = [
-    "United States",
-    "United Kingdom",
-    "Canada",
-    "Australia",
-    "Germany",
-    "France",
-    "Japan",
-    "India",
-    "Brazil",
-    "China"
-  ];
-
-  const sources = [
-    "website",
-    "referral",
-    "social_media",
-    "event",
-    "email_campaign",
-    "cold_call",
-    "other"
-  ];
-
-  const stages = [
-    "lead",
-    "prospect",
-    "opportunity",
-    "customer",
-    "churned"
+    { id: "us", name: "United States" },
+    { id: "ca", name: "Canada" },
+    { id: "uk", name: "United Kingdom" },
+    { id: "au", name: "Australia" },
+    { id: "fr", name: "France" },
+    { id: "de", name: "Germany" },
+    { id: "jp", name: "Japan" },
+    { id: "cn", name: "China" },
+    { id: "in", name: "India" },
+    { id: "br", name: "Brazil" },
   ];
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Basic Information */}
+          <div className="col-span-2">
+            <h3 className="text-md font-medium mb-3">Basic Information</h3>
+          </div>
+          
           <FormField
             control={form.control}
             name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First Name*</FormLabel>
+                <FormLabel>First Name <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
-                  <Input placeholder="John" {...field} />
+                  <Input placeholder="John" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+          
           <FormField
             control={form.control}
             name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Last Name*</FormLabel>
+                <FormLabel>Last Name <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
-                  <Input placeholder="Doe" {...field} />
+                  <Input placeholder="Doe" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email*</FormLabel>
-              <FormControl>
-                <Input placeholder="john.doe@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Phone</FormLabel>
-              <FormControl>
-                <Input placeholder="+1 (555) 123-4567" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email <span className="text-red-500">*</span></FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="john@example.com" {...field} value={field.value || ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone</FormLabel>
+                <FormControl>
+                  <Input placeholder="+1 (555) 123-4567" {...field} value={field.value || ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           <FormField
             control={form.control}
             name="company"
@@ -170,12 +220,13 @@ export default function CustomerForm({
               <FormItem>
                 <FormLabel>Company</FormLabel>
                 <FormControl>
-                  <Input placeholder="Acme Inc." {...field} />
+                  <Input placeholder="Acme Inc." {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+          
           <FormField
             control={form.control}
             name="jobTitle"
@@ -183,173 +234,290 @@ export default function CustomerForm({
               <FormItem>
                 <FormLabel>Job Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Product Manager" {...field} />
+                  <Input placeholder="Marketing Manager" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <FormField
+            control={form.control}
+            name="linkedin"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>LinkedIn URL</FormLabel>
+                <FormControl>
+                  <Input placeholder="https://linkedin.com/in/johndoe" {...field} value={field.value || ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Location</FormLabel>
+                <FormControl>
+                  <Input placeholder="New York, NY" {...field} value={field.value || ""} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          {/* Classification */}
+          <div className="col-span-2 mt-3">
+            <h3 className="text-md font-medium mb-3">Classification</h3>
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="lifecycleStage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Lifecycle Stage</FormLabel>
+                <FormControl>
+                  <Select 
+                    value={field.value || "lead"} 
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select lifecycle stage" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lifecycleStages.map((stage) => (
+                        <SelectItem key={stage.id} value={stage.id}>
+                          {stage.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="contactType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Contact Type</FormLabel>
+                <FormControl>
+                  <Select 
+                    value={field.value || ""} 
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select contact type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contactTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           <FormField
             control={form.control}
             name="industry"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Industry</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
+                <FormLabel>Industry <span className="text-red-500">*</span></FormLabel>
+                <FormControl>
+                  <Select 
+                    value={field.value || ""} 
+                    onValueChange={field.onChange}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select industry" />
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {industries.map((industry) => (
-                      <SelectItem key={industry} value={industry}>
-                        {industry}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                      {industrySuggestions.map((industry) => (
+                        <SelectItem key={industry} value={industry}>
+                          {industry}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+          
           <FormField
             control={form.control}
             name="country"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Country</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
+                <FormControl>
+                  <Select 
+                    value={field.value || ""} 
+                    onValueChange={field.onChange}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                      {countries.map((country) => (
+                        <SelectItem key={country.id} value={country.id}>
+                          {country.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          {/* Contact/Lead Information */}
+          <div className="col-span-2 mt-3">
+            <h3 className="text-md font-medium mb-3">Contact Information</h3>
+          </div>
+          
           <FormField
             control={form.control}
             name="contactSource"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Source</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
+                <FormLabel>Contact Source</FormLabel>
+                <FormControl>
+                  <Select 
+                    value={field.value || "website"} 
+                    onValueChange={field.onChange}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {sources.map((source) => (
-                      <SelectItem key={source} value={source}>
-                        {source.charAt(0).toUpperCase() + source.slice(1).replace('_', ' ')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                      {leadSources.map((source) => (
+                        <SelectItem key={source.id} value={source.id}>
+                          {source.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+          
           <FormField
             control={form.control}
-            name="contactStage"
+            name="leadStatus"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Stage</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
+                <FormLabel>Status</FormLabel>
+                <FormControl>
+                  <Select 
+                    value={field.value || "new"} 
+                    onValueChange={field.onChange}
+                  >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select stage" />
+                      <SelectValue placeholder="Select status" />
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {stages.map((stage) => (
-                      <SelectItem key={stage} value={stage}>
-                        {stage.charAt(0).toUpperCase() + stage.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField
-            control={form.control}
-            name="website"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Website</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://example.com" {...field} />
+                    <SelectContent>
+                      {leadStatuses.map((status) => (
+                        <SelectItem key={status.id} value={status.id}>
+                          {status.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+          
           <FormField
             control={form.control}
-            name="linkedin"
+            name="legalBasis"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>LinkedIn</FormLabel>
+                <FormLabel>Legal Basis</FormLabel>
                 <FormControl>
-                  <Input placeholder="LinkedIn profile URL" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="twitter"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Twitter</FormLabel>
-                <FormControl>
-                  <Input placeholder="Twitter handle" {...field} />
+                  <Select 
+                    value={field.value || ""} 
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select legal basis" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {legalBases.map((basis) => (
+                        <SelectItem key={basis.id} value={basis.id}>
+                          {basis.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Saving..." : "Save Customer"}
-        </Button>
+        
+        {/* Engagement Level Slider */}
+        <div className="space-y-2 mt-3">
+          <FormLabel>Engagement Level: {engagementLevel}</FormLabel>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={engagementLevel}
+            onChange={(e) => setEngagementLevel(parseInt(e.target.value))}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          />
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Low</span>
+            <span>Medium</span>
+            <span>High</span>
+          </div>
+        </div>
+        
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea 
+                  placeholder="Add any important details about this contact..." 
+                  className="min-h-[100px]" 
+                  {...field}
+                  value={field.value || ""}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <div className="flex justify-end">
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save Customer"}
+          </Button>
+        </div>
       </form>
     </Form>
   );

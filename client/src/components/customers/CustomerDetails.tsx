@@ -152,8 +152,8 @@ export default function CustomerDetails({
                     industry: customer.contactIndustry || "",
                     country: customer.country || "",
                     contactSource: customer.contactSource || "website",
-                    contactStage: customer.status || "lead",
-                    website: customer.linkedin?.split("/")[0] || "",  // As a fallback using first part of linkedin URL
+                    lifecycleStage: customer.status || "lead",
+                    location: customer.location || "",
                     linkedin: customer.linkedinUrl || "",
                     twitter: ""  // This field might not exist yet
                   }}
