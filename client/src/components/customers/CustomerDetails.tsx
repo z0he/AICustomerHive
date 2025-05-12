@@ -149,13 +149,15 @@ export default function CustomerDetails({
                     phone: customer.phone || "",
                     company: customer.company || "",
                     jobTitle: customer.jobTitle || "",
+                    location: "",  // This might be derived from address info
                     industry: customer.contactIndustry || "",
                     country: customer.country || "",
                     contactSource: customer.contactSource || "website",
                     lifecycleStage: customer.status || "lead",
-                    location: customer.location || "",
+                    leadStatus: customer.status || "new",
+                    legalBasis: "",
                     linkedin: customer.linkedinUrl || "",
-                    twitter: ""  // This field might not exist yet
+                    notes: ""
                   }}
                 />
               </DialogContent>

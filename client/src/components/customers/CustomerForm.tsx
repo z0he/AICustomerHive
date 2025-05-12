@@ -30,9 +30,14 @@ const customerFormSchema = z.object({
 
 type CustomerFormValues = z.infer<typeof customerFormSchema>;
 
+// Extended type that includes non-form fields
+interface ExtendedCustomerValues extends CustomerFormValues {
+  engagementLevel?: number;
+}
+
 interface CustomerFormProps {
-  defaultValues?: Partial<CustomerFormValues>;
-  onSubmit: (data: CustomerFormValues) => void;
+  defaultValues?: Partial<ExtendedCustomerValues>;
+  onSubmit: (data: ExtendedCustomerValues) => void;
   isSubmitting?: boolean;
 }
 
