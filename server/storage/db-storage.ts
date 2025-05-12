@@ -16,7 +16,9 @@ import {
   formSubmissions, type FormSubmission, type InsertFormSubmission,
   webVisitors, type WebVisitor, type InsertWebVisitor,
   pageViews, type PageView, type InsertPageView,
-  trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation
+  trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation,
+  chatConversations, type ChatConversation, type InsertChatConversation,
+  chatMessages, type ChatMessage, type InsertChatMessage
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {
@@ -1306,6 +1308,170 @@ export class DbStorage implements IStorage {
     } catch (error) {
       console.error(`Failed to delete calendar event #${id}:`, error);
       return false;
+    }
+  }
+
+  // ----- Chat Assistant Methods -----
+
+  async getChatConversations(): Promise<ChatConversation[]> {
+    try {
+      const conversations = await db
+        .select()
+        .from(chatConversations)
+        .orderBy(desc(chatConversations.createdAt));
+      
+      return conversations;
+    } catch (error) {
+      console.error("Failed to get chat conversations:", error);
+      return [];
+    }
+  }
+
+  async getChatConversationsByUserId(userId: number): Promise<ChatConversation[]> {
+    try {
+      const conversations = await db
+        .select()
+        .from(chatConversations)
+        .where(eq(chatConversations.userId, userId))
+        .orderBy(desc(chatConversations.createdAt));
+      
+      return conversations;
+    } catch (error) {
+      console.error(`Failed to get chat conversations for user #${userId}:`, error);
+      return [];
+    }
+  }
+
+  async getChatConversationById(id: number): Promise<ChatConversation | undefined> {
+    try {
+      const [conversation] = await db
+        .select()
+        .from(chatConversations)
+        .where(eq(chatConversations.id, id))
+        .limit(1);
+      
+      return conversation;
+    } catch (error) {
+      console.error(`Failed to get chat conversation #${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async createChatConversation(conversation: InsertChatConversation & { createdAt: Date }): Promise<ChatConversation> {
+    try {
+      const [newConversation] = await db
+        .insert(chatConversations)
+        .values({
+          ...conversation,
+          updatedAt: conversation.createdAt
+        })
+        .returning();
+      
+      return newConversation;
+    } catch (error) {
+      console.error("Failed to create chat conversation:", error);
+      throw new Error("Failed to create chat conversation");
+    }
+  }
+
+  async updateChatConversation(id: number, conversationData: Partial<ChatConversation>): Promise<ChatConversation> {
+    try {
+      const [updatedConversation] = await db
+        .update(chatConversations)
+        .set({
+          ...conversationData,
+          updatedAt: new Date()
+        })
+        .where(eq(chatConversations.id, id))
+        .returning();
+      
+      return updatedConversation;
+    } catch (error) {
+      console.error(`Failed to update chat conversation #${id}:`, error);
+      throw new Error(`Failed to update chat conversation #${id}`);
+    }
+  }
+
+  async deleteChatConversation(id: number): Promise<void> {
+    try {
+      // First delete all messages in the conversation
+      await db
+        .delete(chatMessages)
+        .where(eq(chatMessages.conversationId, id));
+      
+      // Then delete the conversation
+      await db
+        .delete(chatConversations)
+        .where(eq(chatConversations.id, id));
+    } catch (error) {
+      console.error(`Failed to delete chat conversation #${id}:`, error);
+      throw new Error(`Failed to delete chat conversation #${id}`);
+    }
+  }
+
+  async getChatMessages(): Promise<ChatMessage[]> {
+    try {
+      const messages = await db
+        .select()
+        .from(chatMessages)
+        .orderBy(asc(chatMessages.createdAt));
+      
+      return messages;
+    } catch (error) {
+      console.error("Failed to get chat messages:", error);
+      return [];
+    }
+  }
+
+  async getChatMessagesByConversationId(conversationId: number): Promise<ChatMessage[]> {
+    try {
+      const messages = await db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.conversationId, conversationId))
+        .orderBy(asc(chatMessages.createdAt));
+      
+      return messages;
+    } catch (error) {
+      console.error(`Failed to get chat messages for conversation #${conversationId}:`, error);
+      return [];
+    }
+  }
+
+  async getChatMessageById(id: number): Promise<ChatMessage | undefined> {
+    try {
+      const [message] = await db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.id, id))
+        .limit(1);
+      
+      return message;
+    } catch (error) {
+      console.error(`Failed to get chat message #${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async createChatMessage(message: InsertChatMessage & { createdAt: Date }): Promise<ChatMessage> {
+    try {
+      const [newMessage] = await db
+        .insert(chatMessages)
+        .values(message)
+        .returning();
+      
+      // Update the conversation's updatedAt timestamp
+      await db
+        .update(chatConversations)
+        .set({
+          updatedAt: message.createdAt
+        })
+        .where(eq(chatConversations.id, message.conversationId));
+      
+      return newMessage;
+    } catch (error) {
+      console.error("Failed to create chat message:", error);
+      throw new Error("Failed to create chat message");
     }
   }
 }
