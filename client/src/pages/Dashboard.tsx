@@ -642,6 +642,14 @@ const Dashboard = () => {
         onCreateCampaign={createCampaign}
         onClose={closeCampaignModal}
       />
+      
+      {/* Email Preview Modal */}
+      <EmailPreviewModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        voiceCommand={emailVoiceData?.command}
+        targetAudience={emailVoiceData?.targetAudience}
+      />
     </div>
   );
 };

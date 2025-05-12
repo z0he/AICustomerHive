@@ -90,10 +90,23 @@ export async function interpretVoiceCommand(text: string): Promise<{
           intent: "show_campaign_status",
           action: "Check the status of running campaigns"
         };
-      } else if (textLower.includes("email") || textLower.includes("send")) {
+      } else if (textLower.includes("email") || (textLower.includes("send") && (textLower.includes("message") || textLower.includes("email")))) {
+        let action = "Send email to targeted customers";
+        
+        // Determine the target audience from the command
+        if (textLower.includes("inactive") || textLower.includes("dormant")) {
+          action = "Send email to inactive customers";
+        } else if (textLower.includes("top") || textLower.includes("best") || textLower.includes("loyal")) {
+          action = "Send email to top customers";
+        } else if (textLower.includes("new") || textLower.includes("recent")) {
+          action = "Send email to new customers";
+        } else if (textLower.includes("all")) {
+          action = "Send email to all customers";
+        }
+        
         return {
           intent: "send_email",
-          action: "Send email to targeted customers"
+          action: action
         };
       } else if ((textLower.includes("show") || textLower.includes("view") || textLower.includes("display")) && 
                  (textLower.includes("leads") || textLower.includes("lead"))) {
