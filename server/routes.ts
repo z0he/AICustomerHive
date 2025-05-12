@@ -1555,48 +1555,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/campaigns/emails", async (req: Request, res: Response) => {
     try {
-      // In a real implementation, this would fetch from the database
-      const campaignEmails = [
-        {
-          id: 1,
-          campaignId: 1,
-          campaignName: "Spring Promotion",
-          templateId: 3,
-          templateName: "Monthly Newsletter",
-          subject: "Special Spring Offers Inside!",
-          segmentId: 1,
-          segmentName: "Active Users",
-          status: "sent",
-          scheduledFor: "2025-04-10T09:00:00.000Z",
-          sentAt: "2025-04-10T09:00:00.000Z"
-        },
-        {
-          id: 2,
-          campaignId: 1,
-          campaignName: "Spring Promotion",
-          templateId: 2,
-          templateName: "Follow-up Email",
-          subject: "Last Chance: Spring Deals End Tomorrow",
-          segmentId: null,
+      // Get email logs from the database
+      const emailLogs = await storage.getEmailLogs();
+      
+      // Get campaigns and templates for supplementary info
+      const campaigns = await storage.getCampaigns();
+      const templates = await storage.getEmailTemplates();
+      
+      // Transform email logs into campaign emails format
+      const campaignEmails = emailLogs.map(log => {
+        // Find related campaign if exists
+        const campaign = log.campaignId 
+          ? campaigns.find(c => c.id === log.campaignId) 
+          : null;
+        
+        // Find related template if exists
+        const template = log.templateId 
+          ? templates.find(t => t.id === log.templateId) 
+          : null;
+        
+        return {
+          id: log.id,
+          campaignId: log.campaignId,
+          campaignName: campaign ? campaign.name : "Direct Email",
+          templateId: log.templateId,
+          templateName: template ? template.name : "Custom Template",
+          subject: log.subject,
+          segmentId: null, // No segment data in the logs yet
           segmentName: null,
-          status: "scheduled",
-          scheduledFor: "2025-04-30T09:00:00.000Z",
-          sentAt: null
-        },
-        {
-          id: 3,
-          campaignId: 2,
-          campaignName: "Product Update",
-          templateId: 3,
-          templateName: "Monthly Newsletter",
-          subject: "New Features You'll Love",
-          segmentId: 2,
-          segmentName: "High-Value Customers",
-          status: "sent",
-          scheduledFor: "2025-04-15T10:00:00.000Z",
-          sentAt: "2025-04-15T10:00:00.000Z"
-        }
-      ];
+          status: log.status,
+          scheduledFor: log.sentAt, // Using sentAt as scheduledFor for now
+          sentAt: log.status === 'sent' ? log.sentAt : null
+        };
+      });
       
       return res.json(campaignEmails);
     } catch (error) {
