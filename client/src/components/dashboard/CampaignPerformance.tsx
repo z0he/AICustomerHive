@@ -106,16 +106,16 @@ const CampaignPerformance: FC<CampaignPerformanceProps> = ({
                 <span className="text-brand-teal/80">Type:</span> {selectedCampaign.type || 'N/A'}
               </div>
               <div>
-                <span className="text-slate-500">Audience:</span> {selectedCampaign.targetAudience || 'All'}
+                <span className="text-brand-teal/80">Audience:</span> {selectedCampaign.targetAudience || 'All'}
               </div>
               <div>
-                <span className="text-slate-500">Start:</span> {selectedCampaign.startDate || 'N/A'}
+                <span className="text-brand-teal/80">Start:</span> {selectedCampaign.startDate || 'N/A'}
               </div>
               <div>
-                <span className="text-slate-500">End:</span> {selectedCampaign.endDate || 'N/A'}
+                <span className="text-brand-teal/80">End:</span> {selectedCampaign.endDate || 'N/A'}
               </div>
               <div className="col-span-2">
-                <span className="text-slate-500">Message:</span> {selectedCampaign.message || 'No message content'}
+                <span className="text-brand-teal/80">Message:</span> {selectedCampaign.message || 'No message content'}
               </div>
             </div>
           </div>
