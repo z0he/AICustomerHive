@@ -94,7 +94,7 @@ export function ChatAssistant() {
   // Send a message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { message: string; conversationId?: number }) => {
-      const response = await apiRequest('/api/ai/assistant/chat', 'POST', data);
+      const response = await apiRequest('POST', '/api/ai/assistant/chat', data);
       if (!response.ok) {
         throw new Error('Failed to send message');
       }
