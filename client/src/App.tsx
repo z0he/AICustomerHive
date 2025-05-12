@@ -19,7 +19,7 @@ import EmailManagement from "@/pages/EmailManagement";
 import CalendarManagement from "@/pages/CalendarManagement";
 import MarketingForms from "@/pages/MarketingForms";
 import SettingsPage from "@/pages/Settings";
-import LandingPage from "@/pages/LandingPage";
+import Landing from "@/pages/Landing";
 
 // Custom placeholder page for routes under development
 const UnderDevelopment = ({ title }: { title: string }) => {
@@ -27,7 +27,7 @@ const UnderDevelopment = ({ title }: { title: string }) => {
     <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
       <h1 className="text-3xl font-bold text-slate-800 mb-4">{title}</h1>
       <p className="text-slate-600 mb-8">This page is under development.</p>
-      <a href="/dashboard" className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition">
+      <a href="/dashboard" className="px-4 py-2 bg-[#0082AE] text-white rounded-md hover:bg-[#00556E] transition">
         Back to Dashboard
       </a>
     </div>
@@ -39,9 +39,9 @@ function Router() {
 
   return (
     <Switch>
-      {/* Home route - shows LandingPage to non-authenticated users */}
+      {/* Home route - shows Landing to non-authenticated users */}
       <Route path="/">
-        {user ? <Dashboard /> : <LandingPage />}
+        {user ? <Dashboard /> : <Landing />}
       </Route>
       
       {/* Protected routes */}

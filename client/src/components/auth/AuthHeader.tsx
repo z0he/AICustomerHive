@@ -1,7 +1,6 @@
 import { FC } from "react";
 import { Link } from "wouter";
 import { 
-  Users,
   Bell,
   ChevronDown
 } from "lucide-react";
@@ -14,6 +13,8 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import LogoutButton from "@/components/auth/LogoutButton";
+import AIcrmLogo from "@/components/logo/AIcrmLogo";
+import { BrandBadge } from "@/components/ui/brand-badge";
 
 interface User {
   id: number;
@@ -45,17 +46,14 @@ const AuthHeader: FC<AuthHeaderProps> = ({
     <header className="bg-white border-b border-slate-200 py-2 px-4 flex justify-between items-center">
       <div className="flex items-center">
         <div className="flex items-center">
-          <div className="text-accent-600 text-2xl font-bold mr-1">
-            <Users size={24} />
-          </div>
-          <h1 className="text-xl font-bold text-primary-700">AICRM</h1>
+          <AIcrmLogo width={32} height={32} />
         </div>
         <div className="ml-8 hidden md:flex items-center space-x-4">
-          <Link href="/dashboard" className="text-slate-600 hover:text-primary-600 font-medium text-sm">Dashboard</Link>
-          <Link href="/customers" className="text-slate-600 hover:text-primary-600 font-medium text-sm">Customers</Link>
-          <Link href="/campaigns" className="text-slate-600 hover:text-primary-600 font-medium text-sm">Campaigns</Link>
-          <Link href="/analytics" className="text-slate-600 hover:text-primary-600 font-medium text-sm">Analytics</Link>
-          <Link href="/settings" className="text-slate-600 hover:text-primary-600 font-medium text-sm">Settings</Link>
+          <Link href="/dashboard" className="text-slate-600 hover:text-[#0082AE] font-medium text-sm">Dashboard</Link>
+          <Link href="/customers" className="text-slate-600 hover:text-[#0082AE] font-medium text-sm">Customers</Link>
+          <Link href="/campaigns" className="text-slate-600 hover:text-[#0082AE] font-medium text-sm">Campaigns</Link>
+          <Link href="/analytics" className="text-slate-600 hover:text-[#0082AE] font-medium text-sm">Analytics</Link>
+          <Link href="/settings" className="text-slate-600 hover:text-[#0082AE] font-medium text-sm">Settings</Link>
         </div>
       </div>
       <div className="flex items-center space-x-4">
@@ -63,7 +61,7 @@ const AuthHeader: FC<AuthHeaderProps> = ({
           <DropdownMenuTrigger className="relative cursor-pointer">
             <Bell className="text-slate-600" size={20} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-[#8AC33E] text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                 {unreadCount}
               </span>
             )}
@@ -85,14 +83,14 @@ const AuthHeader: FC<AuthHeaderProps> = ({
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="justify-center">
-              <span className="text-primary-600">View all</span>
+              <span className="text-[#0082AE]">View all</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center space-x-2 cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-medium">
+            <div className="w-8 h-8 rounded-full bg-[#0082AE]/10 flex items-center justify-center text-[#0082AE] font-medium">
               {user.initials}
             </div>
             <span className="text-sm font-medium hidden md:inline-block">{user.name}</span>
