@@ -68,7 +68,7 @@ const CampaignPerformance: FC<CampaignPerformanceProps> = ({
                     {campaign.name}: {campaign.conversions} conversions
                   </div>
                   <div 
-                    className="bg-blue-500 rounded-t w-16 transition-all duration-300 cursor-pointer hover:bg-blue-600 shadow-sm" 
+                    className="bg-brand-blue rounded-t w-16 transition-all duration-300 cursor-pointer hover:bg-brand-teal shadow-sm" 
                     style={{ 
                       height: `${Math.max(campaign.percentage, 10)}%`
                     }}

@@ -21,11 +21,11 @@ const SummaryMetrics: FC<SummaryMetricsProps> = ({ metrics }) => {
   const getIcon = (iconType: string) => {
     switch (iconType) {
       case "users":
-        return <Users className="text-primary-600" size={20} />;
+        return <Users className="text-brand-blue" size={20} />;
       case "campaigns":
-        return <Megaphone className="text-secondary-600" size={20} />;
+        return <Megaphone className="text-brand-blue" size={20} />;
       case "conversion":
-        return <TrendingUp className="text-green-600" size={20} />;
+        return <TrendingUp className="text-brand-lime" size={20} />;
       default:
         return null;
     }
@@ -34,11 +34,11 @@ const SummaryMetrics: FC<SummaryMetricsProps> = ({ metrics }) => {
   const getIconBgColor = (iconType: string) => {
     switch (iconType) {
       case "users":
-        return "bg-primary-100";
+        return "bg-brand-blue/10";
       case "campaigns":
-        return "bg-secondary-100";
+        return "bg-brand-blue/10";
       case "conversion":
-        return "bg-green-100";
+        return "bg-brand-lime/10";
       default:
         return "bg-slate-100";
     }
@@ -51,15 +51,15 @@ const SummaryMetrics: FC<SummaryMetricsProps> = ({ metrics }) => {
           <CardContent className="p-4">
             <div className="flex justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-500">{metric.title}</p>
-                <h3 className="text-2xl font-bold text-slate-800 mt-1">{metric.value}</h3>
+                <p className="text-sm font-medium text-brand-teal/80">{metric.title}</p>
+                <h3 className="text-2xl font-bold text-brand-blue mt-1">{metric.value}</h3>
               </div>
               <div className={`h-10 w-10 rounded-full ${getIconBgColor(metric.icon)} flex items-center justify-center`}>
                 {getIcon(metric.icon)}
               </div>
             </div>
             <div className="mt-3 flex items-center text-xs">
-              <span className={`${metric.change.type === 'increase' ? 'text-green-500' : 'text-red-500'} font-medium flex items-center`}>
+              <span className={`${metric.change.type === 'increase' ? 'text-brand-lime' : 'text-red-500'} font-medium flex items-center`}>
                 {metric.change.type === 'increase' ? (
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M12 7a1 1 0 01-1 1H9v2a1 1 0 01-2 0V8H5a1 1 0 010-2h2V4a1 1 0 112 0v2h2a1 1 0 011 1z" clipRule="evenodd" />
@@ -71,7 +71,7 @@ const SummaryMetrics: FC<SummaryMetricsProps> = ({ metrics }) => {
                 )}
                 {metric.change.value}
               </span>
-              <span className="text-slate-500 ml-2">{metric.change.label}</span>
+              <span className="text-brand-teal/70 ml-2">{metric.change.label}</span>
             </div>
           </CardContent>
         </Card>
