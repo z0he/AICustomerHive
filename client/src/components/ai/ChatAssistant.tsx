@@ -66,21 +66,39 @@ export function ChatAssistant() {
   const queryClient = useQueryClient();
 
   // Get all user conversations
-  const { data: conversations, isLoading: isLoadingConversations } = useQuery({
+  const { data: conversations = [], isLoading: isLoadingConversations } = useQuery({
     queryKey: ['/api/ai/assistant/conversations'],
     enabled: isOpen && showConversations,
+    queryFn: async () => {
+      const response = await fetch('/api/ai/assistant/conversations');
+      if (!response.ok) {
+        throw new Error('Failed to fetch conversations');
+      }
+      return response.json();
+    }
   });
 
   // Get messages for the current conversation
   const { data: currentConversation, isLoading: isLoadingMessages } = useQuery({
     queryKey: ['/api/ai/assistant/conversations', currentConversationId],
     enabled: !!currentConversationId && isOpen,
+    queryFn: async () => {
+      const response = await fetch(`/api/ai/assistant/conversations/${currentConversationId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch conversation');
+      }
+      return response.json();
+    }
   });
 
   // Send a message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async (data: { message: string; conversationId?: number }) => {
-      return apiRequest('/api/ai/assistant/chat', 'POST', data);
+      const response = await apiRequest('/api/ai/assistant/chat', 'POST', data);
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+      return response.json();
     },
     onSuccess: (data: ChatResponse) => {
       // Update the current conversation ID if it's a new conversation
@@ -250,7 +268,7 @@ export function ChatAssistant() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {currentConversation?.messages.map((message: ChatMessage) => (
+                  {currentConversation && currentConversation.messages && currentConversation.messages.map((message: ChatMessage) => (
                     <div 
                       key={message.id}
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -265,7 +283,10 @@ export function ChatAssistant() {
                         <div className="whitespace-pre-wrap">{message.content}</div>
                         
                         {/* Suggested actions */}
-                        {message.role === 'assistant' && message.metadata?.suggestedActions?.length > 0 && (
+                        {message.role === 'assistant' && 
+                         message.metadata && 
+                         message.metadata.suggestedActions && 
+                         message.metadata.suggestedActions.length > 0 && (
                           <div className="mt-3 pt-2 border-t border-muted-foreground/20 space-y-2">
                             {message.metadata.suggestedActions.map((action, index) => (
                               <Button 
