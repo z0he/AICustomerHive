@@ -18,6 +18,7 @@ import CustomerData from "@/pages/CustomerData";
 import EmailManagement from "@/pages/EmailManagement";
 import CalendarManagement from "@/pages/CalendarManagement";
 import MarketingForms from "@/pages/MarketingForms";
+import SettingsPage from "@/pages/Settings";
 
 // Custom placeholder page for routes under development
 const UnderDevelopment = ({ title }: { title: string }) => {
@@ -50,8 +51,8 @@ function Router() {
       {/* Campaign detail route */}
       <ProtectedRoute path="/campaigns/:id" component={CampaignDetail} />
       
-      {/* Protected routes still under development */}
-      <ProtectedRoute path="/settings" component={() => <UnderDevelopment title="Settings" />} />
+      {/* Settings page */}
+      <ProtectedRoute path="/settings" component={SettingsPage} />
       
       {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
