@@ -1622,6 +1622,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Removed duplicate /api/campaigns/emails endpoint - already defined above
+    try {
+      // Get email logs from the database
+      const emailLogs = await storage.getEmailLogs();
+      
+      // If no email logs exist, return empty array instead of error
+      if (!emailLogs || emailLogs.length === 0) {
+        return res.json([]);
+      }
+      
+      // For debugging purpose
+      console.log('Email logs found:', emailLogs.length);
+      
+      // Get campaigns and templates for supplementary info
+      const campaigns = await storage.getCampaigns();
+      const templates = await storage.getEmailTemplates();
+      
+      // Transform email logs into campaign emails format with added error handling
+      const campaignEmails = emailLogs.map(log => {
+        try {
+          // Find related campaign if exists (but don't error if not found)
+          const campaign = log.campaignId 
+            ? campaigns.find(c => c.id === log.campaignId) 
+            : null;
+          
+          // Find related template if exists (but don't error if not found)
+          const template = log.templateId 
+            ? templates.find(t => t.id === log.templateId) 
+            : null;
+          
+          return {
+            id: log.id,
+            campaignId: log.campaignId || 0,
+            campaignName: campaign ? campaign.name : "Direct Email",
+            templateId: log.templateId || 0,
+            templateName: template ? template.name : "Custom Template",
+            subject: log.subject || "Email Campaign",
+            segmentId: null, // No segment data in the logs yet
+            segmentName: null,
+            status: log.status || "scheduled",
+            scheduledFor: log.sentAt, // Using sentAt as scheduledFor for now
+            sentAt: log.status === 'sent' ? log.sentAt : null
+          };
+        } catch (error) {
+          console.error("Error processing email log:", error, log);
+          // Return a default object if there's an error
+          return {
+            id: log.id || 0,
+            campaignId: 0,
+            campaignName: "Direct Email",
+            templateId: 0,
+            templateName: "Custom Template",
+            subject: "Email Campaign",
+            segmentId: null,
+            segmentName: null,
+            status: "scheduled",
+            scheduledFor: new Date(),
+            sentAt: null
+          };
+        }
+      });
+      
+      return res.json(campaignEmails);
+    } catch (error) {
+      console.error("Get campaign emails error:", error);
+      return res.status(500).json({ message: "Failed to fetch campaign emails" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
