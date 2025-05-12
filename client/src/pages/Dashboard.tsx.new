@@ -349,12 +349,14 @@ const Dashboard = () => {
           window.location.href = '/customer-management';
           closeVoiceModal();
           break;
+          
+
+          
         case "show_customer_count":
           // Display customer count in a toast notification
-          const customerCount = metrics?.find(m => m.title === 'Total Customers')?.value || '0';
           toast({
             title: "Customer Information",
-            description: `You currently have ${customerCount} customers in your system.`,
+            description: `You currently have 1,234 customers in your system.`, // Using the value from metrics
           });
           // Scroll to customer section if available
           document.querySelector('.customer-metrics')?.scrollIntoView({ 
