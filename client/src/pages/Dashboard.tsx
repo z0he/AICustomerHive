@@ -52,13 +52,20 @@ const Dashboard = () => {
   const { data: userData } = useQuery({
     queryKey: ['/api/user/current'],
     queryFn: async () => {
-      // Return mock user data for now
-      return {
-        id: 1,
-        name: "John Doe",
-        initials: "JD",
-        email: "john@example.com"
-      };
+      const res = await fetch('/api/user/current', {
+        credentials: 'include'
+      });
+      
+      if (!res.ok) {
+        return {
+          id: 1,
+          name: "John Doe",
+          initials: "JD",
+          email: "john@example.com"
+        };
+      }
+      
+      return await res.json();
     }
   });
   
