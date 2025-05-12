@@ -33,7 +33,16 @@ type RegisterValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const { user, isLoading, loginMutation, registerMutation, googleAuthMutation } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("login");
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
+
+  // Parse URL for tab parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam === 'register' || tabParam === 'login') {
+      setActiveTab(tabParam);
+    }
+  }, [location]);
 
   // Redirect if already logged in
   useEffect(() => {

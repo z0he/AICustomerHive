@@ -19,6 +19,7 @@ import EmailManagement from "@/pages/EmailManagement";
 import CalendarManagement from "@/pages/CalendarManagement";
 import MarketingForms from "@/pages/MarketingForms";
 import SettingsPage from "@/pages/Settings";
+import LandingPage from "@/pages/LandingPage";
 
 // Custom placeholder page for routes under development
 const UnderDevelopment = ({ title }: { title: string }) => {
@@ -34,10 +35,16 @@ const UnderDevelopment = ({ title }: { title: string }) => {
 };
 
 function Router() {
+  const { user } = useAuth();
+
   return (
     <Switch>
+      {/* Home route - shows LandingPage to non-authenticated users */}
+      <Route path="/">
+        {user ? <Dashboard /> : <LandingPage />}
+      </Route>
+      
       {/* Protected routes */}
-      <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/dashboard" component={Dashboard} />
       <ProtectedRoute path="/customers" component={Customers} />
       <ProtectedRoute path="/campaigns" component={Campaigns} />
