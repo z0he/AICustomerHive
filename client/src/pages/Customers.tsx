@@ -804,11 +804,9 @@ const Customers = () => {
                                 variant="ghost" 
                                 size="icon" 
                                 className="h-8 w-8"
-                                onClick={() => {
-                                  toast({
-                                    title: "Customer Data",
-                                    description: `Showing details for ${customer.name}`,
-                                  });
+                                onClick={(e) => {
+                                  e.stopPropagation(); // Prevent row click
+                                  handleViewCustomerDetails(customer);
                                 }}
                               >
                                 <FileText className="h-4 w-4 text-slate-500" />
