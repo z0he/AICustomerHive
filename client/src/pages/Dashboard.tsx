@@ -465,7 +465,7 @@ const Dashboard = () => {
     <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
       {/* Header */}
       <AuthHeader 
-        user={userData || { id: 1, name: "John Doe", initials: "JD" }} 
+        user={userData?.user || userData || { id: 1, name: "John Doe", initials: "JD" }} 
         notifications={notifications || []} 
         onLogout={handleLogout} 
       />
@@ -484,7 +484,7 @@ const Dashboard = () => {
             onToggleListening={toggleListening}
             onSelectSuggestion={handleSelectSuggestion}
             onShowHelp={showHelpModal}
-            userName={userData?.name.split(' ')[0] || 'User'}
+            userName={userData?.name ? userData.name.split(' ')[0] : 'User'}
             isBrowserSupported={isBrowserSupported}
           />
           
