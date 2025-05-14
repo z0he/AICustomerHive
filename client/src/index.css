@@ -1,5 +1,6 @@
 @import './styles/brand-colors.css';
 @import './styles/global.css';
+@import './styles/components.css';
 
 @tailwind base;
 @tailwind components;

@@ -141,11 +141,11 @@ export default function LeadDetails({
   
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="lead-profile-card">
+        <CardHeader className="profile-header pb-3">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-xl">{lead.name}</CardTitle>
+              <CardTitle className="profile-name text-xl">{lead.name}</CardTitle>
               <CardDescription>
                 {lead.company ? `${lead.company} • ` : ""}
                 {lead.industry}
