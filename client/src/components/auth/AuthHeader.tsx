@@ -43,35 +43,35 @@ const AuthHeader: FC<AuthHeaderProps> = ({
   const unreadCount = notifications.filter(n => !n.read).length;
   
   return (
-    <header className="bg-white border-b border-slate-200 py-2 px-4 flex justify-between items-center">
+    <header className="bg-white border-b border-brand-blue/10 py-2 px-4 flex justify-between items-center shadow-sm">
       <div className="flex items-center">
         <div className="flex items-center">
           <AIcrmLogo width={32} height={32} />
         </div>
-        <div className="ml-8 hidden md:flex items-center space-x-4">
-          <Link href="/dashboard" className="text-slate-600 hover:text-[#0082AE] font-medium text-sm">Dashboard</Link>
-          <Link href="/customers" className="text-slate-600 hover:text-[#0082AE] font-medium text-sm">Customers</Link>
-          <Link href="/campaigns" className="text-slate-600 hover:text-[#0082AE] font-medium text-sm">Campaigns</Link>
-          <Link href="/analytics" className="text-slate-600 hover:text-[#0082AE] font-medium text-sm">Analytics</Link>
-          <Link href="/settings" className="text-slate-600 hover:text-[#0082AE] font-medium text-sm">Settings</Link>
+        <div className="ml-8 hidden md:flex items-center space-x-6">
+          <Link href="/dashboard" className="text-slate-600 hover:text-brand-blue font-medium text-sm uppercase tracking-wide">Dashboard</Link>
+          <Link href="/customers" className="text-slate-600 hover:text-brand-blue font-medium text-sm uppercase tracking-wide">Customers</Link>
+          <Link href="/campaigns" className="text-slate-600 hover:text-brand-blue font-medium text-sm uppercase tracking-wide">Campaigns</Link>
+          <Link href="/analytics" className="text-slate-600 hover:text-brand-blue font-medium text-sm uppercase tracking-wide">Analytics</Link>
+          <Link href="/settings" className="text-slate-600 hover:text-brand-blue font-medium text-sm uppercase tracking-wide">Settings</Link>
         </div>
       </div>
       <div className="flex items-center space-x-4">
         <DropdownMenu>
           <DropdownMenuTrigger className="relative cursor-pointer">
-            <Bell className="text-slate-600" size={20} />
+            <Bell className="text-brand-blue" size={20} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-[#8AC33E] text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-brand-green text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                 {unreadCount}
               </span>
             )}
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-64">
-            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="w-64 p-0 shadow-md rounded-lg border-brand-blue/10">
+            <DropdownMenuLabel className="bg-brand-gradient text-white font-bold uppercase text-sm tracking-wide py-3">Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {notifications.length > 0 ? (
               notifications.map(notification => (
-                <DropdownMenuItem key={notification.id} className={`${!notification.read ? 'font-semibold' : ''}`}>
+                <DropdownMenuItem key={notification.id} className={`${!notification.read ? 'font-semibold bg-brand-green/10' : ''}`}>
                   <div className="flex flex-col w-full">
                     <span>{notification.message}</span>
                     <span className="text-xs text-slate-500">{notification.date}</span>
@@ -83,27 +83,27 @@ const AuthHeader: FC<AuthHeaderProps> = ({
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="justify-center">
-              <span className="text-[#0082AE]">View all</span>
+              <span className="text-brand-blue hover:text-brand-green">View all</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center space-x-2 cursor-pointer">
-            <div className="w-8 h-8 rounded-full bg-[#0082AE]/10 flex items-center justify-center text-[#0082AE] font-medium">
+            <div className="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-white font-medium">
               {user.initials}
             </div>
-            <span className="text-sm font-medium hidden md:inline-block">{user.name}</span>
-            <ChevronDown className="text-slate-400" size={16} />
+            <span className="text-sm font-medium hidden md:inline-block uppercase tracking-wide">{user.name}</span>
+            <ChevronDown className="text-brand-blue" size={16} />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+          <DropdownMenuContent align="end" className="p-0 shadow-md rounded-lg border-brand-blue/10">
+            <DropdownMenuLabel className="bg-brand-gradient text-white font-bold uppercase text-sm tracking-wide py-3">My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profile</DropdownMenuItem>
-            <DropdownMenuItem>Settings</DropdownMenuItem>
+            <DropdownMenuItem className="hover:text-brand-blue">Profile</DropdownMenuItem>
+            <DropdownMenuItem className="hover:text-brand-blue">Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <LogoutButton variant="ghost" className="w-full justify-start p-2 cursor-pointer" showIcon={true} />
+              <LogoutButton variant="ghost" className="w-full justify-start p-2 cursor-pointer hover:text-brand-blue" showIcon={true} />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

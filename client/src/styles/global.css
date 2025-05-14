@@ -1,0 +1,208 @@
+/* AICRM Global Style Guide */
+
+/* Import Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@300;400;500;600;700&display=swap');
+
+/* Base Styles */
+html {
+  font-family: var(--font-family);
+  color: var(--brand-text-gray);
+}
+
+body {
+  background: var(--brand-gradient);
+  min-height: 100vh;
+}
+
+/* Typography Styles */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--header-letter-spacing);
+  color: var(--brand-blue);
+}
+
+h1.accent, h2.accent, h3.accent, h4.accent, h5.accent, h6.accent {
+  color: var(--brand-green);
+}
+
+/* Button Styles */
+.btn-primary {
+  background: var(--brand-gradient);
+  color: var(--brand-white);
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: var(--brand-button-hover);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-secondary {
+  background-color: var(--brand-white);
+  color: var(--brand-blue);
+  border: 1px solid var(--brand-blue);
+  border-radius: var(--border-radius);
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--brand-light-gray);
+  color: var(--brand-green);
+  border-color: var(--brand-green);
+}
+
+/* Link Styles */
+a {
+  color: var(--brand-blue);
+  transition: all 0.3s ease;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: var(--brand-green);
+}
+
+/* Card Styles */
+.card {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+.card-header {
+  border-bottom: 1px solid var(--brand-light-gray);
+}
+
+.card-header h1, .card-header h2, .card-header h3, 
+.card-header h4, .card-header h5, .card-header h6 {
+  color: var(--brand-blue);
+}
+
+/* Table Styles */
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+thead th {
+  background-color: var(--brand-blue);
+  color: var(--brand-white);
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  letter-spacing: 0.5px;
+}
+
+tbody tr:nth-child(even) {
+  background-color: var(--brand-light-gray);
+}
+
+tbody tr:hover {
+  background-color: rgba(138, 195, 62, 0.1); /* #8ac33e with opacity */
+}
+
+/* Modal Styles */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-container {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+}
+
+/* Form Styles */
+input, select, textarea {
+  border: 1px solid var(--brand-light-gray);
+  border-radius: var(--border-radius);
+  padding: 0.75rem;
+  font-family: var(--font-family);
+  transition: all 0.3s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--brand-blue);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 130, 174, 0.2); /* #0082ae with opacity */
+}
+
+.form-label {
+  font-weight: 500;
+  color: var(--brand-text-gray);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* Badge & Tag Styles */
+.badge {
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+}
+
+.badge-primary {
+  background-color: var(--brand-green);
+  color: var(--brand-white);
+}
+
+.badge-secondary {
+  background-color: var(--brand-blue);
+  color: var(--brand-white);
+}
+
+/* Tabs & Navigation Styles */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--brand-light-gray);
+}
+
+.tab {
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab.active {
+  color: var(--brand-white);
+  background: var(--brand-gradient);
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+/* Tooltip Styles */
+.tooltip {
+  background-color: var(--brand-blue);
+  color: var(--brand-white);
+  border-radius: var(--border-radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+/* Layout utility classes */
+.bg-gradient {
+  background: var(--brand-gradient);
+}
+
+.text-blue {
+  color: var(--brand-blue);
+}
+
+.text-green {
+  color: var(--brand-green);
+}
+
+.border-blue {
+  border-color: var(--brand-blue);
+}
+
+.border-green {
+  border-color: var(--brand-green);
+}

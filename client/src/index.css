@@ -1,4 +1,5 @@
 @import './styles/brand-colors.css';
+@import './styles/global.css';
 
 @tailwind base;
 @tailwind components;
@@ -10,32 +11,26 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply antialiased text-foreground;
+    font-family: var(--font-family);
+    background: var(--brand-gradient);
   }
   
   /* Custom brand color classes */
   .text-brand-blue {
-    color: var(--brand-azure-blue);
+    color: var(--brand-blue);
   }
   
   .text-brand-green {
-    color: var(--brand-lime-green);
-  }
-  
-  .text-brand-teal {
-    color: var(--brand-dark-teal);
+    color: var(--brand-green);
   }
   
   .bg-brand-blue {
-    background-color: var(--brand-azure-blue);
+    background-color: var(--brand-blue);
   }
   
   .bg-brand-green {
-    background-color: var(--brand-lime-green);
-  }
-  
-  .bg-brand-teal {
-    background-color: var(--brand-dark-teal);
+    background-color: var(--brand-green);
   }
   
   .bg-brand-gradient {
@@ -43,43 +38,45 @@
   }
   
   .border-brand-blue {
-    border-color: var(--brand-azure-blue);
+    border-color: var(--brand-blue);
   }
   
   .border-brand-green {
-    border-color: var(--brand-lime-green);
+    border-color: var(--brand-green);
   }
   
-  /* Override primary color classes to use our brand blue */
+  /* Override primary color classes */
   .text-primary {
-    color: var(--brand-azure-blue) !important;
+    color: var(--brand-green) !important;
   }
   
   .bg-primary {
-    background-color: var(--brand-azure-blue) !important;
+    background-color: var(--brand-green) !important;
   }
   
   .border-primary {
-    border-color: var(--brand-azure-blue) !important;
+    border-color: var(--brand-green) !important;
   }
   
   /* Custom button styles */
   .btn-brand-primary {
-    background-color: var(--brand-azure-blue);
+    background: var(--brand-gradient);
     color: white;
+    border-radius: var(--border-radius);
   }
   
   .btn-brand-primary:hover {
-    background-color: var(--brand-dark-teal);
+    background: var(--brand-button-hover);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
   
   .btn-brand-accent {
-    background-color: var(--brand-lime-green);
+    background-color: var(--brand-green);
     color: white;
+    border-radius: var(--border-radius);
   }
   
   .btn-brand-accent:hover {
-    background-color: var(--brand-soft-lime);
-    color: var(--brand-dark-teal);
+    background: var(--brand-button-hover);
   }
 }
