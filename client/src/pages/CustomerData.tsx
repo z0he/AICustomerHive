@@ -631,8 +631,8 @@ const CustomerData = () => {
         
         <TabsContent value="export" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
+            <CardHeader className="dialog-header">
+              <CardTitle className="dialog-title flex items-center">
                 <Download className="mr-2" size={20} />
                 Export Customer Data
               </CardTitle>
@@ -685,8 +685,8 @@ const CustomerData = () => {
                   
                   <div className="mb-4">
                     <h3 className="text-lg font-medium mb-2">Sample Data (First 3 records)</h3>
-                    <div className="bg-muted p-4 rounded-lg overflow-x-auto">
-                      <pre className="text-xs">
+                    <div className="code-sample data-container bg-white border p-4 rounded-lg overflow-x-auto">
+                      <pre className="text-xs font-mono">
                         {JSON.stringify(exportData?.data?.slice(0, 3), null, 2)}
                       </pre>
                     </div>
@@ -721,8 +721,8 @@ const CustomerData = () => {
         
         <TabsContent value="import" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
+            <CardHeader className="dialog-header">
+              <CardTitle className="dialog-title flex items-center">
                 <Upload className="mr-2" size={20} />
                 Import Customer Data
               </CardTitle>
@@ -775,7 +775,7 @@ const CustomerData = () => {
                         JSON Data
                       </label>
                       <textarea
-                        className="min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        className="min-h-[200px] w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm code-sample font-mono shadow-sm"
                         placeholder='[{ "firstName": "John", "lastName": "Doe", "email": "john@example.com" }, ...]'
                         value={importData}
                         onChange={(e) => setImportData(e.target.value)}
@@ -789,7 +789,7 @@ const CustomerData = () => {
                   {/* CSV Import Method */}
                   {importMethod === 'csv' && (
                     <div className="mb-4">
-                      <div className="border-2 border-dashed border-muted-foreground/25 rounded-md p-8 text-center">
+                      <div className="border-2 border-dashed border-brand-green/30 rounded-md p-8 text-center bg-brand-green/5">
                         <input 
                           type="file" 
                           ref={fileInputRef} 
