@@ -51,19 +51,19 @@ export default function LeadStatusFilter({ onFilterChange, activeFilter, leads }
           <Button
             key={status.id}
             variant={activeFilter === status.id ? "default" : "outline"}
-            className="justify-between h-auto py-2 px-2 text-xs sm:text-sm w-full"
+            className="justify-between h-auto py-3"
             onClick={() => onFilterChange(status.id)}
           >
-            <span className="truncate mr-1">{status.label}</span>
-            <Badge variant="secondary" className="ml-1 shrink-0">
+            <span>{status.label}</span>
+            <Badge variant="secondary" className="ml-2">
               {statusCounts[status.id] || 0}
             </Badge>
           </Button>
         ))}
       </div>
       
-      <div className="bg-slate-50 p-3 rounded-md text-xs sm:text-sm text-slate-500">
-        <p className="line-clamp-3">
+      <div className="bg-slate-50 p-3 rounded-md text-sm text-slate-500">
+        <p>
           Lead status indicates the progress of a lead through your sales pipeline. 
           Regularly update lead statuses to keep your pipeline organized.
         </p>

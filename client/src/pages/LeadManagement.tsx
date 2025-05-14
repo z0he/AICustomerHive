@@ -656,14 +656,14 @@ export default function LeadManagement() {
                 </Card>
                 
                 {/* Lead Status Distribution */}
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="flex items-center text-sm sm:text-base">
-                      <Tag className="h-4 w-4 mr-2" />
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Tag className="h-5 w-5 mr-2" />
                       Lead Status Distribution
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-2 sm:p-4">
+                  <CardContent>
                     <LeadStatusFilter 
                       onFilterChange={(status) => setFilterStatus(status)} 
                       activeFilter={filterStatus}
