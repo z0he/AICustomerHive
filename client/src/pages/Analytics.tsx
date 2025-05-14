@@ -219,9 +219,20 @@ const AIInsightCard = ({
   recommendations 
 }: { 
   title: string, 
-  insights: string[], 
-  recommendations: string[] 
+  insights: any[], 
+  recommendations: any[] 
 }) => {
+  // Helper function to safely get the text content regardless of format
+  const getTextContent = (item: any): string => {
+    if (typeof item === 'string') {
+      return item;
+    } else if (item && typeof item === 'object') {
+      // Handle object format (for example, if item is {insight: "text"} or {recommendation: "text"})
+      return item.insight || item.recommendation || JSON.stringify(item);
+    }
+    return "No data available";
+  };
+
   return (
     <Card className="h-full">
       <CardHeader>
@@ -237,12 +248,14 @@ const AIInsightCard = ({
             <Info size={14} className="mr-1 text-blue-500" /> Key Insights
           </h4>
           <ul className="space-y-2">
-            {insights.map((insight, index) => (
+            {Array.isArray(insights) ? insights.map((insight, index) => (
               <li key={index} className="text-sm flex items-start">
                 <span className="text-blue-500 mr-2 mt-0.5">•</span>
-                <span>{insight}</span>
+                <span>{getTextContent(insight)}</span>
               </li>
-            ))}
+            )) : (
+              <li className="text-sm">No insights available</li>
+            )}
           </ul>
         </div>
         
@@ -253,12 +266,14 @@ const AIInsightCard = ({
             <TrendingUp size={14} className="mr-1 text-emerald-500" /> Recommendations
           </h4>
           <ul className="space-y-2">
-            {recommendations.map((recommendation, index) => (
+            {Array.isArray(recommendations) ? recommendations.map((recommendation, index) => (
               <li key={index} className="text-sm flex items-start">
                 <span className="text-emerald-500 mr-2 mt-0.5">•</span>
-                <span>{recommendation}</span>
+                <span>{getTextContent(recommendation)}</span>
               </li>
-            ))}
+            )) : (
+              <li className="text-sm">No recommendations available</li>
+            )}
           </ul>
         </div>
       </CardContent>
@@ -369,6 +384,20 @@ const Analytics = () => {
     setIsGeneratingInsights(true);
     
     try {
+      // First check that we're properly connected to OpenAI
+      const openaiStatus = await fetch('/api/config/openai/status', {
+        credentials: 'include'
+      }).then(res => res.json());
+      
+      if (!openaiStatus || !openaiStatus.configured) {
+        toast({
+          title: "OpenAI Not Configured",
+          description: "Please configure your OpenAI API key in the AI Dashboard first.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Use the queryClient to invalidate the insights query and refetch
       queryClient.invalidateQueries({ queryKey: ['/api/ai/insights'] });
       

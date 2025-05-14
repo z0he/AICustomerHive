@@ -633,6 +633,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Call the OpenAI function to analyze customer data
       const insights = await analyzeCustomerData(customers);
+      
+      // Log the response for debugging
+      console.log("AI Insights response:", JSON.stringify(insights));
+      
       return res.json(insights);
     } catch (error) {
       console.error("Get AI insights error:", error);
