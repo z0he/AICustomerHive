@@ -757,6 +757,9 @@ export default function LeadManagement() {
           <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Lead Details</DialogTitle>
+              <DialogDescription>
+                View and manage lead information
+              </DialogDescription>
             </DialogHeader>
             
             <LeadDetails 
