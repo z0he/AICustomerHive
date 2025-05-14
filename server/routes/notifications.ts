@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { eq } from "drizzle-orm";
+import { eq, count, sql } from "drizzle-orm";
 import { db } from "../db";
 import { systemNotifications } from "@shared/schema";
 import { getRecentNotifications, markNotificationAsRead } from "../lib/notification-service";
@@ -76,11 +76,11 @@ router.delete("/api/admin/notifications/:id", async (req: Request, res: Response
 router.get("/api/admin/notifications/count", async (req: Request, res: Response) => {
   try {
     // Get total count
-    const totalResult = await db.select({ count: db.fn.count() })
+    const totalResult = await db.select({ count: count() })
       .from(systemNotifications);
     
     // Get unread count
-    const unreadResult = await db.select({ count: db.fn.count() })
+    const unreadResult = await db.select({ count: count() })
       .from(systemNotifications)
       .where(eq(systemNotifications.isRead, false));
     

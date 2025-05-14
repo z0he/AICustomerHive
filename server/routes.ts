@@ -21,6 +21,7 @@ import {
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import marketingRoutes from "./routes/marketing";
+import notificationRoutes from "./routes/notifications";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -28,6 +29,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount marketing routes
   app.use("/api/marketing", marketingRoutes);
+  
+  // Mount notification routes
+  app.use(notificationRoutes);
   
   // Legacy compatibility redirect for user current route
   app.get("/api/user/current", (req, res) => {

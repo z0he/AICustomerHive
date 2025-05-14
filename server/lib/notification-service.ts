@@ -1,5 +1,6 @@
 import { sendEmail } from './mailgun';
 import { db } from '../db';
+import { eq } from 'drizzle-orm';
 import { systemNotifications, type InsertSystemNotification } from '@shared/schema';
 
 /**
@@ -138,10 +139,10 @@ export async function notifySystemError(
  */
 export async function getRecentNotifications(limit: number = 10): Promise<any[]> {
   try {
-    const notifications = await db.query.systemNotifications.findMany({
-      orderBy: [{ createdAt: 'desc' }],
-      limit
-    });
+    const notifications = await db.select()
+      .from(systemNotifications)
+      .orderBy(systemNotifications.createdAt)
+      .limit(limit);
     
     return notifications;
   } catch (error) {
@@ -155,11 +156,12 @@ export async function getRecentNotifications(limit: number = 10): Promise<any[]>
  */
 export async function markNotificationAsRead(id: number): Promise<boolean> {
   try {
-    await db.update(systemNotifications)
+    const result = await db.update(systemNotifications)
       .set({ isRead: true })
-      .where({ id });
+      .where(eq(systemNotifications.id, id))
+      .returning();
     
-    return true;
+    return result.length > 0;
   } catch (error) {
     console.error('Failed to mark notification as read:', error);
     return false;
