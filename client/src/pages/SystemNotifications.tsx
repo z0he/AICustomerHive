@@ -58,7 +58,7 @@ const SystemNotifications = () => {
     queryKey: ['/api/admin/notifications'],
     queryFn: async () => {
       const response = await apiRequest('/api/admin/notifications', 'GET');
-      return response as SystemNotification[];
+      return response as unknown as SystemNotification[];
     }
   });
 
@@ -67,7 +67,7 @@ const SystemNotifications = () => {
     queryKey: ['/api/admin/notifications/count'],
     queryFn: async () => {
       const response = await apiRequest('/api/admin/notifications/count', 'GET');
-      return response as { total: number; unread: number };
+      return response as unknown as { total: number; unread: number };
     }
   });
 
@@ -196,7 +196,7 @@ const SystemNotifications = () => {
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          {counts?.unread > 0 && (
+          {counts && counts.unread && counts.unread > 0 && (
             <Button onClick={() => markAllReadMutation.mutate()} size="sm">
               Mark All as Read
             </Button>
@@ -216,7 +216,7 @@ const SystemNotifications = () => {
           </TabsTrigger>
           <TabsTrigger value="unread">
             Unread
-            {!isCountLoading && counts && counts.unread > 0 && (
+            {!isCountLoading && counts && counts.unread && counts.unread > 0 && (
               <Badge variant="outline" className="ml-2">
                 {counts.unread}
               </Badge>
