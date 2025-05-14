@@ -64,18 +64,18 @@ const CampaignPerformance: FC<CampaignPerformanceProps> = ({
                   key={campaign.id} 
                   className="flex flex-col items-center justify-end group relative h-full"
                 >
-                  <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-brand-blue text-white p-2 rounded text-xs transform -translate-x-1/2 left-1/2 whitespace-nowrap z-10">
+                  <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white p-2 rounded text-xs transform -translate-x-1/2 left-1/2 whitespace-nowrap z-10">
                     {campaign.name}: {campaign.conversions} conversions
                   </div>
                   <div 
-                    className="bg-brand-blue rounded-t w-16 transition-all duration-300 cursor-pointer hover:bg-brand-teal shadow-sm" 
+                    className="bg-blue-500 rounded-t w-16 transition-all duration-300 cursor-pointer hover:bg-blue-600 shadow-sm" 
                     style={{ 
                       height: `${Math.max(campaign.percentage, 10)}%`
                     }}
                     onClick={() => handleCampaignClick(campaign)}
                   ></div>
                   <div 
-                    className="mt-2 text-xs text-brand-teal/80 font-medium text-center truncate w-full cursor-pointer"
+                    className="mt-2 text-xs text-slate-600 font-medium text-center truncate w-full cursor-pointer"
                     onClick={() => handleCampaignClick(campaign)}
                   >
                     {campaign.name}
@@ -95,27 +95,27 @@ const CampaignPerformance: FC<CampaignPerformanceProps> = ({
               <h4 className="text-sm font-medium">{selectedCampaign.name} Details</h4>
               <div className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${
                 selectedCampaign.percentage > 50 
-                  ? "border-transparent bg-brand-green text-white" 
-                  : "border-transparent bg-brand-blue text-white"
+                  ? "border-transparent bg-green-500 text-white" 
+                  : "border-transparent bg-primary text-primary-foreground"
               }`}>
                 {selectedCampaign.percentage}% Performance
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="text-brand-teal/80">Type:</span> {selectedCampaign.type || 'N/A'}
+                <span className="text-slate-500">Type:</span> {selectedCampaign.type || 'N/A'}
               </div>
               <div>
-                <span className="text-brand-teal/80">Audience:</span> {selectedCampaign.targetAudience || 'All'}
+                <span className="text-slate-500">Audience:</span> {selectedCampaign.targetAudience || 'All'}
               </div>
               <div>
-                <span className="text-brand-teal/80">Start:</span> {selectedCampaign.startDate || 'N/A'}
+                <span className="text-slate-500">Start:</span> {selectedCampaign.startDate || 'N/A'}
               </div>
               <div>
-                <span className="text-brand-teal/80">End:</span> {selectedCampaign.endDate || 'N/A'}
+                <span className="text-slate-500">End:</span> {selectedCampaign.endDate || 'N/A'}
               </div>
               <div className="col-span-2">
-                <span className="text-brand-teal/80">Message:</span> {selectedCampaign.message || 'No message content'}
+                <span className="text-slate-500">Message:</span> {selectedCampaign.message || 'No message content'}
               </div>
             </div>
           </div>
@@ -123,11 +123,11 @@ const CampaignPerformance: FC<CampaignPerformanceProps> = ({
         
         <div className="flex justify-between items-center mt-4">
           <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-brand-blue mr-2"></div>
-            <span className="text-xs text-brand-teal/80">Campaign Performance</span>
+            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+            <span className="text-xs text-slate-600">Campaign Performance</span>
           </div>
           <button 
-            className="text-brand-green text-sm font-medium hover:text-brand-teal flex items-center"
+            className="text-primary-600 text-sm font-medium hover:text-primary-700 flex items-center"
             onClick={() => toast({ 
               title: "Detailed Reports", 
               description: selectedCampaign 
