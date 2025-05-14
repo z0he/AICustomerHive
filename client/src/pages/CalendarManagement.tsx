@@ -1232,7 +1232,7 @@ const CalendarManagement: React.FC = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           <SelectItem value="lead">Lead</SelectItem>
                           <SelectItem value="customer">Customer</SelectItem>
                           <SelectItem value="campaign">Campaign</SelectItem>
@@ -1514,7 +1514,7 @@ const CalendarManagement: React.FC = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           <SelectItem value="lead">Lead</SelectItem>
                           <SelectItem value="customer">Customer</SelectItem>
                           <SelectItem value="campaign">Campaign</SelectItem>
