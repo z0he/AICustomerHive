@@ -135,6 +135,30 @@
   padding: 1.5rem;
 }
 
+.crm-assistant-button {
+  background-color: var(--brand-green-light, #e7f2d9);
+  color: var(--brand-text-gray);
+  border: 1px solid var(--brand-green-light, #e7f2d9);
+  border-radius: var(--border-radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: auto;
+  min-height: 2.5rem;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.crm-assistant-button:hover {
+  background-color: var(--brand-green);
+  color: white;
+}
+
 .ai-assistant-input {
   background-color: var(--brand-white);
   border: 1px solid rgba(0, 0, 0, 0.1);

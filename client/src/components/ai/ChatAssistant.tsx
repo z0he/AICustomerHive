@@ -288,13 +288,13 @@ export function ChatAssistant() {
                          message.metadata && 
                          message.metadata.suggestedActions && 
                          message.metadata.suggestedActions.length > 0 && (
-                          <div className="mt-3 pt-2 border-t border-muted-foreground/20 space-y-2">
+                          <div className="mt-3 pt-2 border-t border-muted-foreground/20 flex flex-wrap gap-2">
                             {message.metadata.suggestedActions.map((action, index) => (
                               <Button 
                                 key={index}
                                 variant="secondary"
                                 size="sm"
-                                className="mr-2 text-xs"
+                                className="text-xs whitespace-normal h-auto py-1 text-left justify-start font-normal"
                                 onClick={() => handleSuggestedAction(action.action)}
                               >
                                 {action.label}
@@ -322,17 +322,16 @@ export function ChatAssistant() {
                     "How can I track email performance?",
                     "What analytics should I focus on?"
                   ].map((suggestion, i) => (
-                    <Button 
+                    <button 
                       key={i} 
-                      variant="outline"
                       onClick={() => {
                         setMessage(suggestion);
                         setTimeout(() => handleSendMessage(), 100);
                       }}
-                      className="justify-start h-auto py-3 px-4 text-left"
+                      className="crm-assistant-button"
                     >
                       {suggestion}
-                    </Button>
+                    </button>
                   ))}
                 </div>
               </div>

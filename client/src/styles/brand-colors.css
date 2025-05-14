@@ -5,6 +5,10 @@
   --brand-white: #ffffff;
   --brand-text-gray: #333333;
   
+  /* Color variations */
+  --brand-green-light: #e7f2d9;
+  --brand-blue-light: #e0f0f5;
+  
   /* Table header colors */
   --table-header-text: var(--brand-white);
   --table-header-bg: #0082ae;
