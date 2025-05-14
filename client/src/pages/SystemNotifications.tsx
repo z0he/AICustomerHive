@@ -53,51 +53,12 @@ const SystemNotifications = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("all");
 
-  // Fetch notifications and calculate counts
+  // Fetch notifications
   const { data: notifications, isLoading, refetch } = useQuery({
     queryKey: ['/api/admin/notifications'],
     queryFn: async () => {
       try {
-        // For now, let's mock the notifications since the API route isn't fully implemented
-        return [
-          {
-            id: 1,
-            type: 'new_user',
-            title: 'New User Registration',
-            message: 'A new user has registered: John Doe (johndoe)',
-            severity: 'info',
-            isRead: false,
-            isEmailSent: true,
-            emailRecipient: 'admin@example.com',
-            createdAt: new Date().toISOString(),
-            relatedEntityType: 'user',
-            relatedEntityId: 1,
-            metadata: {
-              username: 'johndoe',
-              name: 'John Doe',
-              registeredAt: new Date().toISOString()
-            }
-          },
-          {
-            id: 2,
-            type: 'system_error',
-            title: 'System Error: API Integration',
-            message: 'Failed to connect to external API',
-            severity: 'error',
-            isRead: false,
-            isEmailSent: true,
-            emailRecipient: 'admin@example.com',
-            createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-            relatedEntityType: null,
-            relatedEntityId: null,
-            metadata: {
-              errorName: 'ConnectionError',
-              errorStack: 'Error: Failed to connect to API endpoint...',
-              context: 'API Integration',
-              timestamp: new Date(Date.now() - 86400000).toISOString()
-            }
-          }
-        ] as SystemNotification[];
+        return await apiRequest('/api/admin/notifications', 'GET') as unknown as SystemNotification[];
       } catch (error) {
         console.error('Error fetching notifications:', error);
         return [];
@@ -105,27 +66,28 @@ const SystemNotifications = () => {
     }
   });
 
-  // Calculate counts based on notifications
-  const counts = useMemo(() => {
-    if (!notifications) return { total: 0, unread: 0 };
-    
-    const unreadCount = notifications.filter(n => !n.isRead).length;
-    return {
-      total: notifications.length,
-      unread: unreadCount
-    };
-  }, [notifications]);
+  // Fetch notification counts
+  const { data: counts, isLoading: isCountLoading } = useQuery({
+    queryKey: ['/api/admin/notifications/count'],
+    queryFn: async () => {
+      try {
+        return await apiRequest('/api/admin/notifications/count', 'GET') as unknown as { total: number; unread: number };
+      } catch (error) {
+        console.error('Error fetching notification counts:', error);
+        return { total: 0, unread: 0 };
+      }
+    }
+  });
 
   // Mark notification as read
   const markAsReadMutation = useMutation({
     mutationFn: async (id: number) => {
-      // Mock the API call for now
-      console.log(`Marking notification ${id} as read`);
-      return { success: true };
+      return await apiRequest(`/api/admin/notifications/${id}/read`, 'POST');
     },
     onSuccess: () => {
-      // Update the notifications state manually since we're using mock data
-      refetch();
+      // Invalidate queries to refetch notifications
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/notifications/count'] });
       
       toast({
         title: 'Notification marked as read',
@@ -144,13 +106,12 @@ const SystemNotifications = () => {
   // Delete notification
   const deleteNotificationMutation = useMutation({
     mutationFn: async (id: number) => {
-      // Mock the API call for now
-      console.log(`Deleting notification ${id}`);
-      return { success: true };
+      return await apiRequest(`/api/admin/notifications/${id}`, 'DELETE');
     },
     onSuccess: () => {
-      // Update the notifications state manually since we're using mock data
-      refetch();
+      // Invalidate queries to refetch notifications
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/notifications/count'] });
       
       toast({
         title: 'Notification deleted',
@@ -169,17 +130,18 @@ const SystemNotifications = () => {
   // Mark all as read
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
-      // Mock the API call for now
-      console.log('Marking all notifications as read');
-      return { success: true, count: 2 };
+      return await apiRequest('/api/admin/notifications/mark-all-read', 'POST') as unknown as { success: boolean; count: number };
     },
-    onSuccess: () => {
-      // Update the notifications state manually since we're using mock data
-      refetch();
+    onSuccess: (data) => {
+      // Invalidate queries to refetch notifications
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/notifications/count'] });
+      
+      const count = data?.count || 0;
       
       toast({
         title: 'All notifications marked as read',
-        description: 'All notifications have been marked as read',
+        description: `${count} notification${count === 1 ? '' : 's'} marked as read`,
       });
     },
     onError: (error: any) => {
