@@ -592,3 +592,34 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
 
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+
+// System Notifications table for tracking system events
+export const systemNotifications = pgTable("system_notifications", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // new_user, system_error, security_alert, etc.
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  severity: text("severity").default("info"), // info, warning, error, critical
+  isRead: boolean("is_read").default(false),
+  isEmailSent: boolean("is_email_sent").default(false),
+  emailRecipient: text("email_recipient"), // Where notification was sent
+  createdAt: timestamp("created_at").notNull(),
+  relatedEntityType: text("related_entity_type"), // user, lead, etc.
+  relatedEntityId: integer("related_entity_id"),
+  metadata: jsonb("metadata"), // Additional context about the event
+});
+
+export const insertSystemNotificationSchema = createInsertSchema(systemNotifications).pick({
+  type: true,
+  title: true,
+  message: true,
+  severity: true,
+  isEmailSent: true,
+  emailRecipient: true,
+  relatedEntityType: true,
+  relatedEntityId: true,
+  metadata: true,
+});
+
+export type InsertSystemNotification = z.infer<typeof insertSystemNotificationSchema>;
+export type SystemNotification = typeof systemNotifications.$inferSelect;
