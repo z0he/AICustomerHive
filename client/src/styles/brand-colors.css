@@ -4,6 +4,11 @@
   --brand-blue: #0082ae;
   --brand-white: #ffffff;
   --brand-text-gray: #333333;
+  
+  /* Table header colors */
+  --table-header-text: var(--brand-white);
+  --table-header-bg: #0082ae;
+  --table-header-border: #8ac33e;
 
   /* UI colors */
   --brand-black: #121212;
