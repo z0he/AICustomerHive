@@ -11,7 +11,9 @@ import {
   FileDown,
   CalendarDays,
   Send,
-  FormInput
+  FormInput,
+  Bell,
+  ShieldAlert
 } from "lucide-react";
 
 interface SidebarItem {
@@ -86,7 +88,13 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
       </div>
       
       <div className="p-4 border-t border-slate-200">
-        <div>
+        <div className="space-y-1">
+          <Link href="/admin/notifications">
+            <div className="flex items-center space-x-3 text-slate-600 hover:bg-slate-50 hover:text-brand-blue px-3 py-2 rounded-lg cursor-pointer">
+              <Bell size={20} className="text-amber-600" />
+              <span className="font-medium text-sm hidden md:inline-block uppercase tracking-wide">Notifications</span>
+            </div>
+          </Link>
           <Link href="/settings">
             <div className="flex items-center space-x-3 text-slate-600 hover:bg-slate-50 hover:text-brand-blue px-3 py-2 rounded-lg cursor-pointer">
               <Settings size={20} className="text-brand-blue" />

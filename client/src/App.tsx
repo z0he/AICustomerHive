@@ -19,6 +19,7 @@ import EmailManagement from "@/pages/EmailManagement";
 import CalendarManagement from "@/pages/CalendarManagement";
 import MarketingForms from "@/pages/MarketingForms";
 import SettingsPage from "@/pages/Settings";
+import SystemNotifications from "@/pages/SystemNotifications";
 import Landing from "@/pages/Landing";
 
 // Custom placeholder page for routes under development
@@ -60,6 +61,9 @@ function Router() {
       
       {/* Settings page */}
       <ProtectedRoute path="/settings" component={SettingsPage} />
+      
+      {/* Admin pages */}
+      <ProtectedRoute path="/admin/notifications" component={SystemNotifications} />
       
       {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
