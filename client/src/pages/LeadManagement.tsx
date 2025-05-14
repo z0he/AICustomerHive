@@ -763,19 +763,19 @@ export default function LeadManagement() {
             </DialogHeader>
             
             {/* Lead Name and Status Section */}
-            <div className="px-6 py-2 mb-4">
+            <div className="px-6 py-2 mb-4 border border-brand-green-light rounded-md bg-brand-green-light/30">
               <div className="text-xl font-bold uppercase tracking-wide">
-                {typeof selectedLead === 'object' && selectedLead !== null ? (selectedLead as any).name : ''}
+                {selectedLead.name || "Lead Name"}
               </div>
               <div className="flex gap-2 mt-2">
-                {typeof selectedLead === 'object' && selectedLead !== null && (selectedLead as any).leadStatus && (
-                  <Badge variant={(selectedLead as any).leadStatus === 'qualified' || (selectedLead as any).leadStatus === 'won' ? 'success' : 'secondary'}>
-                    {(selectedLead as any).leadStatus.charAt(0).toUpperCase() + (selectedLead as any).leadStatus.slice(1)}
+                {selectedLead.leadStatus && (
+                  <Badge variant={selectedLead.leadStatus === 'qualified' || selectedLead.leadStatus === 'won' ? 'success' : 'secondary'}>
+                    {selectedLead.leadStatus.charAt(0).toUpperCase() + selectedLead.leadStatus.slice(1)}
                   </Badge>
                 )}
-                {typeof selectedLead === 'object' && selectedLead !== null && (selectedLead as any).leadSource && (
+                {selectedLead.leadSource && (
                   <Badge variant="outline">
-                    {(selectedLead as any).leadSource.charAt(0).toUpperCase() + (selectedLead as any).leadSource.slice(1)}
+                    {selectedLead.leadSource.charAt(0).toUpperCase() + selectedLead.leadSource.slice(1)}
                   </Badge>
                 )}
               </div>
