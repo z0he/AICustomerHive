@@ -58,7 +58,7 @@ const SystemNotifications = () => {
     queryKey: ['/api/admin/notifications'],
     queryFn: async () => {
       try {
-        return await apiRequest('/api/admin/notifications', 'GET') as unknown as SystemNotification[];
+        return await apiRequest('GET', '/api/admin/notifications') as unknown as SystemNotification[];
       } catch (error) {
         console.error('Error fetching notifications:', error);
         return [];
@@ -71,7 +71,7 @@ const SystemNotifications = () => {
     queryKey: ['/api/admin/notifications/count'],
     queryFn: async () => {
       try {
-        return await apiRequest('/api/admin/notifications/count', 'GET') as unknown as { total: number; unread: number };
+        return await apiRequest('GET', '/api/admin/notifications/count') as unknown as { total: number; unread: number };
       } catch (error) {
         console.error('Error fetching notification counts:', error);
         return { total: 0, unread: 0 };
@@ -82,7 +82,7 @@ const SystemNotifications = () => {
   // Mark notification as read
   const markAsReadMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/admin/notifications/${id}/read`, 'POST');
+      return await apiRequest('POST', `/api/admin/notifications/${id}/read`);
     },
     onSuccess: () => {
       // Invalidate queries to refetch notifications
@@ -106,7 +106,7 @@ const SystemNotifications = () => {
   // Delete notification
   const deleteNotificationMutation = useMutation({
     mutationFn: async (id: number) => {
-      return await apiRequest(`/api/admin/notifications/${id}`, 'DELETE');
+      return await apiRequest('DELETE', `/api/admin/notifications/${id}`);
     },
     onSuccess: () => {
       // Invalidate queries to refetch notifications
@@ -130,7 +130,7 @@ const SystemNotifications = () => {
   // Mark all as read
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('/api/admin/notifications/mark-all-read', 'POST') as unknown as { success: boolean; count: number };
+      return await apiRequest('POST', '/api/admin/notifications/mark-all-read') as unknown as { success: boolean; count: number };
     },
     onSuccess: (data) => {
       // Invalidate queries to refetch notifications
