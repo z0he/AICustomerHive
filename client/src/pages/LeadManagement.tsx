@@ -762,6 +762,25 @@ export default function LeadManagement() {
               </DialogDescription>
             </DialogHeader>
             
+            {/* Lead Name and Status Section */}
+            <div className="px-6 py-2 mb-4">
+              <div className="text-xl font-bold uppercase tracking-wide">
+                {typeof selectedLead === 'object' && selectedLead !== null ? (selectedLead as any).name : ''}
+              </div>
+              <div className="flex gap-2 mt-2">
+                {typeof selectedLead === 'object' && selectedLead !== null && (selectedLead as any).leadStatus && (
+                  <Badge variant={(selectedLead as any).leadStatus === 'qualified' || (selectedLead as any).leadStatus === 'won' ? 'success' : 'secondary'}>
+                    {(selectedLead as any).leadStatus.charAt(0).toUpperCase() + (selectedLead as any).leadStatus.slice(1)}
+                  </Badge>
+                )}
+                {typeof selectedLead === 'object' && selectedLead !== null && (selectedLead as any).leadSource && (
+                  <Badge variant="outline">
+                    {(selectedLead as any).leadSource.charAt(0).toUpperCase() + (selectedLead as any).leadSource.slice(1)}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            
             <LeadDetails 
               lead={selectedLead}
               onUpdateScore={(scoringData) => updateLeadScoreMutation.mutate({ 
