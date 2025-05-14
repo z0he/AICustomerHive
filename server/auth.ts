@@ -11,6 +11,7 @@ import { queryClient } from "./lib/db";
 import { User as SelectUser } from "@shared/schema";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import { notifyNewUserRegistration, notifySystemError } from "./lib/notification-service";
 
 declare global {
   namespace Express {
@@ -201,7 +202,11 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ message: "Failed to log in after registration" });
         }
         
-        // Return the user and token
+        // Send admin notification about new user registration
+        notifyNewUserRegistration(user)
+          .catch(notifError => console.error("Failed to send new user notification:", notifError));
+          
+        // Return the user and token  
         res.status(201).json({
           user: {
             id: user.id,
@@ -214,6 +219,12 @@ export function setupAuth(app: Express) {
       });
     } catch (error) {
       console.error("Registration error:", error);
+      
+      // Log the error to admin notifications
+      notifySystemError(error instanceof Error ? error : new Error(String(error)), 
+                       "User Registration")
+        .catch(notifError => console.error("Failed to send error notification:", notifError));
+      
       res.status(500).json({ message: "Failed to register" });
     }
   });
