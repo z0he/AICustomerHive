@@ -657,15 +657,15 @@ const CustomerData = () => {
               ) : (
                 <>
                   <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2">Export Summary</h3>
+                    <h3 className="text-lg font-bold text-brand-blue uppercase tracking-wide mb-2">Export Summary</h3>
                     <div className="flex flex-wrap gap-4">
-                      <div className="bg-muted p-4 rounded-lg">
-                        <div className="text-sm text-muted-foreground">Total Customers</div>
-                        <div className="text-2xl font-bold">{exportData?.metadata?.totalCount || exportData?.data?.length || 0}</div>
+                      <div className="bg-brand-blue/10 border border-brand-blue/20 p-4 rounded-lg">
+                        <div className="text-sm text-brand-blue/80">Total Customers</div>
+                        <div className="text-2xl font-bold text-brand-blue">{exportData?.metadata?.totalCount || exportData?.data?.length || 0}</div>
                       </div>
-                      <div className="bg-muted p-4 rounded-lg">
-                        <div className="text-sm text-muted-foreground">Export Date</div>
-                        <div className="text-md font-medium">
+                      <div className="bg-brand-green/10 border border-brand-green/20 p-4 rounded-lg">
+                        <div className="text-sm text-brand-green/80">Export Date</div>
+                        <div className="text-md font-medium text-brand-green">
                           {exportData?.metadata?.exportDate 
                             ? new Date(exportData.metadata.exportDate).toLocaleDateString() 
                             : new Date().toLocaleDateString()}
@@ -675,16 +675,16 @@ const CustomerData = () => {
                   </div>
                   
                   <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2">Available Fields</h3>
-                    <div className="flex flex-wrap gap-2">
+                    <h3 className="text-lg font-bold text-brand-blue uppercase tracking-wide mb-2">Available Fields</h3>
+                    <div className="flex flex-wrap gap-2 p-3 bg-brand-blue/5 rounded-lg border border-brand-blue/10">
                       {exportData?.metadata?.fields?.map((field: string) => (
-                        <Badge key={field} variant="outline">{field}</Badge>
+                        <Badge key={field} className="bg-white border-brand-blue/20 text-brand-blue">{field}</Badge>
                       ))}
                     </div>
                   </div>
                   
                   <div className="mb-4">
-                    <h3 className="text-lg font-medium mb-2">Sample Data (First 3 records)</h3>
+                    <h3 className="text-lg font-bold text-brand-blue uppercase tracking-wide mb-2">Sample Data (First 3 records)</h3>
                     <div className="code-sample data-container bg-white border p-4 rounded-lg overflow-x-auto">
                       <pre className="text-xs font-mono">
                         {JSON.stringify(exportData?.data?.slice(0, 3), null, 2)}
