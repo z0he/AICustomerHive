@@ -181,8 +181,10 @@ const CalendarManagement: React.FC = () => {
   const createEventMutation = useMutation({
     mutationFn: async (data: EventFormData) => {
       // Convert date objects to ISO strings for API compatibility
+      // And handle "none" value for relatedEntityType
       const formattedData = {
         ...data,
+        relatedEntityType: data.relatedEntityType === "none" ? null : data.relatedEntityType,
         startDate: data.startDate.toISOString(),
         endDate: data.endDate.toISOString()
       };
@@ -225,8 +227,10 @@ const CalendarManagement: React.FC = () => {
   const updateEventMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: EventFormData }) => {
       // Convert date objects to ISO strings for API compatibility
+      // And handle "none" value for relatedEntityType
       const formattedData = {
         ...data,
+        relatedEntityType: data.relatedEntityType === "none" ? null : data.relatedEntityType,
         startDate: data.startDate.toISOString(),
         endDate: data.endDate.toISOString()
       };
@@ -378,7 +382,7 @@ const CalendarManagement: React.FC = () => {
       allDay: event.allDay || false,
       location: event.location || '',
       status: event.status || 'confirmed',
-      relatedEntityType: event.relatedEntityType || '',
+      relatedEntityType: event.relatedEntityType || 'none',
       relatedEntityId: event.relatedEntityId?.toString() || '',
       ownerId: event.ownerId?.toString() || '',
       url: event.url || '',
