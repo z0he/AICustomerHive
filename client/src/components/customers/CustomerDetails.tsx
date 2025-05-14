@@ -117,11 +117,11 @@ export default function CustomerDetails({
   
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="customer-profile-card">
+        <CardHeader className="profile-header pb-3">
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-xl">{customer.name}</CardTitle>
+              <CardTitle className="profile-name text-xl">{customer.name}</CardTitle>
               <CardDescription>
                 {customer.company ? `${customer.company} • ` : ""}
                 {customer.contactIndustry}

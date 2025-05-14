@@ -6,14 +6,15 @@
   background-color: var(--brand-white) !important;
   border-radius: var(--border-radius);
   box-shadow: var(--card-shadow);
+  border: 1px solid #e5f0d5;
 }
 
 .dialog-header, 
 .modal-header {
   color: var(--brand-blue);
   background: linear-gradient(to right, var(--brand-white), #f0f9e8);
-  padding: 1rem;
-  border-bottom: 1px solid #e5f0d5;
+  padding: 1.25rem;
+  border-bottom: 2px solid #e5f0d5;
   border-radius: var(--border-radius) var(--border-radius) 0 0;
 }
 
@@ -23,6 +24,32 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: var(--header-letter-spacing);
+  font-size: 1.25rem;
+}
+
+/* Dialog close button styling */
+.dialog-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: var(--brand-blue);
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  padding: 0.25rem;
+  transition: all 0.2s ease;
+}
+
+.dialog-close:hover {
+  background-color: var(--brand-green);
+  color: white;
+}
+
+/* Dialog footer styling */
+.dialog-footer {
+  border-top: 1px solid #e5f0d5;
+  padding: 1rem;
+  background-color: #f9fcf5;
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
 }
 
 /* Form container styles */
@@ -53,6 +80,26 @@
   text-transform: uppercase;
   font-size: 0.85rem;
   letter-spacing: 0.5px;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--brand-green);
+}
+
+/* Improved table styling for better contrast */
+.table-container {
+  background-color: var(--brand-white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+}
+
+.table-row-alt {
+  background-color: rgba(138, 195, 62, 0.05);
+}
+
+.table-cell {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e5f0d5;
+  color: var(--brand-text-gray);
 }
 
 /* Tabs */
