@@ -155,7 +155,7 @@ const SystemNotifications = () => {
 
   // Helper function to filter notifications based on active tab
   const getFilteredNotifications = () => {
-    if (!notifications) return [];
+    if (!notifications || !Array.isArray(notifications)) return [];
     
     switch (activeTab) {
       case 'unread':
