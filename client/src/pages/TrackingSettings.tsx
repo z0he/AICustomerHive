@@ -208,14 +208,14 @@ const TrackingSettings = () => {
                       <div className="relative">
                         <Textarea 
                           className="font-mono text-sm h-48"
-                          value={trackingCode}
+                          value={displayTrackingCode}
                           readOnly
                         />
                         <Button
                           size="sm"
                           variant="ghost"
                           className="absolute top-2 right-2"
-                          onClick={() => copyToClipboard(trackingCode)}
+                          onClick={() => copyToClipboard(displayTrackingCode)}
                         >
                           {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                         </Button>
