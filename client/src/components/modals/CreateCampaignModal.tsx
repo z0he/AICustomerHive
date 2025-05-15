@@ -19,6 +19,9 @@ const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
   type: z.string().min(1, "Campaign type is required"),
   targetAudience: z.string().min(1, "Target audience is required"),
+  location: z.string().optional(),
+  industry: z.string().optional(),
+  season: z.string().optional(),
   message: z.string().min(10, "Message must be at least 10 characters"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
@@ -228,11 +231,20 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
   }, [refreshSuggestions]);
 
   // Trigger message refresh when target audience or type changes
+  // Also show/hide specific selectors based on audience type
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
       // When audience selection changes, trigger a refresh of message suggestions
       if (name === 'targetAudience' || name === 'type') {
         setRefreshSuggestions(prev => prev + 1);
+        
+        // Show/hide specific selectors based on audience selection
+        if (name === 'targetAudience') {
+          const targetAudience = value.targetAudience;
+          setShowLocationSelector(targetAudience === "Specific Location Customers");
+          setShowIndustrySelector(targetAudience === "Industry-Specific Customers");
+          setShowSeasonalSelector(targetAudience === "Seasonal Campaign");
+        }
       }
     });
     
