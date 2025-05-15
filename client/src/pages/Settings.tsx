@@ -416,17 +416,12 @@ const SettingsPage: React.FC = () => {
   
   // If we have a newly generated code, use that, otherwise fall back to the latest installation or a placeholder
   const displayTrackingCode = generatedCode || latestInstallation?.trackingCode || `
-<!-- CRM Tracking Code -->
-<script type="text/javascript">
-  (function(w, d, s, tc) {
-    let scriptTag = d.createElement(s);
-    scriptTag.async = true;
-    scriptTag.src = 'https://yourcrm.com/api/marketing/tracking/script.js';
-    let firstScriptTag = d.getElementsByTagName(s)[0];
-    firstScriptTag.parentNode.insertBefore(scriptTag, firstScriptTag);
-  })(window, document, 'script', 'TRACKING_CODE_HERE');
-</script>
-<!-- End CRM Tracking Code -->
+<!-- Your generated tracking code will appear here -->
+<!-- 
+This is a placeholder. After you enter your website URL and click
+'Generate Code', your unique tracking script will appear in this box.
+You can then copy and paste it into your website's HTML.
+-->
 `;
 
   // Handle logout
