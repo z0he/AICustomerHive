@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { queryClient } from '@/lib/queryClient';
 import { apiRequest } from '@/lib/queryClient';
+import { trackEvent } from '@/lib/analytics';
 
 // Define types for tracking installations
 interface TrackingInstallation {
@@ -50,6 +51,9 @@ const TrackingSettings = () => {
       });
     },
     onSuccess: () => {
+      // Track successful code generation in Google Analytics
+      trackEvent('generate_tracking_code', 'tracking', websiteUrl);
+      
       toast({
         title: 'Tracking code generated',
         description: 'Copy and paste the code into your website.',
@@ -57,6 +61,9 @@ const TrackingSettings = () => {
       queryClient.invalidateQueries({ queryKey: ['/api/marketing/tracking/installations'] });
     },
     onError: (error) => {
+      // Track error in Google Analytics
+      trackEvent('tracking_code_error', 'tracking', websiteUrl);
+      
       toast({
         title: 'Error generating tracking code',
         description: 'Please try again with a valid website URL.',
@@ -76,6 +83,8 @@ const TrackingSettings = () => {
       return;
     }
     
+    // Track attempt to generate tracking code
+    trackEvent('tracking_code_generation_attempt', 'tracking');
     generateTrackingCode.mutate();
   };
   
@@ -83,6 +92,10 @@ const TrackingSettings = () => {
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
     setCopied(true);
+    
+    // Track code copy in Google Analytics
+    trackEvent('copy_tracking_code', 'tracking', websiteUrl);
+    
     toast({
       title: 'Copied to clipboard',
       description: 'The tracking code has been copied to your clipboard.',
@@ -120,7 +133,10 @@ const TrackingSettings = () => {
             </div>
             <Button
               variant="outline"
-              onClick={() => refetchInstallations()}
+              onClick={() => {
+                trackEvent('refresh_installations', 'tracking');
+                refetchInstallations();
+              }}
               disabled={isLoadingInstallations}
             >
               {isLoadingInstallations ? (
@@ -132,7 +148,12 @@ const TrackingSettings = () => {
             </Button>
           </div>
 
-          <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+          <Tabs 
+            defaultValue={activeTab} 
+            onValueChange={(value) => {
+              setActiveTab(value);
+              trackEvent('tab_change', 'tracking', value);
+            }}>
             <TabsList className="mb-4">
               <TabsTrigger value="code">Tracking Code</TabsTrigger>
               <TabsTrigger value="advanced">Advanced Tracking</TabsTrigger>
@@ -265,7 +286,18 @@ const TrackingSettings = () => {
                       />
                     </div>
                     
-                    <Button className="w-full">Save Settings</Button>
+                    <Button 
+                      className="w-full"
+                      onClick={() => {
+                        trackEvent('save_tracking_settings', 'tracking');
+                        toast({
+                          title: 'Settings saved',
+                          description: 'Your tracking settings have been updated.',
+                        });
+                      }}
+                    >
+                      Save Settings
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
