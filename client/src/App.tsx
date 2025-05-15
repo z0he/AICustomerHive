@@ -62,7 +62,15 @@ function Router() {
       <ProtectedRoute path="/email" component={EmailManagement} />
       <ProtectedRoute path="/calendar" component={CalendarManagement} />
       <ProtectedRoute path="/marketing-forms" component={MarketingForms} />
-      <ProtectedRoute path="/tracking-settings" component={TrackingSettings} />
+      
+      {/* Redirect tracking to settings with tracking tab selected */}
+      <Route path="/tracking-settings">
+        {() => {
+          // Use effect to change URL without causing a refresh
+          typeof window !== "undefined" && window.location.replace('/settings?tab=tracking');
+          return null;
+        }}
+      </Route>
       
       {/* Campaign detail route */}
       <ProtectedRoute path="/campaigns/:id" component={CampaignDetail} />

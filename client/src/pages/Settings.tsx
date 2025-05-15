@@ -109,12 +109,33 @@ type ProfileSettingsFormData = z.infer<typeof profileSettingsSchema>;
 type NotificationSettingsFormData = z.infer<typeof notificationSettingsSchema>;
 
 const SettingsPage: React.FC = () => {
+  // Get URL parameters to check for 'tab' parameter
+  const getInitialTab = () => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      return tabParam && ['profile', 'notifications', 'integrations', 'tracking', 'appearance'].includes(tabParam)
+        ? tabParam
+        : 'profile';
+    }
+    return 'profile';
+  };
+
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(getInitialTab());
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [copied, setCopied] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
   const [trackingActiveTab, setTrackingActiveTab] = useState('code');
+  
+  // Update URL when tab changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', activeTab);
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [activeTab]);
 
   // Query user data
   const { data: userData } = useQuery({
@@ -237,7 +258,7 @@ const SettingsPage: React.FC = () => {
   const generateTrackingCode = useMutation({
     mutationFn: async () => {
       return apiRequest('POST', '/api/marketing/tracking/code', { 
-        websiteUrl 
+        websiteUrl
       });
     },
     onSuccess: async (response) => {
