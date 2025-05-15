@@ -328,7 +328,7 @@ const SettingsPage: React.FC = () => {
             </h1>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="profile">
                   <div className="flex items-center">
                     <User className="h-4 w-4 mr-2" />
@@ -345,6 +345,12 @@ const SettingsPage: React.FC = () => {
                   <div className="flex items-center">
                     <Key className="h-4 w-4 mr-2" />
                     <span>API Integrations</span>
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger value="tracking">
+                  <div className="flex items-center">
+                    <Code className="h-4 w-4 mr-2" />
+                    <span>Tracking</span>
                   </div>
                 </TabsTrigger>
                 <TabsTrigger value="appearance">
