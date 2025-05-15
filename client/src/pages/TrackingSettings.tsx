@@ -33,6 +33,7 @@ const TrackingSettings = () => {
   const [activeTab, setActiveTab] = useState('code');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState('');
   
   // Query tracking installations
   const { 
@@ -46,18 +47,27 @@ const TrackingSettings = () => {
   // Generate tracking code mutation
   const generateTrackingCode = useMutation({
     mutationFn: async () => {
-      return apiRequest('/api/marketing/tracking/code', 'POST', { 
+      return apiRequest('POST', '/api/marketing/tracking/code', { 
         websiteUrl 
       });
     },
-    onSuccess: () => {
+    onSuccess: async (response) => {
       // Track successful code generation in Google Analytics
       trackEvent('generate_tracking_code', 'tracking', websiteUrl);
+      
+      // Get the JSON response with the tracking code
+      const data = await response.json();
+      
+      // Set the generated code to display in the UI
+      if (data && data.trackingCode) {
+        setGeneratedCode(data.trackingCode);
+      }
       
       toast({
         title: 'Tracking code generated',
         description: 'Copy and paste the code into your website.',
       });
+      
       queryClient.invalidateQueries({ queryKey: ['/api/marketing/tracking/installations'] });
     },
     onError: (error) => {
@@ -104,9 +114,11 @@ const TrackingSettings = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Find most recently generated code
+  // Use generated code if available, otherwise use the latest installation code
   const latestInstallation = trackingInstallations && trackingInstallations[0];
-  const trackingCode = latestInstallation?.trackingCode || `
+  
+  // If we have a newly generated code, use that, otherwise fall back to the latest installation or a placeholder
+  const displayTrackingCode = generatedCode || latestInstallation?.trackingCode || `
 <!-- CRM Tracking Code -->
 <script type="text/javascript">
   (function(w, d, s, tc) {
