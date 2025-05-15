@@ -414,15 +414,21 @@ const SettingsPage: React.FC = () => {
   // Use generated code if available, otherwise use the latest installation code
   const latestInstallation = trackingInstallations && trackingInstallations[0];
   
-  // If we have a newly generated code, use that, otherwise fall back to the latest installation or a placeholder
-  const displayTrackingCode = generatedCode || latestInstallation?.trackingCode || `
-<!-- Your generated tracking code will appear here -->
-<!-- 
-This is a placeholder. After you enter your website URL and click
-'Generate Code', your unique tracking script will appear in this box.
-You can then copy and paste it into your website's HTML.
--->
-`;
+  // Determine what to display in the tracking code textarea
+  // Only show a tracking code if one was just generated
+  let displayTrackingCode = '';
+  
+  if (generatedCode) {
+    // Show newly generated code
+    displayTrackingCode = generatedCode;
+  } else if (latestInstallation?.trackingCode) {
+    // If there's an existing installation but no new code was generated,
+    // leave the field empty and let the placeholder show
+    displayTrackingCode = '';
+  } else {
+    // No installations and no generated code - leave empty to show placeholder
+    displayTrackingCode = '';
+  }
 
   // Handle logout
   const handleLogout = () => {
@@ -966,6 +972,7 @@ You can then copy and paste it into your website's HTML.
                                 <Textarea 
                                   className="font-mono text-sm h-48"
                                   value={displayTrackingCode}
+                                  placeholder="Your generated tracking code will appear here"
                                   readOnly
                                 />
                                 <Button
