@@ -2,7 +2,12 @@ import { FC } from "react";
 import { Link } from "wouter";
 import { 
   Bell,
-  ChevronDown
+  ChevronDown,
+  Home,
+  Info,
+  DollarSign,
+  Contact,
+  Play
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -57,6 +62,46 @@ const AuthHeader: FC<AuthHeaderProps> = ({
         </div>
       </div>
       <div className="flex items-center space-x-4">
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center space-x-1 cursor-pointer px-2 py-1 rounded hover:bg-slate-100 text-slate-700 hover:text-brand-blue">
+            <Home size={16} />
+            <span className="text-sm font-medium">Public</span>
+            <ChevronDown size={14} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="p-0 shadow-md rounded-lg border-brand-blue/10">
+            <DropdownMenuItem asChild>
+              <Link href="/" className="flex items-center">
+                <Home className="mr-2" size={16} />
+                <span>Home</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/features" className="flex items-center">
+                <Info className="mr-2" size={16} />
+                <span>Features</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/pricing" className="flex items-center">
+                <DollarSign className="mr-2" size={16} />
+                <span>Pricing</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/contact" className="flex items-center">
+                <Contact className="mr-2" size={16} />
+                <span>Contact</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/demo" className="flex items-center">
+                <Play className="mr-2" size={16} />
+                <span>Demo</span>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
         <DropdownMenu>
           <DropdownMenuTrigger className="relative cursor-pointer">
             <Bell className="text-brand-blue" size={20} />
