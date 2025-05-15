@@ -306,6 +306,9 @@ export class DbStorage implements IStorage {
       trackingCode = result[0].trackingCode;
     }
     
+    // Get the server URL from the environment or use a default for development
+    const serverUrl = process.env.SERVER_URL || 'https://ai-crm.replit.app';
+    
     // Generate JavaScript tracking code
     const jsTrackingCode = `
 <!-- CRM Tracking Code -->
@@ -313,7 +316,7 @@ export class DbStorage implements IStorage {
   (function(w, d, s, tc) {
     let scriptTag = d.createElement(s);
     scriptTag.async = true;
-    scriptTag.src = '${process.env.PUBLIC_URL || ''}/api/marketing/tracking/' + tc + '.js';
+    scriptTag.src = '${serverUrl}/api/marketing/tracking/' + tc + '.js';
     let firstScriptTag = d.getElementsByTagName(s)[0];
     firstScriptTag.parentNode.insertBefore(scriptTag, firstScriptTag);
   })(window, document, 'script', '${trackingCode}');
