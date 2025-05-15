@@ -55,6 +55,9 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       name: "",
       type: "",
       targetAudience: "",
+      location: "",
+      industry: "",
+      season: "",
       message: "",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -143,21 +146,74 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       } else if (targetAudience === "High-Spending Customers") {
         message = aiGeneratedMessages[5];
       } else if (targetAudience === "Seasonal Campaign") {
-        message = aiGeneratedMessages[6];
+        // Will be replaced with actual season later
+        message = aiGeneratedMessages[6].replace("[season]", "the season");
       } else if (targetAudience === "Specific Location Customers") {
-        message = aiGeneratedMessages[7];
+        // Will be replaced with actual location later
+        message = aiGeneratedMessages[7].replace("[region]", "your region");
       } else if (targetAudience === "Industry-Specific Customers") {
-        message = aiGeneratedMessages[8];
+        // Will be replaced with actual industry later
+        message = aiGeneratedMessages[8].replace("[industry]", "your industry");
       }
       
       // In a real implementation, we would call the OpenAI API to generate customized messages
       // based on customer data and campaign type
+      
+      // Set appropriate secondary selectors
+      setShowLocationSelector(targetAudience === "Specific Location Customers");
+      setShowIndustrySelector(targetAudience === "Industry-Specific Customers");
+      setShowSeasonalSelector(targetAudience === "Seasonal Campaign");
+      
+      // Default values for secondary fields if selected
+      let location = "";
+      let industry = "";
+      let season = "";
+      
+      // Extract potential location/industry from command
+      if (targetAudience === "Specific Location Customers") {
+        if (command.includes("north america")) location = "North America";
+        else if (command.includes("europe")) location = "Europe";
+        else if (command.includes("asia")) location = "Asia Pacific";
+        else if (command.includes("latin")) location = "Latin America";
+        else if (command.includes("middle east")) location = "Middle East";
+        else if (command.includes("africa")) location = "Africa";
+        else if (command.includes("urban")) location = "Urban Areas";
+        else if (command.includes("rural")) location = "Rural Areas";
+        else if (command.includes("suburban")) location = "Suburban Areas";
+      }
+      
+      if (targetAudience === "Industry-Specific Customers") {
+        if (command.includes("tech")) industry = "Technology";
+        else if (command.includes("health")) industry = "Healthcare";
+        else if (command.includes("finance") || command.includes("banking")) industry = "Finance";
+        else if (command.includes("retail") || command.includes("ecommerce")) industry = "Retail";
+        else if (command.includes("manufacturing")) industry = "Manufacturing";
+        else if (command.includes("education")) industry = "Education";
+        else if (command.includes("entertainment") || command.includes("media")) industry = "Entertainment";
+        else if (command.includes("hospitality") || command.includes("travel")) industry = "Hospitality";
+        else if (command.includes("real estate")) industry = "Real Estate";
+        else if (command.includes("services")) industry = "Professional Services";
+        else if (command.includes("non-profit") || command.includes("ngo")) industry = "Non-profit";
+      }
+      
+      if (targetAudience === "Seasonal Campaign") {
+        if (command.includes("spring")) season = "Spring";
+        else if (command.includes("summer")) season = "Summer";
+        else if (command.includes("fall") || command.includes("autumn")) season = "Fall";
+        else if (command.includes("winter")) season = "Winter";
+        else if (command.includes("holiday")) season = "Holiday Season";
+        else if (command.includes("school")) season = "Back to School";
+        else if (command.includes("new year")) season = "New Year";
+      }
       
       form.reset({
         ...form.getValues(),
         name: campaignName,
         type: campaignType,
         targetAudience: targetAudience,
+        location,
+        industry, 
+        season,
         message
       });
     }
@@ -257,6 +313,34 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
     onClose();
   };
   
+  // Effect to update message placeholders when location, industry, or season is selected
+  useEffect(() => {
+    const targetAudience = form.getValues().targetAudience;
+    const message = form.getValues().message;
+    
+    if (targetAudience === "Specific Location Customers") {
+      const location = form.getValues().location;
+      if (location && message.includes("your region")) {
+        const updatedMessage = message.replace("your region", location);
+        form.setValue('message', updatedMessage, { shouldValidate: true });
+      }
+    } 
+    else if (targetAudience === "Industry-Specific Customers") {
+      const industry = form.getValues().industry;
+      if (industry && message.includes("your industry")) {
+        const updatedMessage = message.replace("your industry", industry);
+        form.setValue('message', updatedMessage, { shouldValidate: true });
+      }
+    }
+    else if (targetAudience === "Seasonal Campaign") {
+      const season = form.getValues().season;
+      if (season && message.includes("the season")) {
+        const updatedMessage = message.replace("the season", season);
+        form.setValue('message', updatedMessage, { shouldValidate: true });
+      }
+    }
+  }, [form.watch('location'), form.watch('industry'), form.watch('season')]);
+
   // Get suggestions based on combined AI and static messages
   const filteredMessages = useMemo(() => {
     return aiGeneratedSuggestions.length > 0 ? aiGeneratedSuggestions : aiGeneratedMessages;
@@ -362,6 +446,108 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                 </FormItem>
               )}
             />
+            
+            {showLocationSelector && (
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Specify Location</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a location" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="North America">North America</SelectItem>
+                        <SelectItem value="Europe">Europe</SelectItem>
+                        <SelectItem value="Asia Pacific">Asia Pacific</SelectItem>
+                        <SelectItem value="Latin America">Latin America</SelectItem>
+                        <SelectItem value="Middle East">Middle East</SelectItem>
+                        <SelectItem value="Africa">Africa</SelectItem>
+                        <SelectItem value="Urban Areas">Urban Areas</SelectItem>
+                        <SelectItem value="Rural Areas">Rural Areas</SelectItem>
+                        <SelectItem value="Suburban Areas">Suburban Areas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            
+            {showIndustrySelector && (
+              <FormField
+                control={form.control}
+                name="industry"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Specify Industry</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an industry" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Technology">Technology</SelectItem>
+                        <SelectItem value="Healthcare">Healthcare</SelectItem>
+                        <SelectItem value="Finance">Finance & Banking</SelectItem>
+                        <SelectItem value="Retail">Retail & E-commerce</SelectItem>
+                        <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                        <SelectItem value="Education">Education</SelectItem>
+                        <SelectItem value="Entertainment">Entertainment & Media</SelectItem>
+                        <SelectItem value="Hospitality">Hospitality & Travel</SelectItem>
+                        <SelectItem value="Real Estate">Real Estate</SelectItem>
+                        <SelectItem value="Professional Services">Professional Services</SelectItem>
+                        <SelectItem value="Non-profit">Non-profit & NGO</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            
+            {showSeasonalSelector && (
+              <FormField
+                control={form.control}
+                name="season"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Specify Season</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a season" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Spring">Spring</SelectItem>
+                        <SelectItem value="Summer">Summer</SelectItem>
+                        <SelectItem value="Fall">Fall</SelectItem>
+                        <SelectItem value="Winter">Winter</SelectItem>
+                        <SelectItem value="Holiday Season">Holiday Season</SelectItem>
+                        <SelectItem value="Back to School">Back to School</SelectItem>
+                        <SelectItem value="New Year">New Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             
             <FormField
