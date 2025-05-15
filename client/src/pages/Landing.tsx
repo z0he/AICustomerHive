@@ -50,10 +50,12 @@ const Landing: React.FC = () => {
               Welcome to a CRM that's fast, friendly, and freaking smart.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <AccentButton className="px-8 py-3 text-base">
-                Try it FREE
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </AccentButton>
+              <Link href="https://ai-crmuk.replit.app/auth?tab=register">
+                <AccentButton className="px-8 py-3 text-base">
+                  Try it FREE
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </AccentButton>
+              </Link>
               <Link href="/demo">
                 <button className="bg-white text-[#0082AE] hover:bg-white/90 px-8 py-3 rounded-md font-medium text-base">
                   Watch a 3-minute demo
@@ -335,9 +337,11 @@ const Landing: React.FC = () => {
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-4">Let Go of the CRM Bloat. Embrace Growth Without the Guesswork.</h2>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row mt-8">
-            <AccentButton className="px-8 py-3 text-base">
-              Try it FREE — No credit card required
-            </AccentButton>
+            <Link href="https://ai-crmuk.replit.app/auth?tab=register">
+              <AccentButton className="px-8 py-3 text-base">
+                Try it FREE — No credit card required
+              </AccentButton>
+            </Link>
             <Link href="/demo">
               <button className="bg-white text-[#0082AE] hover:bg-white/90 px-8 py-3 rounded-md font-medium text-base">
                 Watch a 3-minute demo
