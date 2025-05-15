@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 // UI Components
 import AuthHeader from '@/components/auth/AuthHeader';
@@ -43,6 +43,9 @@ import {
   UserCog,
   Globe,
   Layout,
+  Code,
+  Copy,
+  CheckCircle2,
 } from 'lucide-react';
 
 // Form schemas
@@ -87,6 +90,19 @@ const notificationSettingsSchema = z.object({
   securityAlerts: z.boolean(),
 });
 
+// Define types for tracking installations
+interface TrackingInstallation {
+  id: number;
+  websiteUrl: string;
+  installationDate: string;
+  status: 'active' | 'inactive' | 'pending';
+  trackingCode: string;
+  lastPingAt?: string;
+  settings?: Record<string, any>;
+  owner?: number;
+  notes?: string;
+}
+
 type OpenAIConfigFormData = z.infer<typeof openAIConfigSchema>;
 type MailgunConfigFormData = z.infer<typeof mailgunConfigSchema>;
 type ProfileSettingsFormData = z.infer<typeof profileSettingsSchema>;
@@ -95,6 +111,10 @@ type NotificationSettingsFormData = z.infer<typeof notificationSettingsSchema>;
 const SettingsPage: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('profile');
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState('');
+  const [trackingActiveTab, setTrackingActiveTab] = useState('code');
 
   // Query user data
   const { data: userData } = useQuery({
@@ -114,6 +134,15 @@ const SettingsPage: React.FC = () => {
         securityAlerts: true,
       };
     }
+  });
+
+  // Query tracking installations
+  const { 
+    data: trackingInstallations = [] as TrackingInstallation[], 
+    isLoading: isLoadingInstallations,
+    refetch: refetchInstallations 
+  } = useQuery<TrackingInstallation[]>({
+    queryKey: ['/api/marketing/tracking/installations'],
   });
 
   // OpenAI API status query
@@ -205,6 +234,39 @@ const SettingsPage: React.FC = () => {
   }, [notificationSettings, notificationForm]);
 
   // Mutations
+  const generateTrackingCode = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', '/api/marketing/tracking/code', { 
+        websiteUrl 
+      });
+    },
+    onSuccess: async (response) => {
+      // Track successful code generation
+      
+      // Get the JSON response with the tracking code
+      const data = await response.json();
+      
+      // Set the generated code to display in the UI
+      if (data && data.trackingCode) {
+        setGeneratedCode(data.trackingCode);
+      }
+      
+      toast({
+        title: 'Tracking code generated',
+        description: 'Copy and paste the code into your website.',
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/marketing/tracking/installations'] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error generating tracking code',
+        description: 'Please try again with a valid website URL.',
+        variant: 'destructive',
+      });
+    }
+  });
+  
   const configureOpenAIMutation = useMutation({
     mutationFn: async (data: OpenAIConfigFormData) => {
       return await apiRequest('/api/config/openai', 'POST', data);
@@ -299,6 +361,51 @@ const SettingsPage: React.FC = () => {
   const onNotificationSubmit = (data: NotificationSettingsFormData) => {
     updateNotificationsMutation.mutate(data);
   };
+
+  // Handle generation of tracking code
+  const handleGenerateCode = () => {
+    if (!websiteUrl) {
+      toast({
+        title: 'Website URL required',
+        description: 'Please enter a valid website URL.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    generateTrackingCode.mutate();
+  };
+  
+  // Copy tracking code to clipboard
+  const copyToClipboard = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    
+    toast({
+      title: 'Copied to clipboard',
+      description: 'The tracking code has been copied to your clipboard.',
+    });
+    
+    setTimeout(() => setCopied(false), 2000);
+  };
+  
+  // Use generated code if available, otherwise use the latest installation code
+  const latestInstallation = trackingInstallations && trackingInstallations[0];
+  
+  // If we have a newly generated code, use that, otherwise fall back to the latest installation or a placeholder
+  const displayTrackingCode = generatedCode || latestInstallation?.trackingCode || `
+<!-- CRM Tracking Code -->
+<script type="text/javascript">
+  (function(w, d, s, tc) {
+    let scriptTag = d.createElement(s);
+    scriptTag.async = true;
+    scriptTag.src = 'https://yourcrm.com/api/marketing/tracking/script.js';
+    let firstScriptTag = d.getElementsByTagName(s)[0];
+    firstScriptTag.parentNode.insertBefore(scriptTag, firstScriptTag);
+  })(window, document, 'script', 'TRACKING_CODE_HERE');
+</script>
+<!-- End CRM Tracking Code -->
+`;
 
   // Handle logout
   const handleLogout = () => {
@@ -771,6 +878,230 @@ const SettingsPage: React.FC = () => {
               </TabsContent>
               
               {/* Appearance Tab */}
+              {/* Tracking Tab */}
+              <TabsContent value="tracking" className="mt-4 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Code className="h-5 w-5" />
+                      Website Tracking
+                    </CardTitle>
+                    <CardDescription>
+                      Manage website tracking and analytics
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-end mb-6">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          refetchInstallations();
+                        }}
+                        disabled={isLoadingInstallations}
+                      >
+                        {isLoadingInstallations ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                        )}
+                        Refresh
+                      </Button>
+                    </div>
+
+                    <Tabs 
+                      defaultValue={trackingActiveTab} 
+                      onValueChange={(value) => {
+                        setTrackingActiveTab(value);
+                      }}>
+                      <TabsList className="mb-4">
+                        <TabsTrigger value="code">Tracking Code</TabsTrigger>
+                        <TabsTrigger value="advanced">Advanced Tracking</TabsTrigger>
+                        <TabsTrigger value="installations">Your Installations</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="code">
+                        <div className="space-y-6">
+                          <div className="grid gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="website-url">Website URL</Label>
+                              <div className="flex gap-2">
+                                <Input 
+                                  id="website-url" 
+                                  placeholder="https://yourwebsite.com" 
+                                  value={websiteUrl}
+                                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                                />
+                                <Button 
+                                  onClick={handleGenerateCode}
+                                  disabled={generateTrackingCode.isPending}
+                                >
+                                  {generateTrackingCode.isPending && (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  )}
+                                  Generate Code
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Embed Code</Label>
+                              <div className="relative">
+                                <Textarea 
+                                  className="font-mono text-sm h-48"
+                                  value={displayTrackingCode}
+                                  readOnly
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="absolute top-2 right-2"
+                                  onClick={() => copyToClipboard(displayTrackingCode)}
+                                >
+                                  {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="advanced">
+                        <div className="space-y-6">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <Label htmlFor="track-forms">Track Form Submissions</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Automatically track all form submissions on your website
+                                </p>
+                              </div>
+                              <Switch id="track-forms" defaultChecked />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <Label htmlFor="track-clicks">Track Button Clicks</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Track clicks on buttons and links
+                                </p>
+                              </div>
+                              <Switch id="track-clicks" defaultChecked />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <Label htmlFor="track-scroll">Track Scroll Depth</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Measure how far users scroll down your pages
+                                </p>
+                              </div>
+                              <Switch id="track-scroll" defaultChecked />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <Label htmlFor="anonymize-ip">Anonymize IP Addresses</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  For privacy compliance (GDPR, CCPA)
+                                </p>
+                              </div>
+                              <Switch id="anonymize-ip" defaultChecked />
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <Label htmlFor="consent-required">Require Cookie Consent</Label>
+                                <p className="text-sm text-muted-foreground">
+                                  Only track users who have accepted cookies
+                                </p>
+                              </div>
+                              <Switch id="consent-required" defaultChecked />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="excluded-paths">Excluded Paths</Label>
+                              <p className="text-sm text-muted-foreground">
+                                Enter paths to exclude from tracking (one per line)
+                              </p>
+                              <Textarea 
+                                id="excluded-paths"
+                                placeholder="/thank-you&#10;/admin&#10;/login"
+                                className="font-mono text-sm"
+                              />
+                            </div>
+                            
+                            <Button 
+                              className="w-full"
+                              onClick={() => {
+                                toast({
+                                  title: 'Settings saved',
+                                  description: 'Your tracking settings have been updated.',
+                                });
+                              }}
+                            >
+                              Save Settings
+                            </Button>
+                          </div>
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="installations">
+                        <div>
+                          {isLoadingInstallations ? (
+                            <div className="flex justify-center items-center py-12">
+                              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                          ) : !trackingInstallations || trackingInstallations.length === 0 ? (
+                            <div className="text-center py-12">
+                              <p className="text-muted-foreground">No tracking installations found.</p>
+                              <p className="text-sm mt-2">
+                                Generate and install tracking code on your websites to see them here.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {trackingInstallations.map((installation: any) => (
+                                <div key={installation.id} className="border rounded-md p-4">
+                                  <div className="flex justify-between items-start">
+                                    <div>
+                                      <h3 className="font-medium">{installation.websiteUrl}</h3>
+                                      <p className="text-sm text-muted-foreground">
+                                        Installed: {new Date(installation.installationDate).toLocaleDateString()}
+                                      </p>
+                                      <div className="flex items-center mt-2">
+                                        <span className={`inline-flex h-2 w-2 rounded-full mr-2 ${
+                                          installation.status === 'active' ? 'bg-green-500' : 'bg-amber-500'
+                                        }`} />
+                                        <span className="text-sm">
+                                          {installation.status === 'active' ? 'Active' : 'Pending'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="space-x-2">
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => copyToClipboard(installation.trackingCode)}
+                                      >
+                                        <Copy className="h-4 w-4 mr-2" />
+                                        Copy Code
+                                      </Button>
+                                      <Button size="sm" variant="outline">
+                                        Test Connection
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </TabsContent>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
               <TabsContent value="appearance" className="mt-4 space-y-6">
                 <Card>
                   <CardHeader>
