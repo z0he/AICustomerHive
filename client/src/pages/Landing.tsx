@@ -23,7 +23,7 @@ const Landing: React.FC = () => {
       {/* Header */}
       <header className="bg-white py-4 px-6 border-b border-slate-200">
         <div className="container mx-auto flex justify-between items-center">
-          <AIcrmLogo width={40} height={40} />
+          <AIcrmLogo width={180} height={60} />
           <div className="flex items-center space-x-6">
             <Link href="/features" className="text-slate-600 hover:text-[#0082AE] font-medium">Features</Link>
             <Link href="/pricing" className="text-slate-600 hover:text-[#0082AE] font-medium">Pricing</Link>
@@ -357,7 +357,7 @@ const Landing: React.FC = () => {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <AIcrmLogo width={32} height={32} />
+              <AIcrmLogo width={160} height={60} />
               <p className="mt-4 text-slate-600">
                 AI-powered CRM for modern businesses.
               </p>

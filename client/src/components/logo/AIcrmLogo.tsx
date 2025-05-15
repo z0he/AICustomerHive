@@ -5,7 +5,7 @@ interface LogoProps {
   height?: number;
 }
 
-const AIcrmLogo: React.FC<LogoProps> = ({ width = 150, height = 50 }) => {
+const AIcrmLogo: React.FC<LogoProps> = ({ width = 200, height = 70 }) => {
   return (
     <div className="flex items-center">
       <img 
