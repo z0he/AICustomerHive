@@ -213,7 +213,6 @@ export class DbStorage implements IStorage {
   async createPageView(pageView: InsertPageView): Promise<PageView> {
     const pageViewData = {
       ...pageView,
-      timestamp: new Date(),
       contactId: null // Set contactId to null if not provided
     };
     
@@ -221,6 +220,50 @@ export class DbStorage implements IStorage {
       .values(pageViewData as any)
       .returning();
       
+    return result[0];
+  }
+
+  // ----- Tracking Installations methods -----
+  
+  async getTrackingInstallations(): Promise<TrackingInstallation[]> {
+    return await db.select()
+      .from(trackingInstallations)
+      .orderBy(desc(trackingInstallations.installationDate));
+  }
+  
+  async getTrackingInstallation(id: number): Promise<TrackingInstallation | undefined> {
+    const result = await db.select()
+      .from(trackingInstallations)
+      .where(eq(trackingInstallations.id, id));
+      
+    return result[0];
+  }
+  
+  async createTrackingInstallation(installation: InsertTrackingInstallation): Promise<TrackingInstallation> {
+    const installData = {
+      ...installation,
+      installationDate: new Date(),
+      trackingCode: `CRM-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      status: installation.status || 'active'
+    };
+    
+    const result = await db.insert(trackingInstallations)
+      .values(installData as any)
+      .returning();
+      
+    return result[0];
+  }
+  
+  async updateTrackingInstallation(id: number, data: Partial<TrackingInstallation>): Promise<TrackingInstallation> {
+    const result = await db.update(trackingInstallations)
+      .set(data)
+      .where(eq(trackingInstallations.id, id))
+      .returning();
+      
+    if (result.length === 0) {
+      throw new Error(`Tracking installation with ID ${id} not found`);
+    }
+    
     return result[0];
   }
   

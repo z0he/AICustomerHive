@@ -12,7 +12,8 @@ import {
   type WebVisitor,
   type InsertWebVisitor,
   type PageView,
-  type InsertPageView
+  type InsertPageView,
+  type TrackingInstallation
 } from '@shared/schema';
 
 const router = Router();
@@ -274,13 +275,11 @@ router.post('/track/pageview', async (req: Request, res: Response) => {
     let visitor = await storage.getWebVisitorByVisitorId(visitorId);
     
     if (!visitor) {
-      // Create new visitor
+      // Create new visitor with required schema fields
       visitor = await storage.createWebVisitor({
         visitorId,
-        firstVisitAt: new Date(),
-        lastVisitAt: new Date(),
         ipAddress: req.ip,
-        userAgent: req.headers['user-agent'],
+        userAgent: req.headers['user-agent'] as string,
         deviceType: req.body.deviceType,
         browser: req.body.browser,
         operatingSystem: req.body.operatingSystem,
@@ -298,7 +297,6 @@ router.post('/track/pageview', async (req: Request, res: Response) => {
     } else {
       // Update existing visitor
       await storage.updateWebVisitor(visitorId, {
-        lastVisitAt: new Date(),
         totalVisits: (visitor.totalVisits || 0) + 1,
         totalPageviews: (visitor.totalPageviews || 0) + 1,
         latestReferrer: referrer,
@@ -306,12 +304,11 @@ router.post('/track/pageview', async (req: Request, res: Response) => {
       });
     }
     
-    // Record page view
+    // Record page view with required schema fields
     const pageView = await storage.createPageView({
       visitorId,
       pageUrl,
       pageTitle,
-      timestamp: new Date(),
       referrer,
       utmSource: utmParams?.source,
       utmMedium: utmParams?.medium,
@@ -345,9 +342,13 @@ router.get('/tracking/code', checkAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Website URL is required' });
     }
     
+    // Generate or retrieve tracking code with owner ID
+    // If req.user.id is undefined, we'll provide a default value of 1
+    const ownerId = req.user?.id || 1;
+    
     // Generate or retrieve tracking code
     const trackingCode = await storage.generateTrackingCode(websiteUrl, {
-      owner: req.user?.id
+      owner: ownerId
     });
     
     return res.json({ trackingCode });
@@ -366,9 +367,12 @@ router.post('/tracking/code', checkAuth, async (req: Request, res: Response) => 
       return res.status(400).json({ message: 'Website URL is required' });
     }
     
-    // Generate or retrieve tracking code
+    // Generate or retrieve tracking code with owner ID
+    // If req.user.id is undefined, we'll provide a default value of 1
+    const ownerId = req.user?.id || 1;
+    
     const trackingCode = await storage.generateTrackingCode(websiteUrl, {
-      owner: req.user?.id
+      owner: ownerId
     });
     
     return res.json({ trackingCode, success: true });
@@ -386,7 +390,7 @@ router.get('/tracking/installations', checkAuth, async (req: Request, res: Respo
     // If user.id is available, filter installations by owner
     if (req.user?.id) {
       const filteredInstallations = installations.filter(
-        install => install.owner === req.user?.id
+        (install: TrackingInstallation) => install.owner === req.user?.id
       );
       return res.json(filteredInstallations);
     }
