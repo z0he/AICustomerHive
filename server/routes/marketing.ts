@@ -336,7 +336,7 @@ router.post('/track/pageview', async (req: Request, res: Response) => {
   }
 });
 
-// Get tracking code
+// Get tracking code (GET method for existing installs)
 router.get('/tracking/code', checkAuth, async (req: Request, res: Response) => {
   try {
     const websiteUrl = req.query.websiteUrl as string;
@@ -354,6 +354,66 @@ router.get('/tracking/code', checkAuth, async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error generating tracking code:', error);
     return res.status(500).json({ message: 'Failed to generate tracking code' });
+  }
+});
+
+// Generate tracking code (POST method for new installs)
+router.post('/tracking/code', checkAuth, async (req: Request, res: Response) => {
+  try {
+    const { websiteUrl } = req.body;
+    
+    if (!websiteUrl) {
+      return res.status(400).json({ message: 'Website URL is required' });
+    }
+    
+    // Generate or retrieve tracking code
+    const trackingCode = await storage.generateTrackingCode(websiteUrl, {
+      owner: req.user?.id
+    });
+    
+    return res.json({ trackingCode, success: true });
+  } catch (error) {
+    console.error('Error generating tracking code:', error);
+    return res.status(500).json({ message: 'Failed to generate tracking code' });
+  }
+});
+
+// Get all tracking installations
+router.get('/tracking/installations', checkAuth, async (req: Request, res: Response) => {
+  try {
+    const installations = await storage.getTrackingInstallations();
+    
+    // If user.id is available, filter installations by owner
+    if (req.user?.id) {
+      const filteredInstallations = installations.filter(
+        install => install.owner === req.user?.id
+      );
+      return res.json(filteredInstallations);
+    }
+    
+    return res.json(installations);
+  } catch (error) {
+    console.error('Error fetching tracking installations:', error);
+    return res.status(500).json({ message: 'Failed to fetch tracking installations' });
+  }
+});
+
+// Update tracking installation
+router.patch('/tracking/installations/:id', checkAuth, async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { status, settings, notes } = req.body;
+    
+    const updated = await storage.updateTrackingInstallation(id, {
+      status,
+      settings,
+      notes
+    });
+    
+    return res.json(updated);
+  } catch (error) {
+    console.error('Error updating tracking installation:', error);
+    return res.status(500).json({ message: 'Failed to update tracking installation' });
   }
 });
 
