@@ -42,7 +42,7 @@ const Landing: React.FC = () => {
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto text-center">
             <BrandBadge variant="accentLight" className="mb-4">AI-POWERED CRM</BrandBadge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white">
               CRMs Weren't Built for You. So We Built One That Was.
             </h1>
             <p className="text-xl mb-8 text-white/90">
