@@ -43,12 +43,12 @@ const AuthHeader: FC<AuthHeaderProps> = ({
   const unreadCount = notifications.filter(n => !n.read).length;
   
   return (
-    <header className="bg-white border-b border-brand-blue/10 py-2 px-4 flex justify-between items-center shadow-sm">
+    <header className="bg-white border-b border-brand-blue/10 py-3 px-6 flex justify-between items-center shadow-sm">
       <div className="flex items-center">
         <div className="flex items-center">
-          <AIcrmLogo width={32} height={32} />
+          <AIcrmLogo width={120} height={45} />
         </div>
-        <div className="ml-8 hidden md:flex items-center space-x-6">
+        <div className="ml-10 hidden md:flex items-center space-x-7">
           <Link href="/dashboard" className="text-slate-600 hover:text-brand-blue font-medium text-sm uppercase tracking-wide">Dashboard</Link>
           <Link href="/customers" className="text-slate-600 hover:text-brand-blue font-medium text-sm uppercase tracking-wide">Customers</Link>
           <Link href="/campaigns" className="text-slate-600 hover:text-brand-blue font-medium text-sm uppercase tracking-wide">Campaigns</Link>
