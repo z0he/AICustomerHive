@@ -25,6 +25,10 @@ import TrackingSettings from "@/pages/TrackingSettings";
 import SettingsPage from "@/pages/Settings";
 import SystemNotifications from "@/pages/SystemNotifications";
 import Landing from "@/pages/Landing";
+import Features from "@/pages/Features";
+import Pricing from "@/pages/Pricing";
+import Contact from "@/pages/Contact";
+import Demo from "@/pages/Demo";
 
 // Custom placeholder page for routes under development
 const UnderDevelopment = ({ title }: { title: string }) => {
@@ -83,6 +87,10 @@ function Router() {
       
       {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
+      <Route path="/features" component={Features} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/contact" component={Contact} />
+      <Route path="/demo" component={Demo} />
       
       <Route component={NotFound} />
     </Switch>
