@@ -13,7 +13,9 @@ import {
   Send,
   FormInput,
   Bell,
-  ShieldAlert
+  ShieldAlert,
+  Code,
+  LineChart
 } from "lucide-react";
 
 interface SidebarItem {
@@ -43,6 +45,7 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
     { icon: <Megaphone size={20} />, label: "Campaigns", path: "/campaigns" },
     { icon: <Send size={20} />, label: "Email", path: "/email" },
     { icon: <FormInput size={20} />, label: "Forms", path: "/marketing-forms" },
+    { icon: <Code size={20} />, label: "Tracking", path: "/tracking-settings" },
     { icon: <CalendarDays size={20} />, label: "Calendar", path: "/calendar" },
     { icon: <FileDown size={20} />, label: "Data Mgmt", path: "/customer-data" },
     { icon: <BarChart2 size={20} />, label: "Analytics", path: "/analytics" },

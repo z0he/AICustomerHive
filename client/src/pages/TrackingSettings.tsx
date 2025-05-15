@@ -284,7 +284,7 @@ const TrackingSettings = () => {
                     <div className="flex justify-center items-center py-12">
                       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
-                  ) : trackingInstallations.length === 0 ? (
+                  ) : !trackingInstallations || trackingInstallations.length === 0 ? (
                     <div className="text-center py-12">
                       <p className="text-muted-foreground">No tracking installations found.</p>
                       <p className="text-sm mt-2">

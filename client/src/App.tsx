@@ -18,6 +18,7 @@ import CustomerData from "@/pages/CustomerData";
 import EmailManagement from "@/pages/EmailManagement";
 import CalendarManagement from "@/pages/CalendarManagement";
 import MarketingForms from "@/pages/MarketingForms";
+import TrackingSettings from "@/pages/TrackingSettings";
 import SettingsPage from "@/pages/Settings";
 import SystemNotifications from "@/pages/SystemNotifications";
 import Landing from "@/pages/Landing";
@@ -55,6 +56,7 @@ function Router() {
       <ProtectedRoute path="/email" component={EmailManagement} />
       <ProtectedRoute path="/calendar" component={CalendarManagement} />
       <ProtectedRoute path="/marketing-forms" component={MarketingForms} />
+      <ProtectedRoute path="/tracking-settings" component={TrackingSettings} />
       
       {/* Campaign detail route */}
       <ProtectedRoute path="/campaigns/:id" component={CampaignDetail} />

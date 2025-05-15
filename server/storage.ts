@@ -60,6 +60,12 @@ export interface IStorage {
   createWebVisitor(visitor: InsertWebVisitor): Promise<WebVisitor>;
   updateWebVisitor(visitorId: string, data: Partial<WebVisitor>): Promise<WebVisitor>;
   createPageView(pageView: InsertPageView): Promise<PageView>;
+  
+  // Tracking Installations methods
+  getTrackingInstallations(): Promise<TrackingInstallation[]>;
+  getTrackingInstallation(id: number): Promise<TrackingInstallation | undefined>;
+  createTrackingInstallation(installation: InsertTrackingInstallation): Promise<TrackingInstallation>;
+  updateTrackingInstallation(id: number, data: Partial<TrackingInstallation>): Promise<TrackingInstallation>;
   generateTrackingCode(websiteUrl: string, options: {owner: number}): Promise<string>;
   getCampaign(id: number): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
