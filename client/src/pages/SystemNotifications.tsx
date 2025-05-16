@@ -155,22 +155,37 @@ const SystemNotifications = () => {
 
   // Helper function to filter notifications based on active tab
   const getFilteredNotifications = () => {
-    if (!notifications || !Array.isArray(notifications)) return [];
+    if (!notifications || !Array.isArray(notifications)) {
+      console.log("No notifications array available", notifications);
+      return [];
+    }
     
+    console.log("Total notifications:", notifications.length);
+    console.log("Current active tab:", activeTab);
+    
+    let filtered = [];
     switch (activeTab) {
       case 'unread':
-        return notifications.filter(n => !n.isRead);
+        filtered = notifications.filter(n => !n.isRead);
+        break;
       case 'errors':
-        return notifications.filter(n => n.severity === 'error' || n.severity === 'critical');
+        filtered = notifications.filter(n => n.severity === 'error' || n.severity === 'critical');
+        break;
       case 'users':
-        return notifications.filter(n => n.type === 'new_user');
+        filtered = notifications.filter(n => n.type === 'new_user');
+        break;
       case 'system':
-        return notifications.filter(n => n.type === 'system_error');
+        filtered = notifications.filter(n => n.type === 'system_error');
+        break;
       case 'feedback':
-        return notifications.filter(n => n.type === 'user_feedback');
+        filtered = notifications.filter(n => n.type === 'user_feedback');
+        break;
       default:
-        return notifications;
+        filtered = notifications;
     }
+    
+    console.log(`Filtered ${activeTab} notifications:`, filtered.length);
+    return filtered;
   };
 
   // Helper function to get an icon based on notification type and severity
