@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/lib/protected-route";
 import ChatAssistant from "@/components/ai/ChatAssistant";
+import FeedbackButton from "@/components/feedback/FeedbackButton";
 import { useEffect } from "react";
 import { initGA } from "@/lib/analytics";
 import { useAnalytics } from "@/hooks/use-analytics";
@@ -122,6 +123,7 @@ function AppContent() {
     <>
       <Router />
       {user && <ChatAssistant />}
+      <FeedbackButton />
       <Toaster />
     </>
   );
