@@ -67,10 +67,10 @@ export default function FeedbackButton() {
 
   return (
     <>
-      {/* Floating feedback button */}
+      {/* Floating feedback button - positioned higher to avoid overlap with chat assistant */}
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 rounded-full shadow-lg flex items-center gap-2 z-50"
+        className="fixed bottom-20 right-6 rounded-full shadow-lg flex items-center gap-2 z-50"
         size="sm"
       >
         <MessageSquare size={16} />
