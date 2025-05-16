@@ -22,6 +22,7 @@ import {
 import { setupAuth } from "./auth";
 import marketingRoutes from "./routes/marketing";
 import notificationRoutes from "./routes/notifications";
+import feedbackRoutes from "./routes/feedback";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -32,6 +33,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount notification routes
   app.use(notificationRoutes);
+  
+  // Mount feedback routes
+  app.use(feedbackRoutes);
   
   // Legacy compatibility redirect for user current route
   app.get("/api/user/current", (req, res) => {
