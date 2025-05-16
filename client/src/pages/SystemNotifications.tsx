@@ -329,6 +329,12 @@ const SystemNotifications = () => {
                           New User
                         </Badge>
                       )}
+                      
+                      {notification.type === 'user_feedback' && (
+                        <Badge variant="outline" className="bg-indigo-50 border-indigo-200 text-indigo-700">
+                          Feedback
+                        </Badge>
+                      )}
                     </div>
                   </div>
 
