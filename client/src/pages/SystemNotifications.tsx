@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { CircleCheck, CircleOff, RefreshCw, AlertTriangle, Info, AlertCircle, Clock, Trash2, MailCheck } from "lucide-react";
+import { CircleCheck, CircleOff, RefreshCw, AlertTriangle, Info, AlertCircle, Clock, Trash2, MailCheck, MessageSquare } from "lucide-react";
 
 import {
   Card,
@@ -166,6 +166,8 @@ const SystemNotifications = () => {
         return notifications.filter(n => n.type === 'new_user');
       case 'system':
         return notifications.filter(n => n.type === 'system_error');
+      case 'feedback':
+        return notifications.filter(n => n.type === 'user_feedback');
       default:
         return notifications;
     }
@@ -173,10 +175,15 @@ const SystemNotifications = () => {
 
   // Helper function to get an icon based on notification type and severity
   const getNotificationIcon = (notification: SystemNotification) => {
-    if (notification.type === 'new_user') {
-      return <CircleCheck className="h-5 w-5 text-green-500" />;
+    // Check notification type first
+    switch (notification.type) {
+      case 'new_user':
+        return <CircleCheck className="h-5 w-5 text-green-500" />;
+      case 'user_feedback':
+        return <MessageSquare className="h-5 w-5 text-indigo-500" />;
     }
     
+    // Then fall back to severity
     switch (notification.severity) {
       case 'info':
         return <Info className="h-5 w-5 text-blue-500" />;
@@ -225,7 +232,7 @@ const SystemNotifications = () => {
       </div>
 
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="all">
             All
             {counts && (
@@ -242,6 +249,7 @@ const SystemNotifications = () => {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="feedback">Feedback</TabsTrigger>
           <TabsTrigger value="errors">Errors</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="system">System</TabsTrigger>
