@@ -17,7 +17,8 @@ export enum NotificationType {
   SYSTEM_ERROR = 'system_error',
   SECURITY_ALERT = 'security_alert',
   LEAD_CREATED = 'lead_created',
-  FORM_SUBMISSION = 'form_submission'
+  FORM_SUBMISSION = 'form_submission',
+  USER_FEEDBACK = 'user_feedback'
 }
 
 /**
@@ -81,7 +82,7 @@ export async function createSystemNotification({
           // Update notification to mark email as sent
           await db.update(systemNotifications)
             .set({ isEmailSent: true })
-            .where({ id: notification[0].id });
+            .where(eq(systemNotifications.id, notification[0].id));
         }
       } catch (emailError) {
         console.error('Failed to send notification email:', emailError);
@@ -166,4 +167,39 @@ export async function markNotificationAsRead(id: number): Promise<boolean> {
     console.error('Failed to mark notification as read:', error);
     return false;
   }
+}
+
+/**
+ * Submit user feedback
+ */
+export async function submitUserFeedback({
+  userId,
+  username,
+  feedbackType,
+  message,
+  userEmail,
+  metadata = {}
+}: {
+  userId?: number;
+  username?: string;
+  feedbackType: 'suggestion' | 'bug' | 'question' | 'other';
+  message: string;
+  userEmail?: string;
+  metadata?: Record<string, any>;
+}): Promise<void> {
+  await createSystemNotification({
+    type: NotificationType.USER_FEEDBACK,
+    title: `User Feedback: ${feedbackType}`,
+    message,
+    severity: NotificationSeverity.INFO,
+    relatedEntityType: userId ? 'user' : undefined,
+    relatedEntityId: userId,
+    metadata: {
+      feedbackType,
+      username,
+      userEmail,
+      submittedAt: new Date().toISOString(),
+      ...metadata
+    }
+  });
 }
