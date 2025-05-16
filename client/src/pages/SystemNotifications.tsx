@@ -58,7 +58,14 @@ const SystemNotifications = () => {
     queryKey: ['/api/admin/notifications'],
     queryFn: async () => {
       try {
-        return await apiRequest('GET', '/api/admin/notifications') as unknown as SystemNotification[];
+        const response = await apiRequest('GET', '/api/admin/notifications');
+        console.log("API response received:", response);
+        if (Array.isArray(response)) {
+          return response;
+        } else {
+          console.error("Invalid API response format:", response);
+          return [];
+        }
       } catch (error) {
         console.error('Error fetching notifications:', error);
         return [];
@@ -153,35 +160,40 @@ const SystemNotifications = () => {
     },
   });
 
+  // Process notifications for display
+  const processedNotifications = useMemo(() => {
+    return notifications || [];
+  }, [notifications]);
+  
   // Helper function to filter notifications based on active tab
   const getFilteredNotifications = () => {
-    if (!notifications || !Array.isArray(notifications)) {
-      console.log("No notifications array available", notifications);
+    if (!processedNotifications || !Array.isArray(processedNotifications)) {
+      console.log("No notifications array available", processedNotifications);
       return [];
     }
     
-    console.log("Total notifications:", notifications.length);
+    console.log("Total notifications:", processedNotifications.length);
     console.log("Current active tab:", activeTab);
     
     let filtered = [];
     switch (activeTab) {
       case 'unread':
-        filtered = notifications.filter(n => !n.isRead);
+        filtered = processedNotifications.filter(n => !n.isRead);
         break;
       case 'errors':
-        filtered = notifications.filter(n => n.severity === 'error' || n.severity === 'critical');
+        filtered = processedNotifications.filter(n => n.severity === 'error' || n.severity === 'critical');
         break;
       case 'users':
-        filtered = notifications.filter(n => n.type === 'new_user');
+        filtered = processedNotifications.filter(n => n.type === 'new_user');
         break;
       case 'system':
-        filtered = notifications.filter(n => n.type === 'system_error');
+        filtered = processedNotifications.filter(n => n.type === 'system_error');
         break;
       case 'feedback':
-        filtered = notifications.filter(n => n.type === 'user_feedback');
+        filtered = processedNotifications.filter(n => n.type === 'user_feedback');
         break;
       default:
-        filtered = notifications;
+        filtered = processedNotifications;
     }
     
     console.log(`Filtered ${activeTab} notifications:`, filtered.length);

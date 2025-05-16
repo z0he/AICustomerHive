@@ -25,6 +25,7 @@ import MarketingForms from "@/pages/MarketingForms";
 import TrackingSettings from "@/pages/TrackingSettings";
 import SettingsPage from "@/pages/Settings";
 import SystemNotifications from "@/pages/SystemNotifications";
+import FeedbackList from "@/pages/FeedbackList";
 import Landing from "@/pages/Landing";
 import Features from "@/pages/Features";
 import Pricing from "@/pages/Pricing";
@@ -79,6 +80,7 @@ function Router() {
       
       {/* Admin pages */}
       <ProtectedRoute path="/admin/notifications" component={SystemNotifications} />
+      <ProtectedRoute path="/admin/feedback" component={FeedbackList} />
       
       {/* Public routes */}
       <Route path="/auth" component={AuthPage} />
