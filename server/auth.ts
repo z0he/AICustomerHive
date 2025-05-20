@@ -285,20 +285,32 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "ID token is required" });
       }
       
+      console.log("Processing Google authentication with idToken");
+      
       // Create Google OAuth client
       const client = new OAuth2Client(process.env.VITE_FIREBASE_API_KEY);
       
-      // Verify the ID token
-      const ticket = await client.verifyIdToken({
-        idToken,
-        audience: process.env.VITE_FIREBASE_API_KEY
-      });
-      
-      // Get the payload from the token
-      const payload = ticket.getPayload();
-      
-      if (!payload) {
-        return res.status(400).json({ message: "Invalid ID token" });
+      let payload;
+      try {
+        // Verify the ID token
+        console.log(`Using API key: ${process.env.VITE_FIREBASE_API_KEY?.substring(0, 5)}... as audience`);
+        const ticket = await client.verifyIdToken({
+          idToken,
+          audience: process.env.VITE_FIREBASE_API_KEY
+        });
+        
+        // Get the payload from the token
+        payload = ticket.getPayload();
+        
+        if (!payload) {
+          console.log("Token verification succeeded but payload is empty");
+          return res.status(400).json({ message: "Invalid ID token" });
+        }
+        
+        console.log(`Successfully verified token for email: ${payload.email}`);
+      } catch (verifyError) {
+        console.error("Token verification error:", verifyError);
+        return res.status(401).json({ message: "Google token verification failed" });
       }
       
       const { sub: googleId, email, name: fullName } = payload;
