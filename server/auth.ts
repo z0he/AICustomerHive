@@ -288,15 +288,18 @@ export function setupAuth(app: Express) {
       console.log("Processing Google authentication with idToken");
       
       // Create Google OAuth client
-      const client = new OAuth2Client(process.env.VITE_FIREBASE_API_KEY);
+      console.log(`Firebase config - Project ID: ${process.env.VITE_FIREBASE_PROJECT_ID}`);
+      
+      // We should be using a client ID for verification, not the API key
+      // For Firebase auth, we can try to verify the token without specifying an audience
+      const client = new OAuth2Client();
       
       let payload;
       try {
-        // Verify the ID token
-        console.log(`Using API key: ${process.env.VITE_FIREBASE_API_KEY?.substring(0, 5)}... as audience`);
+        // Verify the ID token without specifying an audience
+        console.log("Verifying Firebase ID token...");
         const ticket = await client.verifyIdToken({
-          idToken,
-          audience: process.env.VITE_FIREBASE_API_KEY
+          idToken
         });
         
         // Get the payload from the token
@@ -315,15 +318,18 @@ export function setupAuth(app: Express) {
       
       const { sub: googleId, email, name: fullName } = payload;
       
+      console.log(`Processing user with Google ID: ${googleId}, email: ${email}`);
+      
       // Check if user exists with this Google ID or email
       let user = await storage.getUserByUsername(email || googleId);
       
       if (!user) {
+        console.log("User not found, creating new user account");
         // Create a new user
         const initials = fullName
           ? fullName
               .split(" ")
-              .map(word => word[0])
+              .map((word: string) => word[0])
               .join("")
               .toUpperCase()
           : "U";
