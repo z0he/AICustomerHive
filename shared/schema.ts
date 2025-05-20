@@ -106,6 +106,7 @@ export const customers = pgTable("customers", {
   customFields: json("custom_fields"), // For storing additional import fields
   createdAt: timestamp("created_at").notNull(),
   status: text("status").default("active"),
+  isSample: boolean("is_sample").default(false), // Flag to identify sample data
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).pick({
