@@ -38,7 +38,6 @@ export const campaigns = pgTable("campaigns", {
   conversions: integer("conversions").default(0),
   percentage: integer("percentage").default(0),
   isABTestActive: boolean("is_ab_test_active").default(false),
-  isSample: boolean("is_sample").default(false), // Flag to identify sample data
 });
 
 // Message Variants for A/B testing
@@ -72,7 +71,6 @@ export const insertCampaignSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
   isABTestActive: z.boolean().optional().default(false),
-  isSample: z.boolean().optional().default(false),
   messageVariants: z.array(
     z.object({
       variantName: z.string(),
@@ -128,7 +126,6 @@ export const insertCustomerSchema = createInsertSchema(customers).pick({
   contactType: true,
   legalBasis: true,
   customFields: true,
-  isSample: true,
 });
 
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -169,7 +166,6 @@ export const leads = pgTable("leads", {
   notes: text("notes"),
   customFields: json("custom_fields"), // For storing additional import fields
   createdAt: timestamp("created_at").notNull(),
-  isSample: boolean("is_sample").default(false), // Flag to identify sample data
 });
 
 export const insertLeadSchema = createInsertSchema(leads).pick({
@@ -191,7 +187,6 @@ export const insertLeadSchema = createInsertSchema(leads).pick({
   tags: true,
   notes: true,
   customFields: true,
-  isSample: true,
 });
 
 export type InsertLead = z.infer<typeof insertLeadSchema>;

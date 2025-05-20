@@ -544,14 +544,7 @@ export default function LeadManagement() {
                                       {lead.initials}
                                     </div>
                                     <div>
-                                      <div className="flex items-center gap-2">
-                                        {lead.name}
-                                        {lead.isSample && (
-                                          <Badge variant="outline" className="text-xs py-0 h-5 bg-amber-50 border-amber-200 text-amber-700">
-                                            Sample
-                                          </Badge>
-                                        )}
-                                      </div>
+                                      <div>{lead.name}</div>
                                       <div className="text-sm text-slate-500">
                                         {lead.company || lead.industry}
                                       </div>
@@ -709,14 +702,7 @@ export default function LeadManagement() {
                                   {lead.initials}
                                 </div>
                                 <div>
-                                  <div className="flex items-center gap-2">
-                                    <div className="font-medium">{lead.name}</div>
-                                    {lead.isSample && (
-                                      <Badge variant="outline" className="text-xs py-0 h-5 bg-amber-50 border-amber-200 text-amber-700">
-                                        Sample
-                                      </Badge>
-                                    )}
-                                  </div>
+                                  <div className="font-medium">{lead.name}</div>
                                   <div className="text-sm text-slate-500">
                                     {formatDate(lead.nextFollowUpDate)}
                                   </div>
