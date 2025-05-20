@@ -45,7 +45,16 @@ const CampaignCard = ({ campaign }: { campaign: Campaign }) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Megaphone className="text-primary-500" size={18} />
-            <CardTitle className="text-base">{campaign.name}</CardTitle>
+            <div>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-base">{campaign.name}</CardTitle>
+                {campaign.isSample && (
+                  <Badge variant="outline" className="text-xs py-0 h-5 bg-amber-50 border-amber-200 text-amber-700">
+                    Sample
+                  </Badge>
+                )}
+              </div>
+            </div>
           </div>
           <Badge 
             variant={status === "active" ? "default" : status === "completed" ? "secondary" : "outline"}
