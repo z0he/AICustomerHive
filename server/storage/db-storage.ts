@@ -583,7 +583,9 @@ export class DbStorage implements IStorage {
   // ----- Lead methods -----
   
   async getLeads(): Promise<Lead[]> {
-    return await db.select().from(leads);
+    const leadData = await db.select().from(leads);
+    // Ensure the database field is_sample is properly mapped to isSample for the frontend
+    return leadData;
   }
 
   async getLeadsBySource(source: string): Promise<Lead[]> {
