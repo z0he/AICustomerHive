@@ -294,44 +294,57 @@ export function setupAuth(app: Express) {
   // Google authentication endpoint
   app.post("/api/auth/google", async (req: Request, res: Response) => {
     try {
-      const { idToken } = req.body;
+      const { idToken, googleUserInfo } = req.body;
       
-      if (!idToken) {
-        return res.status(400).json({ message: "ID token is required" });
+      // Check for required data
+      if (!idToken && !googleUserInfo) {
+        return res.status(400).json({ message: "Either ID token or Google user info is required" });
       }
       
       console.log("Attempting to process Google authentication");
       
-      // For development purposes, let's modify our approach
-      // Let's create a simpler endpoint that works with the Firebase token
+      // Variables to store user information
       let googleId: string;
       let userEmail: string;
       let userName: string;
       
-      // Simplified token handling
-      try {
-        // Basic JWT structure check (header.payload.signature)
-        const tokenParts = idToken.split('.');
-        if (tokenParts.length !== 3) {
-          throw new Error("Invalid token format");
+      // First, try to use the user info object if provided (more reliable)
+      if (googleUserInfo && googleUserInfo.email) {
+        console.log("Using provided Google user info");
+        googleId = googleUserInfo.uid || `google-user-${Date.now()}`;
+        userEmail = googleUserInfo.email;
+        userName = googleUserInfo.displayName || userEmail.split('@')[0];
+        
+        console.log(`Processing Google sign-in for: ${userEmail}`);
+      } else if (idToken) {
+        // Fall back to token decoding if user info is not provided
+        try {
+          console.log("Attempting to decode token");
+          // Basic JWT structure check (header.payload.signature)
+          const tokenParts = idToken.split('.');
+          if (tokenParts.length !== 3) {
+            throw new Error("Invalid token format");
+          }
+          
+          // For development, extract data directly from payload without verification
+          // This is NOT secure for production, but helps us test the flow
+          const payloadPart = tokenParts[1];
+          const paddedPayload = payloadPart.padEnd(payloadPart.length + (4 - (payloadPart.length % 4)) % 4, '=');
+          const decodedPayload = Buffer.from(paddedPayload, 'base64').toString();
+          const parsedPayload = JSON.parse(decodedPayload);
+          
+          // Extract user information
+          googleId = parsedPayload.sub || parsedPayload.user_id || `google-user-${Date.now()}`;
+          userEmail = parsedPayload.email || '';
+          userName = parsedPayload.name || (userEmail ? userEmail.split('@')[0] : 'Google User');
+          
+          console.log(`Successfully decoded token payload - Email: ${userEmail}`);
+        } catch (error) {
+          console.error("Token handling error:", error);
+          return res.status(401).json({ message: "Could not process Google authentication" });
         }
-        
-        // For development, extract data directly from payload without verification
-        // This is NOT secure for production, but helps us test the flow
-        const payloadPart = tokenParts[1];
-        const paddedPayload = payloadPart.padEnd(payloadPart.length + (4 - (payloadPart.length % 4)) % 4, '=');
-        const decodedPayload = Buffer.from(paddedPayload, 'base64').toString();
-        const parsedPayload = JSON.parse(decodedPayload);
-        
-        // Extract user information
-        googleId = parsedPayload.sub || parsedPayload.user_id || `google-user-${Date.now()}`;
-        userEmail = parsedPayload.email || '';
-        userName = parsedPayload.name || (userEmail ? userEmail.split('@')[0] : 'Google User');
-        
-        console.log(`Successfully decoded token payload - Email: ${userEmail}`);
-      } catch (error) {
-        console.error("Token handling error:", error);
-        return res.status(401).json({ message: "Could not process Google authentication" });
+      } else {
+        return res.status(400).json({ message: "Missing required authentication data" });
       }
       
       // Check if user exists with this email

@@ -96,7 +96,17 @@ export default function AuthPage() {
       if (result?.user) {
         // Get ID token and authenticate with our backend
         const idToken = await result.user.getIdToken();
-        googleAuthMutation.mutate({ idToken });
+        // Pass both the token and the user object to include more information
+        googleAuthMutation.mutate({ 
+          idToken,
+          user: result.user 
+        });
+        
+        console.log("Google user information:", {
+          uid: result.user.uid,
+          email: result.user.email,
+          displayName: result.user.displayName
+        });
       }
     } catch (error) {
       console.error("Google sign-in error:", error);

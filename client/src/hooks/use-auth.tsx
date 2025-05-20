@@ -155,12 +155,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
   
   const googleAuthMutation = useMutation({
-    mutationFn: async ({ idToken }: { idToken: string }) => {
+    mutationFn: async ({ idToken, user }: { idToken: string, user?: any }) => {
       try {
+        // Include both token and user information for better handling
+        const userData = user ? {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL
+        } : null;
+        
+        console.log("Sending auth data to server:", userData ? "User data included" : "Token only");
+        
         const res = await fetch("/api/auth/google", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken }),
+          body: JSON.stringify({ 
+            idToken,
+            googleUserInfo: userData 
+          }),
           credentials: "include"
         });
         
