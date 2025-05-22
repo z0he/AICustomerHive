@@ -40,7 +40,7 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
   const [location] = useLocation();
   
   // Get current user to check admin status
-  const { data: userResponse } = useQuery({
+  const { data: userResponse, isLoading: userLoading } = useQuery({
     queryKey: ['/api/auth/user'],
     retry: false,
     refetchOnWindowFocus: false
