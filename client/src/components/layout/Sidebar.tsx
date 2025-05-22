@@ -39,6 +39,15 @@ interface SidebarProps {
 const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
   const [location] = useLocation();
   
+  // Get current user to check admin status
+  const { data: userResponse } = useQuery<{ user: { id: number, username: string, name: string, initials: string, isAdmin: boolean } }>({
+    queryKey: ['/api/auth/user'],
+    retry: false,
+    refetchOnWindowFocus: false
+  });
+  
+  const isAdmin = userResponse?.user?.isAdmin || false;
+  
   const mainNavItems: SidebarItem[] = [
     { icon: <LayoutDashboard size={20} />, label: "Dashboard", path: "/dashboard" },
     { icon: <Users size={20} />, label: "Customers", path: "/customers" },
@@ -92,12 +101,14 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
       
       <div className="p-4 border-t border-slate-200">
         <div className="space-y-1">
-          <Link href="/admin/notifications">
-            <div className="flex items-center space-x-3 text-slate-600 hover:bg-slate-50 hover:text-brand-blue px-3 py-2 rounded-lg cursor-pointer">
-              <Bell size={20} className="text-amber-600" />
-              <span className="font-medium text-sm hidden md:inline-block uppercase tracking-wide">Notifications</span>
-            </div>
-          </Link>
+          {isAdmin && (
+            <Link href="/admin/notifications">
+              <div className="flex items-center space-x-3 text-slate-600 hover:bg-slate-50 hover:text-brand-blue px-3 py-2 rounded-lg cursor-pointer">
+                <Bell size={20} className="text-amber-600" />
+                <span className="font-medium text-sm hidden md:inline-block uppercase tracking-wide">Notifications</span>
+              </div>
+            </Link>
+          )}
           <Link href="/settings">
             <div className="flex items-center space-x-3 text-slate-600 hover:bg-slate-50 hover:text-brand-blue px-3 py-2 rounded-lg cursor-pointer">
               <Settings size={20} className="text-brand-blue" />
