@@ -64,18 +64,11 @@ const Dashboard = () => {
       }
       
       const data = await res.json();
-      console.log('User data from API:', data);
-      console.log('Extracted user:', data.user);
       return data.user; // Extract the user object from the response
     }
   });
 
-  // Debug logging
-  console.log('userData in Dashboard:', userData);
-  console.log('userData structure:', typeof userData, userData);
-  console.log('userData.name:', userData?.name);
-  console.log('userData.user:', userData?.user);
-  console.log('userName would be:', userData?.name ? userData.name.split(' ')[0] : 'User');
+
   
   const { data: notifications } = useQuery({
     queryKey: ['/api/notifications'],
@@ -540,7 +533,7 @@ const Dashboard = () => {
             onToggleListening={toggleListening}
             onSelectSuggestion={handleSelectSuggestion}
             onShowHelp={showHelpModal}
-            userName={userData?.name ? userData.name.split(' ')[0] : 'User'}
+            userName={userData?.user?.name ? userData.user.name.split(' ')[0] : 'User'}
             isBrowserSupported={isBrowserSupported}
           />
           
