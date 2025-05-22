@@ -64,9 +64,15 @@ const Dashboard = () => {
       }
       
       const data = await res.json();
+      console.log('User data from API:', data);
+      console.log('Extracted user:', data.user);
       return data.user; // Extract the user object from the response
     }
   });
+
+  // Debug logging
+  console.log('userData in Dashboard:', userData);
+  console.log('userName would be:', userData?.name ? userData.name.split(' ')[0] : 'User');
   
   const { data: notifications } = useQuery({
     queryKey: ['/api/notifications'],
