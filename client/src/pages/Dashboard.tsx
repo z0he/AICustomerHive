@@ -53,22 +53,18 @@ const Dashboard = () => {
   
   // Data fetching
   const { data: userData } = useQuery({
-    queryKey: ['/api/user/current'],
+    queryKey: ['/api/auth/user'],
     queryFn: async () => {
-      const res = await fetch('/api/user/current', {
+      const res = await fetch('/api/auth/user', {
         credentials: 'include'
       });
       
       if (!res.ok) {
-        return {
-          id: 1,
-          name: "John Doe",
-          initials: "JD",
-          email: "john@example.com"
-        };
+        return null;
       }
       
-      return await res.json();
+      const data = await res.json();
+      return data.user; // Extract the user object from the response
     }
   });
   
