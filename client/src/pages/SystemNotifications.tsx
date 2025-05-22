@@ -59,11 +59,12 @@ const SystemNotifications = () => {
     queryFn: async () => {
       try {
         const response = await apiRequest('GET', '/api/admin/notifications');
-        console.log("API response received:", response);
-        if (Array.isArray(response)) {
-          return response;
+        const data = await response.json();
+        console.log("API response received:", data);
+        if (Array.isArray(data)) {
+          return data;
         } else {
-          console.error("Invalid API response format:", response);
+          console.error("Invalid API response format:", data);
           return [];
         }
       } catch (error) {
@@ -78,7 +79,9 @@ const SystemNotifications = () => {
     queryKey: ['/api/admin/notifications/count'],
     queryFn: async () => {
       try {
-        return await apiRequest('GET', '/api/admin/notifications/count') as unknown as { total: number; unread: number };
+        const response = await apiRequest('GET', '/api/admin/notifications/count');
+        const data = await response.json();
+        return data as { total: number; unread: number };
       } catch (error) {
         console.error('Error fetching notification counts:', error);
         return { total: 0, unread: 0 };
