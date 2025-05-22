@@ -413,7 +413,8 @@ export function setupAuth(app: Express) {
             id: req.user!.id,
             username: req.user!.username,
             name: req.user!.name,
-            initials: req.user!.initials
+            initials: req.user!.initials,
+            isAdmin: req.user!.isAdmin || false
           }
         });
       }
@@ -432,7 +433,8 @@ export function setupAuth(app: Express) {
           id: req.user.id,
           username: req.user.username,
           name: req.user.name,
-          initials: req.user.initials
+          initials: req.user.initials,
+          isAdmin: req.user.isAdmin || false
         }
       });
     }
