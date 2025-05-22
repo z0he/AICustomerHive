@@ -72,6 +72,9 @@ const Dashboard = () => {
 
   // Debug logging
   console.log('userData in Dashboard:', userData);
+  console.log('userData structure:', typeof userData, userData);
+  console.log('userData.name:', userData?.name);
+  console.log('userData.user:', userData?.user);
   console.log('userName would be:', userData?.name ? userData.name.split(' ')[0] : 'User');
   
   const { data: notifications } = useQuery({

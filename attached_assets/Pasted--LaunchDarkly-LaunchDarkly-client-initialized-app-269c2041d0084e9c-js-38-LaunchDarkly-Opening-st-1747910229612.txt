@@ -1,0 +1,137 @@
+[LaunchDarkly] LaunchDarkly client initialized
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiIzMjgyMTQzMCIsImtpbmQiOiJ1c2VyIiwibmFtZSI6InpvaGUxIiwicm9sZXMiOltdLCJlbWFpbCI6InpvaGVAZ3Jvd3RoaGFra2EuY29tIiwidGltZV9jcmVhdGVkIjoxNzEwNDYzNTI0MTkyLCJfbWV0YSI6eyJwcml2YXRlQXR0cmlidXRlcyI6WyJlbWFpbCJdfX0
+AICustomerHive:1 Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner.
+12Error while parsing the 'sandbox' attribute: 'allow-downloads-without-user-activation' is an invalid sandbox flag.Understand this error
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'ambient-light-sensor'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'battery'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'execution-while-not-rendered'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'execution-while-out-of-viewport'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'layout-animations'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'legacy-image-formats'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'navigation-override'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'oversized-images'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'publickey-credentials'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'speaker-selection'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'unoptimized-images'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'unsized-media'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Unrecognized feature: 'pointer-lock'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Allow attribute will take precedence over 'allowfullscreen'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+framework-cf914a8253cfaa48.js:1 Allow attribute will take precedence over 'allowpaymentrequest'.
+_ @ framework-cf914a8253cfaa48.js:1Understand this warning
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Exceeded event queue capacity. Increase capacity to avoid dropping events.
+(anonymous) @ _app-269c2041d0084e9c.js:38Understand this warning
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Closing stream connection
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiIzMjgyMTQzMCIsImtpbmQiOiJ1c2VyIiwibmFtZSI6InpvaGUxIiwicm9sZXMiOltdLCJlbWFpbCI6InpvaGVAZ3Jvd3RoaGFra2EuY29tIiwidGltZV9jcmVhdGVkIjoxNzEwNDYzNTI0MTkyLCJfbWV0YSI6eyJwcml2YXRlQXR0cmlidXRlcyI6WyJlbWFpbCJdfX0
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Exceeded event queue capacity. Increase capacity to avoid dropping events.
+(anonymous) @ _app-269c2041d0084e9c.js:38Understand this warning
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Closing stream connection
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiIzMjgyMTQzMCIsImtpbmQiOiJ1c2VyIiwibmFtZSI6InpvaGUxIiwicm9sZXMiOltdLCJlbWFpbCI6InpvaGVAZ3Jvd3RoaGFra2EuY29tIiwidGltZV9jcmVhdGVkIjoxNzEwNDYzNTI0MTkyLCJfbWV0YSI6eyJwcml2YXRlQXR0cmlidXRlcyI6WyJlbWFpbCJdfX0
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Exceeded event queue capacity. Increase capacity to avoid dropping events.
+(anonymous) @ _app-269c2041d0084e9c.js:38Understand this warning
+stallwart.build.js:1 stallwart: failed ping 1
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Closing stream connection
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiIzMjgyMTQzMCIsImtpbmQiOiJ1c2VyIiwibmFtZSI6InpvaGUxIiwicm9sZXMiOltdLCJlbWFpbCI6InpvaGVAZ3Jvd3RoaGFra2EuY29tIiwidGltZV9jcmVhdGVkIjoxNzEwNDYzNTI0MTkyLCJfbWV0YSI6eyJwcml2YXRlQXR0cmlidXRlcyI6WyJlbWFpbCJdfX0
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Exceeded event queue capacity. Increase capacity to avoid dropping events.
+(anonymous) @ _app-269c2041d0084e9c.js:38Understand this warning
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Closing stream connection
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiIzMjgyMTQzMCIsImtpbmQiOiJ1c2VyIiwibmFtZSI6InpvaGUxIiwicm9sZXMiOltdLCJlbWFpbCI6InpvaGVAZ3Jvd3RoaGFra2EuY29tIiwidGltZV9jcmVhdGVkIjoxNzEwNDYzNTI0MTkyLCJfbWV0YSI6eyJwcml2YXRlQXR0cmlidXRlcyI6WyJlbWFpbCJdfX0
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Exceeded event queue capacity. Increase capacity to avoid dropping events.
+(anonymous) @ _app-269c2041d0084e9c.js:38Understand this warning
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Closing stream connection
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiIzMjgyMTQzMCIsImtpbmQiOiJ1c2VyIiwibmFtZSI6InpvaGUxIiwicm9sZXMiOltdLCJlbWFpbCI6InpvaGVAZ3Jvd3RoaGFra2EuY29tIiwidGltZV9jcmVhdGVkIjoxNzEwNDYzNTI0MTkyLCJfbWV0YSI6eyJwcml2YXRlQXR0cmlidXRlcyI6WyJlbWFpbCJdfX0
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Exceeded event queue capacity. Increase capacity to avoid dropping events.
+(anonymous) @ _app-269c2041d0084e9c.js:38Understand this warning
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Closing stream connection
+_app-269c2041d0084e9c.js:38 [LaunchDarkly] Opening stream connection to https://clientstream.launchdarkly.com/eval/62b35a865152ab14c5942820/eyJrZXkiOiIzMjgyMTQzMCIsImtpbmQiOiJ1c2VyIiwibmFtZSI6InpvaGUxIiwicm9sZXMiOltdLCJlbWFpbCI6InpvaGVAZ3Jvd3RoaGFra2EuY29tIiwidGltZV9jcmVhdGVkIjoxNzEwNDYzNTI0MTkyLCJfbWV0YSI6eyJwcml2YXRlQXR0cmlidXRlcyI6WyJlbWFpbCJdfX0
+workspace_iframe.html:32 Unrecognized feature: 'ambient-light-sensor'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'battery'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'execution-while-not-rendered'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'execution-while-out-of-viewport'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'layout-animations'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'legacy-image-formats'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'navigation-override'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'oversized-images'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'publickey-credentials'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'speaker-selection'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'unoptimized-images'.Understand this warning
+workspace_iframe.html:32 Unrecognized feature: 'unsized-media'.Understand this warning
+workspace_iframe.html:32 Allow attribute will take precedence over 'allowfullscreen'.Understand this warning
+workspace_iframe.html:32 Allow attribute will take precedence over 'allowpaymentrequest'.Understand this warning
+Console.js:61 Initializing Google Analytics
+Console.js:61 Making request to: /api/auth/user
+Console.js:61 Using auth token from localStorage
+Console.js:61 Response status: 200 for /api/auth/user
+Console.js:61 Response data for /api/auth/user: Object
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+Console.js:61 Warning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+
+Check the render method of `SlotClone`.
+    at Badge (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/src/components/ui/badge.tsx:38:18)
+    at https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKHUMOWT.js?v=e8fb6bb4:52:11
+    at https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKHUMOWT.js?v=e8fb6bb4:33:11
+    at https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-CPFL7ZFD.js?v=e8fb6bb4:41:13
+    at https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKHUMOWT.js?v=e8fb6bb4:52:11
+    at https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DKHUMOWT.js?v=e8fb6bb4:33:11
+    at https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-CPFL7ZFD.js?v=e8fb6bb4:41:13
+    at https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PSLAEUKM.js?v=e8fb6bb4:1980:13
+    at https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=e8fb6bb4:189:13
+    at Provider (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JJS7DLG7.js?v=e8fb6bb4:38:15)
+    at Provider (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PSLAEUKM.js?v=e8fb6bb4:1915:15)
+    at Popper (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-PSLAEUKM.js?v=e8fb6bb4:1972:11)
+    at Tooltip (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=e8fb6bb4:107:5)
+    at Provider (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-JJS7DLG7.js?v=e8fb6bb4:38:15)
+    at TooltipProvider (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=e8fb6bb4:63:5)
+    at div
+    at div
+    at div
+    at section
+    at VoiceCommandInterface (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/src/components/voice/VoiceCommandInterface.tsx:29:3)
+    at main
+    at div
+    at div
+    at Dashboard (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/src/pages/Dashboard.tsx?t=1747910081037:39:51)
+    at Route (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=e8fb6bb4:265:16)
+    at Switch (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=e8fb6bb4:321:17)
+    at Router (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/src/App.tsx?t=1747910081037&v=TzoLb8A1WjkEfRlagY_1n:77:20)
+    at AppContent (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/src/App.tsx?t=1747910081037&v=TzoLb8A1WjkEfRlagY_1n:230:20)
+    at Router (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=e8fb6bb4:233:17)
+    at AuthProvider (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/src/hooks/use-auth.tsx:27:32)
+    at QueryClientProvider (https://da517597-5d49-4ffa-81a1-02fa6c085ebb-00-3b6ttt1gtfx2.kirk.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=e8fb6bb4:2805:3)
+    at App
+Mt.forEach.n.<computed> @ Console.js:61Understand this error
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+Console.js:61 userData in Dashboard: Object
+Console.js:61 userName would be: User
+stallwart.build.js:1 stallwart: failed ping 1
