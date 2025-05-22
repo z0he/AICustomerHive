@@ -40,13 +40,13 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
   const [location] = useLocation();
   
   // Get current user to check admin status
-  const { data: userResponse } = useQuery<{ user: { id: number, username: string, name: string, initials: string, isAdmin: boolean } }>({
+  const { data: userResponse } = useQuery({
     queryKey: ['/api/auth/user'],
     retry: false,
     refetchOnWindowFocus: false
   });
   
-  const isAdmin = userResponse?.user?.isAdmin || false;
+  const isAdmin = userResponse?.user?.isAdmin === true;
   
   const mainNavItems: SidebarItem[] = [
     { icon: <LayoutDashboard size={20} />, label: "Dashboard", path: "/dashboard" },
