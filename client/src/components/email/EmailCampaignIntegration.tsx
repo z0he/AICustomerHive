@@ -668,7 +668,7 @@ const EmailCampaignIntegration = () => {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">All customers</SelectItem>
+                        <SelectItem value="all">All customers</SelectItem>
                         {segments.map((segment: any) => (
                           <SelectItem key={segment.id} value={segment.id.toString()}>
                             {segment.name}
