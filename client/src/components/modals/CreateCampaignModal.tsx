@@ -576,7 +576,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">All sources</SelectItem>
+                            <SelectItem value="all_sources">All sources</SelectItem>
                             <SelectItem value="website">Website</SelectItem>
                             <SelectItem value="referral">Referral</SelectItem>
                             <SelectItem value="advertisement">Advertisement</SelectItem>
@@ -609,7 +609,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">All statuses</SelectItem>
+                            <SelectItem value="all_statuses">All statuses</SelectItem>
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="contacted">Contacted</SelectItem>
                             <SelectItem value="qualified">Qualified</SelectItem>
