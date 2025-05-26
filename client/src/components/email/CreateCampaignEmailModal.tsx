@@ -250,7 +250,7 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                         />
                       </FormControl>
                       <FormDescription>
-                        You can use personalization like {{firstName}} in the subject
+                        You can use personalization like {`{{firstName}}`} in the subject
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -288,7 +288,7 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                         />
                       </FormControl>
                       <FormDescription>
-                        Use HTML tags for formatting or plain text. Personalization fields like {{firstName}} will be automatically replaced.
+                        Use HTML tags for formatting or plain text. Personalization fields like {`{{firstName}}`} will be automatically replaced.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
