@@ -24,7 +24,7 @@ const campaignFormSchema = z.object({
   season: z.string().optional(),
   leadSource: z.string().optional(),
   leadStatus: z.string().optional(),
-  message: z.string().min(10, "Message must be at least 10 characters"),
+  message: z.string().optional(),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
 });
@@ -631,61 +631,80 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
             )}
 
             
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Campaign Message</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Enter your campaign message or select an AI-generated option below"
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {form.watch('type') === 'email' ? (
+              <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+                <h4 className="text-sm font-medium text-blue-900 mb-2">Email Campaign Setup</h4>
+                <p className="text-sm text-blue-700 mb-3">
+                  For email campaigns, you'll design your emails using professional templates in the "Create Campaign Email" section after creating this campaign.
+                </p>
+                <div className="text-xs text-blue-600">
+                  <strong>Next steps:</strong>
+                  <ol className="list-decimal list-inside mt-1 space-y-1">
+                    <li>Create this campaign</li>
+                    <li>Go to Email Management → Campaigns tab</li>
+                    <li>Click "Create Campaign Email" to link email templates</li>
+                  </ol>
+                </div>
+              </div>
+            ) : (
+              <FormField
+                control={form.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Campaign Message</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter your campaign message or select an AI-generated option below"
+                        className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-medium text-slate-700">AI-Generated Messages:</p>
-                {isLoadingSuggestions && (
-                  <div className="flex items-center text-xs text-slate-500">
-                    <RefreshCw className="animate-spin h-3 w-3 mr-1" />
-                    <span>Generating suggestions...</span>
+            {form.watch('type') !== 'email' && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-slate-700">AI-Generated Messages:</p>
+                  {isLoadingSuggestions && (
+                    <div className="flex items-center text-xs text-slate-500">
+                      <RefreshCw className="animate-spin h-3 w-3 mr-1" />
+                      <span>Generating suggestions...</span>
+                    </div>
+                  )}
+                </div>
+                
+                {isLoadingSuggestions ? (
+                  <div className="space-y-2">
+                    <div className="h-16 bg-slate-100 animate-pulse rounded-md" />
+                    <div className="h-16 bg-slate-100 animate-pulse rounded-md" />
+                    <div className="h-16 bg-slate-100 animate-pulse rounded-md" />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filteredMessages.map((message: string, idx: number) => (
+                      <Card 
+                        key={idx} 
+                        className="cursor-pointer hover:bg-slate-50 transition-colors border border-slate-200 hover:border-primary-300"
+                        onClick={() => selectAIMessage(message)}
+                      >
+                        <CardContent className="p-3">
+                          <p className="text-sm text-slate-700">{message}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 )}
+                
+                <p className="text-xs text-slate-500 mt-2">
+                  <span className="font-medium">Tip:</span> Select a target audience and campaign type to get AI-generated message suggestions.
+                </p>
               </div>
-              
-              {isLoadingSuggestions ? (
-                <div className="space-y-2">
-                  <div className="h-16 bg-slate-100 animate-pulse rounded-md" />
-                  <div className="h-16 bg-slate-100 animate-pulse rounded-md" />
-                  <div className="h-16 bg-slate-100 animate-pulse rounded-md" />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredMessages.map((message: string, idx: number) => (
-                    <Card 
-                      key={idx} 
-                      className="cursor-pointer hover:bg-slate-50 transition-colors border border-slate-200 hover:border-primary-300"
-                      onClick={() => selectAIMessage(message)}
-                    >
-                      <CardContent className="p-3">
-                        <p className="text-sm text-slate-700">{message}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-              
-              <p className="text-xs text-slate-500 mt-2">
-                <span className="font-medium">Tip:</span> Select a target audience and campaign type to get AI-generated message suggestions.
-              </p>
-            </div>
+            )}
             
             <div>
               <Label className="block text-sm font-medium text-slate-700 mb-1">Schedule</Label>
