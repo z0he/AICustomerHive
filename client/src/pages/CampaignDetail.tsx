@@ -43,6 +43,7 @@ import { Campaign } from "@shared/schema";
 const CampaignDetail = () => {
   const [location] = useLocation();
   const { toast } = useToast();
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   
   // Extract campaign ID from URL
   const campaignId = parseInt(location.split("/").pop() || "0");
@@ -164,9 +165,9 @@ const CampaignDetail = () => {
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
                     </Button>
-                    <Button size="sm">
+                    <Button size="sm" onClick={() => setIsEmailModalOpen(true)}>
                       <Mail className="mr-2 h-4 w-4" />
-                      Send
+                      Create Email
                     </Button>
                   </div>
                 </div>
@@ -317,6 +318,15 @@ const CampaignDetail = () => {
           </div>
         </main>
       </div>
+
+      {/* New Email Creation Modal */}
+      {campaign && (
+        <CreateCampaignEmailModal
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          campaign={campaign}
+        />
+      )}
     </div>
   );
 };
