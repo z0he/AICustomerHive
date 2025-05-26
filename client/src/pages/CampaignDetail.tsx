@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import AuthHeader from "@/components/auth/AuthHeader";
 import Sidebar from "@/components/layout/Sidebar";
 import { MessageVariants } from "@/components/campaigns/MessageVariants";
+import CreateCampaignEmailModal from "@/components/email/CreateCampaignEmailModal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { 

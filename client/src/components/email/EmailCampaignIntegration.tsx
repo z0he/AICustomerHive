@@ -42,8 +42,10 @@ import { queryClient } from '@/lib/queryClient';
 // Define form schemas
 const campaignEmailSchema = z.object({
   campaignId: z.number().or(z.string().transform(val => parseInt(val, 10))),
-  templateId: z.number().or(z.string().transform(val => parseInt(val, 10))),
-  subject: z.string().optional(),
+  templateId: z.number().or(z.string().transform(val => parseInt(val, 10))).optional(),
+  subject: z.string().min(1, "Subject is required"),
+  emailContent: z.string().min(1, "Email content is required"),
+  useTemplate: z.boolean().default(true),
   segmentId: z.number().or(z.string().transform(val => parseInt(val, 10))).optional(),
   scheduledFor: z.string().optional(),
   testEmail: z.string().email().optional(),
