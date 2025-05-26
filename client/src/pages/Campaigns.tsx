@@ -162,11 +162,25 @@ const Campaigns = () => {
   };
   
   const createCampaign = (data: any) => {
+    // Build target audience with filtering information
+    let targetAudienceData = data.targetAudience;
+    
+    // If targeting leads with filters, create a structured target audience
+    if (data.targetAudience === "Leads" && (data.leadSource || data.leadStatus)) {
+      targetAudienceData = {
+        type: "Leads",
+        filters: {
+          source: data.leadSource && data.leadSource !== "all_sources" ? data.leadSource : null,
+          status: data.leadStatus && data.leadStatus !== "all_statuses" ? data.leadStatus : null
+        }
+      };
+    }
+    
     const formattedData = {
       name: data.name,
       type: data.type,
-      targetAudience: data.targetAudience,
-      message: data.message,
+      targetAudience: targetAudienceData,
+      message: data.message || "", // Provide empty string if no message for email campaigns
       startDate: data.startDate,
       endDate: data.endDate,
       // These would be calculated or set on the server in a real app
