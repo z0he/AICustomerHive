@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import CreateCampaignEmailModal from './CreateCampaignEmailModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -57,6 +58,7 @@ const EmailCampaignIntegration = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('campaigns');
   const [isNewEmailDialogOpen, setIsNewEmailDialogOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
 
@@ -558,54 +560,74 @@ const EmailCampaignIntegration = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Dialog for creating new campaign email */}
+      {/* Simple Campaign Selection Dialog */}
       <Dialog open={isNewEmailDialogOpen} onOpenChange={setIsNewEmailDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Create Campaign Email</DialogTitle>
+            <DialogTitle>Select Campaign</DialogTitle>
             <DialogDescription>
-              Link an email template with a campaign and schedule it for sending.
+              Choose which campaign you want to create an email for.
             </DialogDescription>
           </DialogHeader>
           
-          <Form {...campaignEmailForm}>
-            <form onSubmit={campaignEmailForm.handleSubmit(onCampaignEmailSubmit)} className="space-y-4">
-              <FormField
-                control={campaignEmailForm.control}
-                name="campaignId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Campaign</FormLabel>
-                    <Select 
-                      onValueChange={val => {
-                        field.onChange(val);
-                        const campaign = campaigns.find((c: any) => c.id === parseInt(val, 10));
-                        setSelectedCampaign(campaign);
-                      }}
-                      defaultValue={field.value.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a campaign" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {campaigns.map((campaign: any) => (
-                          <SelectItem key={campaign.id} value={campaign.id.toString()}>
-                            {campaign.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={campaignEmailForm.control}
-                name="templateId"
-                render={({ field }) => (
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Campaign</label>
+              <Select 
+                onValueChange={val => {
+                  const campaign = campaigns.find((c: any) => c.id === parseInt(val, 10));
+                  setSelectedCampaign(campaign);
+                }}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select a campaign" />
+                </SelectTrigger>
+                <SelectContent>
+                  {campaigns?.map((campaign: any) => (
+                    <SelectItem key={campaign.id} value={campaign.id.toString()}>
+                      {campaign.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            
+            <DialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsNewEmailDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button"
+                onClick={() => {
+                  if (selectedCampaign) {
+                    setIsNewEmailDialogOpen(false);
+                    setIsEmailModalOpen(true);
+                  }
+                }}
+                disabled={!selectedCampaign}
+              >
+                Create Email
+              </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Email Creation Modal */}
+      {selectedCampaign && (
+        <CreateCampaignEmailModal
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          campaign={selectedCampaign}
+        />
+      )}
+    </div>
+  );
+};
+
+export default EmailCampaignIntegration;
                   <FormItem>
                     <FormLabel>Email Template</FormLabel>
                     <Select 
