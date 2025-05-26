@@ -22,6 +22,8 @@ const campaignFormSchema = z.object({
   location: z.string().optional(),
   industry: z.string().optional(),
   season: z.string().optional(),
+  leadSource: z.string().optional(),
+  leadStatus: z.string().optional(),
   message: z.string().min(10, "Message must be at least 10 characters"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
@@ -48,6 +50,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
   const [showIndustrySelector, setShowIndustrySelector] = useState(false);
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [showSeasonalSelector, setShowSeasonalSelector] = useState(false);
+  const [showLeadFilters, setShowLeadFilters] = useState(false);
   
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignFormSchema),
@@ -58,6 +61,8 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       location: "",
       industry: "",
       season: "",
+      leadSource: "",
+      leadStatus: "",
       message: "",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -300,6 +305,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
           setShowLocationSelector(targetAudience === "Specific Location Customers");
           setShowIndustrySelector(targetAudience === "Industry-Specific Customers");
           setShowSeasonalSelector(targetAudience === "Seasonal Campaign");
+          setShowLeadFilters(targetAudience === "Leads");
         }
       }
     });
@@ -431,6 +437,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="All Customers">All Customers</SelectItem>
+                      <SelectItem value="Leads">Leads</SelectItem>
                       <SelectItem value="Inactive Customers">Inactive Customers</SelectItem>
                       <SelectItem value="Top Customers">Top Customers (VIP)</SelectItem>
                       <SelectItem value="New Customers">New Customers</SelectItem>
@@ -547,6 +554,80 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                   </FormItem>
                 )}
               />
+            )}
+
+            {showLeadFilters && (
+              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                <h4 className="text-sm font-medium text-slate-700">Lead Filters</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="leadSource"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Lead Source (Optional)</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="All sources" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">All sources</SelectItem>
+                            <SelectItem value="website">Website</SelectItem>
+                            <SelectItem value="referral">Referral</SelectItem>
+                            <SelectItem value="advertisement">Advertisement</SelectItem>
+                            <SelectItem value="social_media">Social Media</SelectItem>
+                            <SelectItem value="email">Email</SelectItem>
+                            <SelectItem value="event">Event</SelectItem>
+                            <SelectItem value="partner">Partner</SelectItem>
+                            <SelectItem value="import">Import</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="leadStatus"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Lead Status (Optional)</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="All statuses" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="">All statuses</SelectItem>
+                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="contacted">Contacted</SelectItem>
+                            <SelectItem value="qualified">Qualified</SelectItem>
+                            <SelectItem value="proposal">Proposal</SelectItem>
+                            <SelectItem value="negotiation">Negotiation</SelectItem>
+                            <SelectItem value="won">Won</SelectItem>
+                            <SelectItem value="lost">Lost</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Filter your leads by source and status. For example, select "Import" source and "New" status to target your recently imported leads.
+                </p>
+              </div>
             )}
 
             
