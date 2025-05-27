@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -350,14 +352,28 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                     <FormItem>
                       <FormLabel>Email Content</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Write your email content here... Use {{firstName}}, {{company}}, etc. for personalization"
-                          className="min-h-[200px]"
-                          {...field} 
-                        />
+                        <div className="border rounded-md">
+                          <ReactQuill
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Write your email content here... Use {{firstName}}, {{company}}, etc. for personalization"
+                            modules={{
+                              toolbar: [
+                                [{ 'header': [1, 2, 3, false] }],
+                                ['bold', 'italic', 'underline', 'strike'],
+                                [{ 'color': [] }, { 'background': [] }],
+                                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                                [{ 'align': [] }],
+                                ['link', 'image'],
+                                ['clean']
+                              ],
+                            }}
+                            style={{ minHeight: '200px' }}
+                          />
+                        </div>
                       </FormControl>
                       <FormDescription>
-                        Use HTML tags for formatting or plain text. Personalization fields like {`{{firstName}}`} will be automatically replaced.
+                        Use the rich text editor to format your email. Personalization fields like {`{{firstName}}`}, {`{{company}}`} will be automatically replaced.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

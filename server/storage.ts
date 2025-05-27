@@ -1315,16 +1315,44 @@ export class MemStorage implements IStorage {
         relatedEntityId,
         campaignId,
         metadata = {},
-        html
+        html,
+        useTemplate = true
       } = options;
+      
+      // Import email template functions
+      const { createProfessionalEmailTemplate, createMinimalEmailTemplate } = await import('./lib/emailTemplates');
+      
+      // Determine if content is already HTML or plain text
+      const isHtml = body.includes('<') && body.includes('>');
+      let htmlContent: string;
+      let textContent: string;
+      
+      if (html) {
+        // If HTML is explicitly provided, use it
+        htmlContent = html;
+        textContent = html.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
+      } else if (isHtml && useTemplate) {
+        // If body contains HTML and we want to use template, wrap it in professional template
+        htmlContent = createProfessionalEmailTemplate(body);
+        textContent = body.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
+      } else if (isHtml && !useTemplate) {
+        // If body contains HTML but no template wanted, use minimal template
+        htmlContent = createMinimalEmailTemplate(body);
+        textContent = body.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
+      } else {
+        // If body is plain text, convert to HTML and wrap in template
+        const htmlBody = body.replace(/\n/g, '<br>');
+        htmlContent = useTemplate ? createProfessionalEmailTemplate(`<p>${htmlBody}</p>`) : createMinimalEmailTemplate(`<p>${htmlBody}</p>`);
+        textContent = body;
+      }
       
       // Try to send the email with Mailgun
       const emailParams = {
         from,
         to,
         subject,
-        text: body,
-        html: html || body // Use HTML if provided, otherwise use text content
+        text: textContent,
+        html: htmlContent
       };
       
       // Import the sendEmail function from mailgun.ts
@@ -1336,7 +1364,7 @@ export class MemStorage implements IStorage {
         from,
         to,
         subject,
-        body,
+        body: htmlContent, // Store the full HTML for reference
         status: success ? 'sent' : 'failed',
         relatedEntityType,
         relatedEntityId,
