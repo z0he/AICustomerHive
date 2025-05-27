@@ -24,7 +24,7 @@ import {
   Clock
 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import EmailTemplateCard from '@/components/email/EmailTemplateCard';
 import EmailCampaignIntegration from '@/components/email/EmailCampaignIntegration';
 import EmailAnalytics from '@/components/email/EmailAnalytics';
@@ -156,21 +156,7 @@ const EmailManagement: React.FC = () => {
   // Configure API key mutation
   const configureApiMutation = useMutation({
     mutationFn: async (data: ConfigureApiKeyFormData) => {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('/api/config/mailgun', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to configure API key');
-      }
-      
+      const response = await apiRequest('/api/config/mailgun', 'POST', data);
       return response.json();
     },
     onSuccess: () => {
