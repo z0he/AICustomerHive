@@ -1237,7 +1237,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const emailLog = await storage.sendEmail(from, to, subject, body, options || {});
+      // Personalize email content if sending to a lead email
+      let personalizedBody = body;
+      let personalizedSubject = subject;
+      
+      try {
+        // Try to find a lead with this email address
+        const allLeads = await storage.getLeads();
+        const targetLead = allLeads.find(lead => lead.email === to);
+        
+        if (targetLead) {
+          // Personalize the content with lead data
+          const firstName = targetLead.name?.split(' ')[0] || 'Valued Customer';
+          const lastName = targetLead.name?.split(' ').slice(1).join(' ') || '';
+          const company = targetLead.company || 'Your Company';
+          const industry = targetLead.industry || 'your industry';
+          const jobTitle = targetLead.jobTitle || 'your role';
+          const leadOwner = targetLead.leadOwner || 'The Team';
+          
+          // Replace variables in both subject and body
+          personalizedSubject = personalizedSubject
+            .replace(/\{\{firstName\}\}/g, firstName)
+            .replace(/\{\{lastName\}\}/g, lastName)
+            .replace(/\{\{company\}\}/g, company)
+            .replace(/\{\{industry\}\}/g, industry)
+            .replace(/\{\{jobTitle\}\}/g, jobTitle)
+            .replace(/\{\{leadOwner\}\}/g, leadOwner);
+            
+          personalizedBody = personalizedBody
+            .replace(/\{\{firstName\}\}/g, firstName)
+            .replace(/\{\{lastName\}\}/g, lastName)
+            .replace(/\{\{company\}\}/g, company)
+            .replace(/\{\{industry\}\}/g, industry)
+            .replace(/\{\{jobTitle\}\}/g, jobTitle)
+            .replace(/\{\{leadOwner\}\}/g, leadOwner);
+        }
+      } catch (error) {
+        console.log("Personalization lookup failed, sending without personalization:", error);
+        // Continue without personalization if lookup fails
+      }
+      
+      const emailLog = await storage.sendEmail(from, to, personalizedSubject, personalizedBody, options || {});
       return res.json(emailLog);
     } catch (error) {
       console.error("Send email error:", error);
