@@ -1311,54 +1311,9 @@ export class MemStorage implements IStorage {
     try {
       console.log(`STORAGE EMAIL: Sending email to ${to} with subject: ${subject}`);
       
-      // Personalize email content if sending to a lead email
+      // Personalization is handled in the routes layer, not here
       let personalizedBody = body;
       let personalizedSubject = subject;
-      
-      try {
-        const { db } = require('./db');
-        const { leads } = require('@shared/schema');
-        const { eq } = require('drizzle-orm');
-        
-        console.log(`STORAGE PERSONALIZATION: Looking for lead with email: ${to}`);
-        const targetLeadResult = await db.select().from(leads).where(eq(leads.email, to));
-        const targetLead = targetLeadResult[0];
-        
-        if (targetLead) {
-          const firstName = targetLead.name?.split(' ')[0] || 'Valued Customer';
-          const lastName = targetLead.name?.split(' ').slice(1).join(' ') || '';
-          const company = targetLead.company || 'Your Company';
-          const industry = targetLead.industry || 'your industry';
-          const jobTitle = targetLead.job_title || 'your role';
-          const leadOwner = targetLead.lead_owner || 'The Team';
-          
-          console.log(`STORAGE PERSONALIZATION: Found lead - firstName: ${firstName}, industry: ${industry}, leadOwner: ${leadOwner}`);
-          
-          // Replace variables in subject
-          personalizedSubject = personalizedSubject
-            .replace(/\{\{firstName\}\}/g, firstName)
-            .replace(/\{\{lastName\}\}/g, lastName)
-            .replace(/\{\{company\}\}/g, company)
-            .replace(/\{\{industry\}\}/g, industry)
-            .replace(/\{\{jobTitle\}\}/g, jobTitle)
-            .replace(/\{\{leadOwner\}\}/g, leadOwner);
-            
-          // Replace variables in body
-          personalizedBody = personalizedBody
-            .replace(/\{\{firstName\}\}/g, firstName)
-            .replace(/\{\{lastName\}\}/g, lastName)
-            .replace(/\{\{company\}\}/g, company)
-            .replace(/\{\{industry\}\}/g, industry)
-            .replace(/\{\{jobTitle\}\}/g, jobTitle)
-            .replace(/\{\{leadOwner\}\}/g, leadOwner);
-            
-          console.log(`STORAGE PERSONALIZATION: Completed successfully`);
-        } else {
-          console.log(`STORAGE PERSONALIZATION: No lead found with email ${to}`);
-        }
-      } catch (error) {
-        console.error("STORAGE PERSONALIZATION ERROR:", error);
-      }
       
       // Process options
       const {

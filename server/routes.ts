@@ -1243,11 +1243,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let personalizedSubject = subject;
       
       console.log(`PERSONALIZATION: Starting personalization for email to: ${to}`);
+      console.log(`PERSONALIZATION: Subject before: ${personalizedSubject}`);
+      console.log(`PERSONALIZATION: Body before: ${personalizedBody}`);
       
       try {
-        const { db } = require('./db');
-        const { leads } = require('@shared/schema');
-        const { eq } = require('drizzle-orm');
+        // Import database dependencies properly
+        const { db } = await import('./db');
+        const { leads } = await import('@shared/schema');
+        const { eq } = await import('drizzle-orm');
         
         console.log(`PERSONALIZATION: Querying database for lead with email: ${to}`);
         const targetLeadResult = await db.select().from(leads).where(eq(leads.email, to));
