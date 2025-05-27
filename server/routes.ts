@@ -1220,103 +1220,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/email/send", async (req: Request, res: Response) => {
+    console.log("🚀 EMAIL ROUTE: Starting email send process");
+    
     try {
-      console.log("EMAIL SEND: Route reached with data:", { to: req.body.to, subject: req.body.subject });
-      console.log("EMAIL SEND: About to start personalization...");
       const { from, to, subject, body, options } = req.body;
-      console.log("EMAIL SEND: Extracted variables:", { from, to, subject: subject?.substring(0, 50), bodyLength: body?.length });
+      console.log("📧 EMAIL DATA:", { to, subject: subject?.substring(0, 30) + "..." });
       
+      // Validate required fields
       if (!from || !to || !subject || !body) {
-        console.log("EMAIL SEND: Missing required fields!", { from: !!from, to: !!to, subject: !!subject, body: !!body });
+        console.log("❌ VALIDATION: Missing required fields");
         return res.status(400).json({ 
           message: "Missing required email fields. Please provide from, to, subject, and body."
         });
       }
       
-      console.log("EMAIL SEND: All required fields present, proceeding to personalization...");
+      console.log("✅ VALIDATION: All fields present");
       
-      // Check email content size (Mailgun has a 25MB limit, but we'll be more conservative)
-      const contentSize = Buffer.byteLength(body, 'utf8');
-      if (contentSize > 5 * 1024 * 1024) { // 5MB limit
+      // =================== PERSONALIZATION ENGINE ===================
+      console.log("🔧 PERSONALIZATION: Starting engine...");
+      
+      let finalSubject = subject;
+      let finalBody = body;
+      
+      // Check if we need personalization
+      const needsPersonalization = subject.includes('{{') || body.includes('{{');
+      console.log("🔍 PERSONALIZATION: Needs personalization?", needsPersonalization);
+      
+      if (needsPersonalization) {
+        console.log("🎯 PERSONALIZATION: Looking up lead data for:", to);
+        
+        try {
+          // Direct database connection
+          const { db } = require('./db');
+          const { leads } = require('../shared/schema');
+          const { eq } = require('drizzle-orm');
+          
+          console.log("📊 DATABASE: Querying leads table...");
+          const leadResults = await db.select().from(leads).where(eq(leads.email, to)).limit(1);
+          
+          if (leadResults.length > 0) {
+            const lead = leadResults[0];
+            console.log("🎉 PERSONALIZATION: Found lead!", {
+              name: lead.name,
+              leadOwner: lead.leadOwner,
+              jobTitle: lead.jobTitle
+            });
+            
+            // Extract names
+            const firstName = lead.name?.split(' ')[0] || 'Friend';
+            const lastName = lead.name?.split(' ').slice(1).join(' ') || '';
+            
+            // Prepare replacement data
+            const replacements = {
+              '{{firstName}}': firstName,
+              '{{lastName}}': lastName,
+              '{{company}}': lead.company || 'Your Company',
+              '{{industry}}': lead.industry || 'your industry',
+              '{{jobTitle}}': lead.jobTitle || 'your role',
+              '{{leadOwner}}': lead.leadOwner || 'The Team'
+            };
+            
+            console.log("🔄 PERSONALIZATION: Applying replacements...");
+            
+            // Apply replacements to subject
+            Object.entries(replacements).forEach(([placeholder, value]) => {
+              finalSubject = finalSubject.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
+              finalBody = finalBody.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
+            });
+            
+            console.log("✨ PERSONALIZATION: SUCCESS!");
+            console.log("📝 NEW SUBJECT:", finalSubject);
+            console.log("📄 NEW BODY PREVIEW:", finalBody.substring(0, 80) + "...");
+            
+          } else {
+            console.log("⚠️ PERSONALIZATION: No lead found for email:", to);
+          }
+          
+        } catch (dbError) {
+          console.error("💥 PERSONALIZATION: Database error:", dbError);
+        }
+      }
+      
+      // =================== SEND EMAIL ===================
+      console.log("📤 EMAIL: Sending with final content...");
+      
+      // Size check
+      const contentSize = Buffer.byteLength(finalBody, 'utf8');
+      if (contentSize > 5 * 1024 * 1024) {
         return res.status(400).json({ 
           message: "Email content is too large. Please reduce the content size or remove embedded images."
         });
       }
       
-      // NEW PERSONALIZATION SYSTEM - Rebuilt from scratch
-      console.log(`=== PERSONALIZATION START === Email to: ${to}`);
+      const emailLog = await storage.sendEmail(from, to, finalSubject, finalBody, options || {});
       
-      let personalizedSubject = subject;
-      let personalizedBody = body;
-      
-      // Check if email contains personalization variables
-      const hasPersonalizationVars = subject.includes('{{') || body.includes('{{');
-      
-      if (hasPersonalizationVars) {
-        console.log(`PERSONALIZATION: Variables detected, looking up lead data...`);
-        
-        try {
-          // Direct database query using raw SQL for reliability
-          const { Pool } = require('pg');
-          const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-          
-          const leadQuery = 'SELECT * FROM leads WHERE email = $1 LIMIT 1';
-          const leadResult = await pool.query(leadQuery, [to]);
-          
-          if (leadResult.rows.length > 0) {
-            const lead = leadResult.rows[0];
-            console.log(`PERSONALIZATION: Found lead:`, {
-              name: lead.name,
-              lead_owner: lead.lead_owner,
-              job_title: lead.job_title
-            });
-            
-            // Extract personalization data
-            const firstName = lead.name?.split(' ')[0] || 'Friend';
-            const lastName = lead.name?.split(' ').slice(1).join(' ') || '';
-            const company = lead.company || 'Your Company';
-            const industry = lead.industry || 'your industry';
-            const jobTitle = lead.job_title || 'your role';
-            const leadOwner = lead.lead_owner || 'The Team';
-            
-            // Perform replacements
-            const replacements = {
-              '{{firstName}}': firstName,
-              '{{lastName}}': lastName,
-              '{{company}}': company,
-              '{{industry}}': industry,
-              '{{jobTitle}}': jobTitle,
-              '{{leadOwner}}': leadOwner
-            };
-            
-            // Replace in subject
-            for (const [placeholder, value] of Object.entries(replacements)) {
-              personalizedSubject = personalizedSubject.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
-              personalizedBody = personalizedBody.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
-            }
-            
-            console.log(`PERSONALIZATION: SUCCESS! Replaced variables`);
-            console.log(`PERSONALIZATION: Subject: "${personalizedSubject}"`);
-            console.log(`PERSONALIZATION: Body preview: "${personalizedBody.substring(0, 100)}..."`);
-            
-          } else {
-            console.log(`PERSONALIZATION: No lead found for email: ${to}`);
-          }
-          
-          await pool.end();
-        } catch (error) {
-          console.error(`PERSONALIZATION: ERROR -`, error.message);
-        }
-      } else {
-        console.log(`PERSONALIZATION: No variables detected, skipping personalization`);
-      }
-      
-      console.log(`=== PERSONALIZATION END ===`);
-      
-      const emailLog = await storage.sendEmail(from, to, personalizedSubject, personalizedBody, options || {});
+      console.log("🎯 EMAIL: Send complete!");
       return res.json(emailLog);
+      
     } catch (error) {
-      console.error("Send email error:", error);
+      console.error("💥 EMAIL ERROR:", error);
       const errorMessage = error instanceof Error 
         ? error.message 
         : "Failed to send email";
