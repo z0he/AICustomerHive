@@ -1241,19 +1241,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let personalizedBody = body;
       let personalizedSubject = subject;
       
+      console.log(`PERSONALIZATION: Starting personalization for email to: ${to}`);
+      
       try {
-        // Query the database directly for the lead with this email
-        const { db } = await import('./db');
-        const { leads } = await import('@shared/schema');
-        const { eq } = await import('drizzle-orm');
+        const { db } = require('./db');
+        const { leads } = require('@shared/schema');
+        const { eq } = require('drizzle-orm');
         
-        console.log(`Looking for lead with email: ${to}`);
+        console.log(`PERSONALIZATION: Querying database for lead with email: ${to}`);
         const targetLeadResult = await db.select().from(leads).where(eq(leads.email, to));
         const targetLead = targetLeadResult[0];
-        console.log(`Target lead found:`, targetLead);
+        
+        console.log(`PERSONALIZATION: Query result:`, targetLead);
         
         if (targetLead) {
-          // Personalize the content with lead data
           const firstName = targetLead.name?.split(' ')[0] || 'Valued Customer';
           const lastName = targetLead.name?.split(' ').slice(1).join(' ') || '';
           const company = targetLead.company || 'Your Company';
@@ -1261,9 +1262,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const jobTitle = targetLead.jobTitle || 'your role';
           const leadOwner = targetLead.leadOwner || 'The Team';
           
-          console.log(`Personalization data: firstName=${firstName}, industry=${industry}, leadOwner=${leadOwner}`);
+          console.log(`PERSONALIZATION: Using data - firstName: ${firstName}, industry: ${industry}, leadOwner: ${leadOwner}`);
           
-          // Replace variables in both subject and body
+          // Replace variables in subject
           personalizedSubject = personalizedSubject
             .replace(/\{\{firstName\}\}/g, firstName)
             .replace(/\{\{lastName\}\}/g, lastName)
@@ -1272,6 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .replace(/\{\{jobTitle\}\}/g, jobTitle)
             .replace(/\{\{leadOwner\}\}/g, leadOwner);
             
+          // Replace variables in body
           personalizedBody = personalizedBody
             .replace(/\{\{firstName\}\}/g, firstName)
             .replace(/\{\{lastName\}\}/g, lastName)
@@ -1279,9 +1281,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .replace(/\{\{industry\}\}/g, industry)
             .replace(/\{\{jobTitle\}\}/g, jobTitle)
             .replace(/\{\{leadOwner\}\}/g, leadOwner);
+            
+          console.log(`PERSONALIZATION: Completed successfully. Subject: ${personalizedSubject}`);
+        } else {
+          console.log(`PERSONALIZATION: No lead found with email ${to}`);
         }
       } catch (error) {
-        console.log("Personalization lookup failed, sending without personalization:", error);
+        console.error("PERSONALIZATION ERROR:", error);
         // Continue without personalization if lookup fails
       }
       
