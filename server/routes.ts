@@ -1220,105 +1220,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/email/send", async (req: Request, res: Response) => {
-    console.log("🚀 EMAIL ROUTE: Starting email send process");
-    
     try {
       const { from, to, subject, body, options } = req.body;
-      console.log("📧 EMAIL DATA:", { to, subject: subject?.substring(0, 30) + "..." });
       
-      // Validate required fields
       if (!from || !to || !subject || !body) {
-        console.log("❌ VALIDATION: Missing required fields");
         return res.status(400).json({ 
           message: "Missing required email fields. Please provide from, to, subject, and body."
         });
       }
       
-      console.log("✅ VALIDATION: All fields present");
+      // Use the dedicated personalization engine
+      const { personalizeEmailContent } = require('./personalization');
+      const { subject: personalizedSubject, body: personalizedBody } = await personalizeEmailContent(to, subject, body);
       
-      // =================== PERSONALIZATION ENGINE ===================
-      console.log("🔧 PERSONALIZATION: Starting engine...");
-      
-      let finalSubject = subject;
-      let finalBody = body;
-      
-      // Check if we need personalization
-      const needsPersonalization = subject.includes('{{') || body.includes('{{');
-      console.log("🔍 PERSONALIZATION: Needs personalization?", needsPersonalization);
-      
-      if (needsPersonalization) {
-        console.log("🎯 PERSONALIZATION: Looking up lead data for:", to);
-        
-        try {
-          // Direct database connection
-          const { db } = require('./db');
-          const { leads } = require('../shared/schema');
-          const { eq } = require('drizzle-orm');
-          
-          console.log("📊 DATABASE: Querying leads table...");
-          const leadResults = await db.select().from(leads).where(eq(leads.email, to)).limit(1);
-          
-          if (leadResults.length > 0) {
-            const lead = leadResults[0];
-            console.log("🎉 PERSONALIZATION: Found lead!", {
-              name: lead.name,
-              leadOwner: lead.leadOwner,
-              jobTitle: lead.jobTitle
-            });
-            
-            // Extract names
-            const firstName = lead.name?.split(' ')[0] || 'Friend';
-            const lastName = lead.name?.split(' ').slice(1).join(' ') || '';
-            
-            // Prepare replacement data
-            const replacements = {
-              '{{firstName}}': firstName,
-              '{{lastName}}': lastName,
-              '{{company}}': lead.company || 'Your Company',
-              '{{industry}}': lead.industry || 'your industry',
-              '{{jobTitle}}': lead.jobTitle || 'your role',
-              '{{leadOwner}}': lead.leadOwner || 'The Team'
-            };
-            
-            console.log("🔄 PERSONALIZATION: Applying replacements...");
-            
-            // Apply replacements to subject
-            Object.entries(replacements).forEach(([placeholder, value]) => {
-              finalSubject = finalSubject.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
-              finalBody = finalBody.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
-            });
-            
-            console.log("✨ PERSONALIZATION: SUCCESS!");
-            console.log("📝 NEW SUBJECT:", finalSubject);
-            console.log("📄 NEW BODY PREVIEW:", finalBody.substring(0, 80) + "...");
-            
-          } else {
-            console.log("⚠️ PERSONALIZATION: No lead found for email:", to);
-          }
-          
-        } catch (dbError) {
-          console.error("💥 PERSONALIZATION: Database error:", dbError);
-        }
-      }
-      
-      // =================== SEND EMAIL ===================
-      console.log("📤 EMAIL: Sending with final content...");
-      
-      // Size check
-      const contentSize = Buffer.byteLength(finalBody, 'utf8');
+      // Check email content size
+      const contentSize = Buffer.byteLength(personalizedBody, 'utf8');
       if (contentSize > 5 * 1024 * 1024) {
         return res.status(400).json({ 
           message: "Email content is too large. Please reduce the content size or remove embedded images."
         });
       }
       
-      const emailLog = await storage.sendEmail(from, to, finalSubject, finalBody, options || {});
-      
-      console.log("🎯 EMAIL: Send complete!");
+      const emailLog = await storage.sendEmail(from, to, personalizedSubject, personalizedBody, options || {});
       return res.json(emailLog);
       
     } catch (error) {
-      console.error("💥 EMAIL ERROR:", error);
+      console.error("Send email error:", error);
       const errorMessage = error instanceof Error 
         ? error.message 
         : "Failed to send email";
