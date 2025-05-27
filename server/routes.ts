@@ -1278,6 +1278,105 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ===== CAMPAIGN EMAIL ROUTES =====
+  
+  app.post("/api/email/send-campaign", async (req: Request, res: Response) => {
+    try {
+      const { campaignId, subject, emailContent, testEmail } = req.body;
+      
+      if (!campaignId || !subject || !emailContent) {
+        return res.status(400).json({ 
+          message: "Missing required fields. Please provide campaignId, subject, and emailContent."
+        });
+      }
+      
+      // Get campaign details
+      const campaign = await storage.getCampaign(campaignId);
+      if (!campaign) {
+        return res.status(404).json({ message: "Campaign not found" });
+      }
+      
+      // Get leads based on campaign targeting
+      let targetLeads = [];
+      try {
+        if (campaign.targetAudience && campaign.targetAudience !== "All leads") {
+          const targeting = JSON.parse(campaign.targetAudience);
+          if (targeting.type === "Leads" && targeting.filters) {
+            // Filter leads based on campaign criteria
+            const allLeads = await storage.getLeads();
+            targetLeads = allLeads.filter(lead => {
+              if (targeting.filters.source && targeting.filters.source !== "all_sources") {
+                if (lead.source !== targeting.filters.source) return false;
+              }
+              if (targeting.filters.status && targeting.filters.status !== "all_statuses") {
+                if (lead.status !== targeting.filters.status) return false;
+              }
+              return true;
+            });
+          } else {
+            targetLeads = await storage.getLeads();
+          }
+        } else {
+          targetLeads = await storage.getLeads();
+        }
+      } catch (e) {
+        // If targeting parsing fails, get all leads
+        targetLeads = await storage.getLeads();
+      }
+      
+      // Send emails to all target leads
+      const emailResults = [];
+      for (const lead of targetLeads) {
+        try {
+          // Personalize the email content
+          let personalizedContent = emailContent;
+          personalizedContent = personalizedContent.replace(/\{\{firstName\}\}/g, lead.name?.split(' ')[0] || 'Valued Customer');
+          personalizedContent = personalizedContent.replace(/\{\{lastName\}\}/g, lead.name?.split(' ').slice(1).join(' ') || '');
+          personalizedContent = personalizedContent.replace(/\{\{company\}\}/g, lead.company || 'Your Company');
+          personalizedContent = personalizedContent.replace(/\{\{email\}\}/g, lead.email || '');
+          
+          const emailLog = await storage.sendEmail(
+            'noreply@mail.aicrm.co.uk',
+            lead.email,
+            subject,
+            personalizedContent,
+            {
+              campaignId: campaignId,
+              relatedEntityType: 'lead',
+              relatedEntityId: lead.id
+            }
+          );
+          
+          emailResults.push({
+            leadId: lead.id,
+            email: lead.email,
+            status: 'sent',
+            emailLogId: emailLog.id
+          });
+        } catch (error) {
+          console.error(`Failed to send email to ${lead.email}:`, error);
+          emailResults.push({
+            leadId: lead.id,
+            email: lead.email,
+            status: 'failed',
+            error: error.message
+          });
+        }
+      }
+      
+      return res.json({
+        success: true,
+        message: `Campaign email scheduled for ${targetLeads.length} recipients`,
+        campaignId,
+        targetCount: targetLeads.length,
+        results: emailResults
+      });
+    } catch (error) {
+      console.error("Send campaign email error:", error);
+      return res.status(500).json({ message: "Failed to schedule campaign email" });
+    }
+  });
+  
   // ===== MAILGUN CONFIGURATION ROUTE =====
   
   app.post("/api/config/mailgun", async (req: Request, res: Response) => {

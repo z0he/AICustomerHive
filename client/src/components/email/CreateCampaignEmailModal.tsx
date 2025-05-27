@@ -140,8 +140,77 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
     },
   });
 
+  // Send test email mutation
+  const sendTestEmailMutation = useMutation({
+    mutationFn: async (data: { to: string; subject: string; body: string }) => {
+      const token = localStorage.getItem('auth_token');
+      const response = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          from: 'noreply@mail.aicrm.co.uk',
+          to: data.to,
+          subject: `[TEST] ${data.subject}`,
+          body: data.body,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send test email');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Test email sent",
+        description: "Your test email has been sent successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Test email failed",
+        description: error.message || "Failed to send test email",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: CampaignEmailFormData) => {
     createCampaignEmailMutation.mutate(data);
+  };
+
+  const handleSendTest = () => {
+    const formData = form.getValues();
+    const testEmail = formData.testEmail;
+    
+    if (!testEmail) {
+      toast({
+        title: "Test email required",
+        description: "Please enter a test email address",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!formData.subject || !formData.emailContent) {
+      toast({
+        title: "Missing content",
+        description: "Please fill in the subject and email content",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    sendTestEmailMutation.mutate({
+      to: testEmail,
+      subject: formData.subject,
+      body: formData.emailContent,
+    });
   };
 
   const handleTemplateSelect = (template: any) => {
@@ -321,8 +390,17 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                     Cancel
                   </Button>
                   {form.watch('testEmail') && (
-                    <Button type="button" variant="outline">
-                      <Eye className="mr-2 h-4 w-4" />
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={handleSendTest}
+                      disabled={sendTestEmailMutation.isPending}
+                    >
+                      {sendTestEmailMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Eye className="mr-2 h-4 w-4" />
+                      )}
                       Send Test
                     </Button>
                   )}
