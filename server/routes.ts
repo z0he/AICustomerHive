@@ -1229,6 +1229,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Check email content size (Mailgun has a 25MB limit, but we'll be more conservative)
+      const contentSize = Buffer.byteLength(body, 'utf8');
+      if (contentSize > 5 * 1024 * 1024) { // 5MB limit
+        return res.status(400).json({ 
+          message: "Email content is too large. Please reduce the content size or remove embedded images."
+        });
+      }
+      
       const emailLog = await storage.sendEmail(from, to, subject, body, options || {});
       return res.json(emailLog);
     } catch (error) {
@@ -1236,6 +1244,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const errorMessage = error instanceof Error 
         ? error.message 
         : "Failed to send email";
+      
+      // Handle specific Mailgun errors
+      if (errorMessage.includes('Request Entity Too Large') || errorMessage.includes('entity too large')) {
+        return res.status(400).json({ 
+          message: "Email content is too large. Please reduce the content size or remove embedded images.",
+          details: "Try removing images or reducing the amount of formatting in your email."
+        });
+      }
       
       return res.status(500).json({ 
         message: errorMessage,

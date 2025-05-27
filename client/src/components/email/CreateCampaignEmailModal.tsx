@@ -364,10 +364,14 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                                 [{ 'color': [] }, { 'background': [] }],
                                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                                 [{ 'align': [] }],
-                                ['link', 'image'],
+                                ['link'],
                                 ['clean']
                               ],
                             }}
+                            formats={[
+                              'header', 'bold', 'italic', 'underline', 'strike',
+                              'color', 'background', 'list', 'bullet', 'align', 'link'
+                            ]}
                             style={{ minHeight: '200px' }}
                           />
                         </div>
