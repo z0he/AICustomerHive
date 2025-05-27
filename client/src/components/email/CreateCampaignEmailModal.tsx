@@ -364,20 +364,24 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                                 [{ 'color': [] }, { 'background': [] }],
                                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                                 [{ 'align': [] }],
-                                ['link'],
+                                ['link', 'image'],
                                 ['clean']
                               ],
+                              imageResize: {
+                                parchment: true,
+                                modules: ['Resize', 'DisplaySize', 'Toolbar']
+                              }
                             }}
                             formats={[
                               'header', 'bold', 'italic', 'underline', 'strike',
-                              'color', 'background', 'list', 'bullet', 'align', 'link'
+                              'color', 'background', 'list', 'bullet', 'align', 'link', 'image'
                             ]}
                             style={{ minHeight: '200px' }}
                           />
                         </div>
                       </FormControl>
                       <FormDescription>
-                        Use the rich text editor to format your email. Personalization fields like {`{{firstName}}`}, {`{{company}}`} will be automatically replaced.
+                        Use the rich text editor to format your email. Click the image icon to add your logo. Personalization fields like {`{{firstName}}`}, {`{{company}}`} will be automatically replaced.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
