@@ -1329,8 +1329,8 @@ export class MemStorage implements IStorage {
           const lastName = targetLead.name?.split(' ').slice(1).join(' ') || '';
           const company = targetLead.company || 'Your Company';
           const industry = targetLead.industry || 'your industry';
-          const jobTitle = targetLead.jobTitle || 'your role';
-          const leadOwner = targetLead.leadOwner || 'The Team';
+          const jobTitle = targetLead.job_title || 'your role';
+          const leadOwner = targetLead.lead_owner || 'The Team';
           
           console.log(`STORAGE PERSONALIZATION: Found lead - firstName: ${firstName}, industry: ${industry}, leadOwner: ${leadOwner}`);
           
