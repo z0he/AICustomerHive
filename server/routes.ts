@@ -1244,7 +1244,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Try to find a lead with this email address
         const allLeads = await storage.getLeads();
+        console.log(`Looking for lead with email: ${to}`);
+        console.log(`Found ${allLeads.length} total leads`);
+        
         const targetLead = allLeads.find(lead => lead.email === to);
+        console.log(`Target lead found:`, targetLead);
         
         if (targetLead) {
           // Personalize the content with lead data
@@ -1254,6 +1258,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const industry = targetLead.industry || 'your industry';
           const jobTitle = targetLead.jobTitle || 'your role';
           const leadOwner = targetLead.leadOwner || 'The Team';
+          
+          console.log(`Personalization data: firstName=${firstName}, industry=${industry}, leadOwner=${leadOwner}`);
           
           // Replace variables in both subject and body
           personalizedSubject = personalizedSubject
