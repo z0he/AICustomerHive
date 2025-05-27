@@ -763,7 +763,7 @@ const EmailManagement: React.FC = () => {
                                 />
                               </FormControl>
                               <FormDescription>
-                                HTML content of the email. Use {{variableName}} for dynamic content.
+                                HTML content of the email. Use {"{"}{"{"}"variableName"{"}"}{" }"} for dynamic content.
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
