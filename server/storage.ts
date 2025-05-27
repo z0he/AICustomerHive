@@ -1309,6 +1309,57 @@ export class MemStorage implements IStorage {
   async sendEmail(from: string, to: string, subject: string, body: string, options: any = {}): Promise<EmailLog> {
     // Use Mailgun to send emails
     try {
+      console.log(`STORAGE EMAIL: Sending email to ${to} with subject: ${subject}`);
+      
+      // Personalize email content if sending to a lead email
+      let personalizedBody = body;
+      let personalizedSubject = subject;
+      
+      try {
+        const { db } = require('./db');
+        const { leads } = require('@shared/schema');
+        const { eq } = require('drizzle-orm');
+        
+        console.log(`STORAGE PERSONALIZATION: Looking for lead with email: ${to}`);
+        const targetLeadResult = await db.select().from(leads).where(eq(leads.email, to));
+        const targetLead = targetLeadResult[0];
+        
+        if (targetLead) {
+          const firstName = targetLead.name?.split(' ')[0] || 'Valued Customer';
+          const lastName = targetLead.name?.split(' ').slice(1).join(' ') || '';
+          const company = targetLead.company || 'Your Company';
+          const industry = targetLead.industry || 'your industry';
+          const jobTitle = targetLead.jobTitle || 'your role';
+          const leadOwner = targetLead.leadOwner || 'The Team';
+          
+          console.log(`STORAGE PERSONALIZATION: Found lead - firstName: ${firstName}, industry: ${industry}, leadOwner: ${leadOwner}`);
+          
+          // Replace variables in subject
+          personalizedSubject = personalizedSubject
+            .replace(/\{\{firstName\}\}/g, firstName)
+            .replace(/\{\{lastName\}\}/g, lastName)
+            .replace(/\{\{company\}\}/g, company)
+            .replace(/\{\{industry\}\}/g, industry)
+            .replace(/\{\{jobTitle\}\}/g, jobTitle)
+            .replace(/\{\{leadOwner\}\}/g, leadOwner);
+            
+          // Replace variables in body
+          personalizedBody = personalizedBody
+            .replace(/\{\{firstName\}\}/g, firstName)
+            .replace(/\{\{lastName\}\}/g, lastName)
+            .replace(/\{\{company\}\}/g, company)
+            .replace(/\{\{industry\}\}/g, industry)
+            .replace(/\{\{jobTitle\}\}/g, jobTitle)
+            .replace(/\{\{leadOwner\}\}/g, leadOwner);
+            
+          console.log(`STORAGE PERSONALIZATION: Completed successfully`);
+        } else {
+          console.log(`STORAGE PERSONALIZATION: No lead found with email ${to}`);
+        }
+      } catch (error) {
+        console.error("STORAGE PERSONALIZATION ERROR:", error);
+      }
+      
       // Process options
       const {
         relatedEntityType,
@@ -1333,24 +1384,24 @@ export class MemStorage implements IStorage {
         textContent = html.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
       } else if (isHtml && useTemplate) {
         // If body contains HTML and we want to use template, wrap it in professional template
-        htmlContent = createProfessionalEmailTemplate(body);
-        textContent = body.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
+        htmlContent = createProfessionalEmailTemplate(personalizedBody);
+        textContent = personalizedBody.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
       } else if (isHtml && !useTemplate) {
         // If body contains HTML but no template wanted, use minimal template
-        htmlContent = createMinimalEmailTemplate(body);
-        textContent = body.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
+        htmlContent = createMinimalEmailTemplate(personalizedBody);
+        textContent = personalizedBody.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
       } else {
         // If body is plain text, convert to HTML and wrap in template
-        const htmlBody = body.replace(/\n/g, '<br>');
+        const htmlBody = personalizedBody.replace(/\n/g, '<br>');
         htmlContent = useTemplate ? createProfessionalEmailTemplate(`<p>${htmlBody}</p>`) : createMinimalEmailTemplate(`<p>${htmlBody}</p>`);
-        textContent = body;
+        textContent = personalizedBody;
       }
       
       // Try to send the email with Mailgun
       const emailParams = {
         from,
         to,
-        subject,
+        subject: personalizedSubject,
         text: textContent,
         html: htmlContent
       };
