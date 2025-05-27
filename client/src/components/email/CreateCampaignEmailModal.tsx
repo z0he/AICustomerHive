@@ -366,11 +366,7 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                                 [{ 'align': [] }],
                                 ['link', 'image'],
                                 ['clean']
-                              ],
-                              imageResize: {
-                                parchment: true,
-                                modules: ['Resize', 'DisplaySize', 'Toolbar']
-                              }
+                              ]
                             }}
                             formats={[
                               'header', 'bold', 'italic', 'underline', 'strike',
