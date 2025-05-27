@@ -1224,12 +1224,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("EMAIL SEND: Route reached with data:", { to: req.body.to, subject: req.body.subject });
       console.log("EMAIL SEND: About to start personalization...");
       const { from, to, subject, body, options } = req.body;
+      console.log("EMAIL SEND: Extracted variables:", { from, to, subject: subject?.substring(0, 50), bodyLength: body?.length });
       
       if (!from || !to || !subject || !body) {
+        console.log("EMAIL SEND: Missing required fields!", { from: !!from, to: !!to, subject: !!subject, body: !!body });
         return res.status(400).json({ 
           message: "Missing required email fields. Please provide from, to, subject, and body."
         });
       }
+      
+      console.log("EMAIL SEND: All required fields present, proceeding to personalization...");
       
       // Check email content size (Mailgun has a 25MB limit, but we'll be more conservative)
       const contentSize = Buffer.byteLength(body, 'utf8');
@@ -1239,56 +1243,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Personalize email content if sending to a lead email
-      let personalizedBody = body;
+      // NEW PERSONALIZATION SYSTEM - Rebuilt from scratch
+      console.log(`=== PERSONALIZATION START === Email to: ${to}`);
+      
       let personalizedSubject = subject;
+      let personalizedBody = body;
       
-      console.log(`PERSONALIZATION: Starting for email to: ${to}`);
+      // Check if email contains personalization variables
+      const hasPersonalizationVars = subject.includes('{{') || body.includes('{{');
       
-      // Personalization logic
-      const { db } = require('./db');
-      const { leads } = require('@shared/schema');
-      const { eq } = require('drizzle-orm');
-      
-      try {
-        const targetLeadResult = await db.select().from(leads).where(eq(leads.email, to));
-        const targetLead = targetLeadResult[0];
+      if (hasPersonalizationVars) {
+        console.log(`PERSONALIZATION: Variables detected, looking up lead data...`);
         
-        if (targetLead) {
-          const firstName = targetLead.name?.split(' ')[0] || 'Valued Customer';
-          const lastName = targetLead.name?.split(' ').slice(1).join(' ') || '';
-          const company = targetLead.company || 'Your Company';
-          const industry = targetLead.industry || 'your industry';
-          const jobTitle = targetLead.job_title || 'your role';
-          const leadOwner = targetLead.lead_owner || 'The Team';
+        try {
+          // Direct database query using raw SQL for reliability
+          const { Pool } = require('pg');
+          const pool = new Pool({ connectionString: process.env.DATABASE_URL });
           
-          console.log(`PERSONALIZATION: Found lead data - firstName: ${firstName}, leadOwner: ${leadOwner}`);
+          const leadQuery = 'SELECT * FROM leads WHERE email = $1 LIMIT 1';
+          const leadResult = await pool.query(leadQuery, [to]);
           
-          // Replace variables in subject
-          personalizedSubject = personalizedSubject
-            .replace(/\{\{firstName\}\}/g, firstName)
-            .replace(/\{\{lastName\}\}/g, lastName)
-            .replace(/\{\{company\}\}/g, company)
-            .replace(/\{\{industry\}\}/g, industry)
-            .replace(/\{\{jobTitle\}\}/g, jobTitle)
-            .replace(/\{\{leadOwner\}\}/g, leadOwner);
+          if (leadResult.rows.length > 0) {
+            const lead = leadResult.rows[0];
+            console.log(`PERSONALIZATION: Found lead:`, {
+              name: lead.name,
+              lead_owner: lead.lead_owner,
+              job_title: lead.job_title
+            });
             
-          // Replace variables in body
-          personalizedBody = personalizedBody
-            .replace(/\{\{firstName\}\}/g, firstName)
-            .replace(/\{\{lastName\}\}/g, lastName)
-            .replace(/\{\{company\}\}/g, company)
-            .replace(/\{\{industry\}\}/g, industry)
-            .replace(/\{\{jobTitle\}\}/g, jobTitle)
-            .replace(/\{\{leadOwner\}\}/g, leadOwner);
+            // Extract personalization data
+            const firstName = lead.name?.split(' ')[0] || 'Friend';
+            const lastName = lead.name?.split(' ').slice(1).join(' ') || '';
+            const company = lead.company || 'Your Company';
+            const industry = lead.industry || 'your industry';
+            const jobTitle = lead.job_title || 'your role';
+            const leadOwner = lead.lead_owner || 'The Team';
             
-          console.log(`PERSONALIZATION: COMPLETED! Subject now: ${personalizedSubject}`);
-        } else {
-          console.log(`PERSONALIZATION: No lead found with email ${to}`);
+            // Perform replacements
+            const replacements = {
+              '{{firstName}}': firstName,
+              '{{lastName}}': lastName,
+              '{{company}}': company,
+              '{{industry}}': industry,
+              '{{jobTitle}}': jobTitle,
+              '{{leadOwner}}': leadOwner
+            };
+            
+            // Replace in subject
+            for (const [placeholder, value] of Object.entries(replacements)) {
+              personalizedSubject = personalizedSubject.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
+              personalizedBody = personalizedBody.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), value);
+            }
+            
+            console.log(`PERSONALIZATION: SUCCESS! Replaced variables`);
+            console.log(`PERSONALIZATION: Subject: "${personalizedSubject}"`);
+            console.log(`PERSONALIZATION: Body preview: "${personalizedBody.substring(0, 100)}..."`);
+            
+          } else {
+            console.log(`PERSONALIZATION: No lead found for email: ${to}`);
+          }
+          
+          await pool.end();
+        } catch (error) {
+          console.error(`PERSONALIZATION: ERROR -`, error.message);
         }
-      } catch (error) {
-        console.error("PERSONALIZATION ERROR:", error);
+      } else {
+        console.log(`PERSONALIZATION: No variables detected, skipping personalization`);
       }
+      
+      console.log(`=== PERSONALIZATION END ===`);
       
       const emailLog = await storage.sendEmail(from, to, personalizedSubject, personalizedBody, options || {});
       return res.json(emailLog);
