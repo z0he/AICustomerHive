@@ -156,10 +156,12 @@ const EmailManagement: React.FC = () => {
   // Configure API key mutation
   const configureApiMutation = useMutation({
     mutationFn: async (data: ConfigureApiKeyFormData) => {
+      const token = localStorage.getItem('auth_token');
       const response = await fetch('/api/config/mailgun', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(data),
       });
