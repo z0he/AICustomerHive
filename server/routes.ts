@@ -1221,6 +1221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/email/send", async (req: Request, res: Response) => {
     try {
+      console.log("EMAIL SEND: Route reached with data:", { to: req.body.to, subject: req.body.subject });
       const { from, to, subject, body, options } = req.body;
       
       if (!from || !to || !subject || !body) {
