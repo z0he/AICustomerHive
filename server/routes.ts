@@ -1242,12 +1242,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let personalizedSubject = subject;
       
       try {
-        // Try to find a lead with this email address
-        const allLeads = await storage.getLeads();
-        console.log(`Looking for lead with email: ${to}`);
-        console.log(`Found ${allLeads.length} total leads`);
+        // Query the database directly for the lead with this email
+        const { db } = await import('./db');
+        const { leads } = await import('@shared/schema');
+        const { eq } = await import('drizzle-orm');
         
-        const targetLead = allLeads.find(lead => lead.email === to);
+        console.log(`Looking for lead with email: ${to}`);
+        const targetLeadResult = await db.select().from(leads).where(eq(leads.email, to));
+        const targetLead = targetLeadResult[0];
         console.log(`Target lead found:`, targetLead);
         
         if (targetLead) {
