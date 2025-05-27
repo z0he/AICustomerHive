@@ -373,7 +373,7 @@ const EmailManagement: React.FC = () => {
                           {apiStatus?.configured ? (
                             <>
                               <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                              <span>Mailgun API is properly configured and ready to use.</span>
+                              <span>Mailgun API is properly configured and ready to use. Your API key and domain have been securely stored.</span>
                             </>
                           ) : (
                             <>
