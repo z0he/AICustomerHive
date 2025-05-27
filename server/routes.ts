@@ -1229,21 +1229,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Use the dedicated personalization engine
-      const { personalizeEmailContent } = require('./personalization');
-      const { subject: personalizedSubject, body: personalizedBody } = await personalizeEmailContent(to, subject, body);
-      
-      // Check email content size
-      const contentSize = Buffer.byteLength(personalizedBody, 'utf8');
-      if (contentSize > 5 * 1024 * 1024) {
+      // Check email content size (Mailgun has a 25MB limit, but we'll be more conservative)
+      const contentSize = Buffer.byteLength(body, 'utf8');
+      if (contentSize > 5 * 1024 * 1024) { // 5MB limit
         return res.status(400).json({ 
           message: "Email content is too large. Please reduce the content size or remove embedded images."
         });
       }
       
-      const emailLog = await storage.sendEmail(from, to, personalizedSubject, personalizedBody, options || {});
+      const emailLog = await storage.sendEmail(from, to, subject, body, options || {});
       return res.json(emailLog);
-      
     } catch (error) {
       console.error("Send email error:", error);
       const errorMessage = error instanceof Error 

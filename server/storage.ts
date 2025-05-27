@@ -1309,12 +1309,6 @@ export class MemStorage implements IStorage {
   async sendEmail(from: string, to: string, subject: string, body: string, options: any = {}): Promise<EmailLog> {
     // Use Mailgun to send emails
     try {
-      console.log(`STORAGE EMAIL: Sending email to ${to} with subject: ${subject}`);
-      
-      // Personalization is handled in the routes layer, not here
-      let personalizedBody = body;
-      let personalizedSubject = subject;
-      
       // Process options
       const {
         relatedEntityType,
@@ -1339,24 +1333,24 @@ export class MemStorage implements IStorage {
         textContent = html.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
       } else if (isHtml && useTemplate) {
         // If body contains HTML and we want to use template, wrap it in professional template
-        htmlContent = createProfessionalEmailTemplate(personalizedBody);
-        textContent = personalizedBody.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
+        htmlContent = createProfessionalEmailTemplate(body);
+        textContent = body.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
       } else if (isHtml && !useTemplate) {
         // If body contains HTML but no template wanted, use minimal template
-        htmlContent = createMinimalEmailTemplate(personalizedBody);
-        textContent = personalizedBody.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
+        htmlContent = createMinimalEmailTemplate(body);
+        textContent = body.replace(/<[^>]*>?/gm, ''); // Strip HTML tags for text version
       } else {
         // If body is plain text, convert to HTML and wrap in template
-        const htmlBody = personalizedBody.replace(/\n/g, '<br>');
+        const htmlBody = body.replace(/\n/g, '<br>');
         htmlContent = useTemplate ? createProfessionalEmailTemplate(`<p>${htmlBody}</p>`) : createMinimalEmailTemplate(`<p>${htmlBody}</p>`);
-        textContent = personalizedBody;
+        textContent = body;
       }
       
       // Try to send the email with Mailgun
       const emailParams = {
         from,
         to,
-        subject: personalizedSubject,
+        subject,
         text: textContent,
         html: htmlContent
       };
