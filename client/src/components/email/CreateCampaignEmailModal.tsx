@@ -38,6 +38,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { queryClient } from '@/lib/queryClient';
+import { PersonalizationTokenPicker } from './PersonalizationTokenPicker';
 
 // Form schema
 const campaignEmailSchema = z.object({
@@ -224,22 +225,11 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
     setActiveTab('custom'); // Switch to custom tab for editing
   };
 
-  const insertPersonalization = (field: string) => {
+  const insertPersonalizationToken = (token: string) => {
     const currentContent = form.getValues('emailContent');
-    const newContent = currentContent + `{{${field}}}`;
+    const newContent = currentContent + token;
     form.setValue('emailContent', newContent);
   };
-
-  const personalizationFields = [
-    { field: 'firstName', label: 'First Name' },
-    { field: 'lastName', label: 'Last Name' },
-    { field: 'email', label: 'Email' },
-    { field: 'company', label: 'Company' },
-    { field: 'jobTitle', label: 'Job Title' },
-    { field: 'createdAt', label: 'Created Date' },
-    { field: 'leadSource', label: 'Lead Source' },
-    { field: 'industry', label: 'Industry' },
-  ];
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -321,7 +311,7 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                         />
                       </FormControl>
                       <FormDescription>
-                        You can use personalization like {`{{firstName}}`} in the subject
+                        You can use personalization like {`{{contact.firstName}}`} in the subject
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -329,20 +319,12 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                 />
 
                 <div>
-                  <label className="text-sm font-medium">Personalization Fields</label>
-                  <div className="flex flex-wrap gap-2 mt-2 mb-4">
-                    {personalizationFields.map((item) => (
-                      <Button
-                        key={item.field}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => insertPersonalization(item.field)}
-                      >
-                        {item.label}
-                      </Button>
-                    ))}
-                  </div>
+                  <label className="text-sm font-medium mb-3 block">Enhanced Personalization</label>
+                  <PersonalizationTokenPicker 
+                    onTokenInsert={insertPersonalizationToken}
+                    initialContent={form.getValues('emailContent')}
+                    placeholder="Enter your email content with personalization tokens like {{contact.firstName}}"
+                  />
                 </div>
 
                 <FormField
