@@ -97,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Send the email
       const success = await sendEmail({
-        from: process.env.DEFAULT_FROM_EMAIL || 'noreply@example.com',
+        from: process.env.DEFAULT_FROM_EMAIL || 'noreply@mail.aicrm.co.uk',
         to,
         subject: `[TEST] ${personalizedSubject}`,
         html: personalizedContent,
