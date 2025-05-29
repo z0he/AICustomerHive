@@ -109,8 +109,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Log the email
+      const fromEmail = process.env.DEFAULT_FROM_EMAIL || 'noreply@mail.aicrm.co.uk';
       const emailLog = await storage.createEmailLog({
-        from: process.env.DEFAULT_FROM_EMAIL || 'noreply@example.com',
+        from: fromEmail,
         to,
         subject: `[TEST] ${personalizedSubject}`,
         body: personalizedContent,
