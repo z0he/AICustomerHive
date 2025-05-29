@@ -46,6 +46,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.redirect("/api/auth/user");
   });
   
+  // ===== PERSONALIZATION ROUTES =====
+  
+  // Get available personalization tokens
+  app.get("/api/personalization/tokens", async (req: Request, res: Response) => {
+    try {
+      const { personalizationEngine } = await import('./lib/personalization');
+      const tokens = personalizationEngine.getAvailableTokens();
+      return res.json(tokens);
+    } catch (error) {
+      console.error("Error fetching personalization tokens:", error);
+      return res.status(500).json({ message: "Failed to fetch personalization tokens" });
+    }
+  });
+  
+  // Preview personalized content
+  app.post("/api/personalization/preview", async (req: Request, res: Response) => {
+    try {
+      const { content, sampleEmail } = req.body;
+      
+      if (!content) {
+        return res.status(400).json({ message: "Content is required" });
+      }
+      
+      const { personalizationEngine } = await import('./lib/personalization');
+      const preview = await personalizationEngine.previewContent(content, sampleEmail);
+      
+      return res.json(preview);
+    } catch (error) {
+      console.error("Error previewing personalized content:", error);
+      return res.status(500).json({ message: "Failed to preview personalized content" });
+    }
+  });
+  
   // Voice command routes
   app.post("/api/voice/interpret", async (req: Request, res: Response) => {
     try {

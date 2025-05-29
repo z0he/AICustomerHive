@@ -1143,37 +1143,60 @@ export class DbStorage implements IStorage {
         throw new Error(`Email template with ID ${templateId} not found`);
       }
       
-      // Import the sendTemplateEmail function from mailgun.ts
-      const { sendTemplateEmail } = await import('../lib/mailgun');
+      // Import personalization engine and mailgun functions
+      const { personalizationEngine } = await import('../lib/personalization');
+      const { sendEmail } = await import('../lib/mailgun');
       
       // Get from address
       const from = options.from || process.env.DEFAULT_FROM_EMAIL || 'noreply@example.com';
       
-      // Send the email
-      const success = await sendTemplateEmail(
-        to,
-        from,
-        template.subject,
-        data,
-        template.name
+      // Process personalization tokens in both subject and body
+      const personalizedSubject = await personalizationEngine.processContent(
+        template.subject, 
+        to, 
+        { defaultValues: data }
       );
       
+      const personalizedBody = await personalizationEngine.processContent(
+        template.bodyHtml, 
+        to, 
+        { defaultValues: data }
+      );
+      
+      const personalizedTextBody = template.bodyText 
+        ? await personalizationEngine.processContent(template.bodyText, to, { defaultValues: data })
+        : personalizedBody.replace(/<[^>]*>/g, ''); // Strip HTML for text version
+      
+      // Send the email with personalized content
+      const success = await sendEmail({
+        from,
+        to,
+        subject: personalizedSubject,
+        html: personalizedBody,
+        text: personalizedTextBody
+      });
+      
       if (!success) {
-        throw new Error('Failed to send template email through Mailgun');
+        throw new Error('Failed to send personalized email through Mailgun');
       }
       
-      // Log the email
+      // Log the email with personalized content
       const emailLog = await this.createEmailLog({
         from,
         to,
-        subject: template.subject,
-        body: template.bodyHtml,
+        subject: personalizedSubject,
+        body: personalizedBody,
         status: 'sent',
         templateId,
         campaignId: options.campaignId,
         relatedEntityType: options.relatedEntityType,
         relatedEntityId: options.relatedEntityId,
-        metadata: { templateData: data }
+        metadata: { 
+          templateData: data,
+          originalSubject: template.subject,
+          originalBody: template.bodyHtml,
+          personalizationApplied: true
+        }
       });
       
       return emailLog;
