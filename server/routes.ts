@@ -94,6 +94,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Force reinitialize Mailgun client to ensure it uses current domain credentials
       reinitializeMailgunClient();
       
+      // Debug: Log the domain being used
+      console.log('Mailgun domain being used:', process.env.MAILGUN_DOMAIN);
+      
       // Process personalization tokens
       const personalizedSubject = await personalizationEngine.processContent(subject, to);
       const personalizedContent = await personalizationEngine.processContent(content, to);
