@@ -89,7 +89,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const { personalizationEngine } = await import('./lib/personalization');
-      const { sendEmail } = await import('./lib/mailgun');
+      const { sendEmail, reinitializeMailgunClient } = await import('./lib/mailgun');
+      
+      // Force reinitialize Mailgun client to ensure it uses current domain credentials
+      reinitializeMailgunClient();
       
       // Process personalization tokens
       const personalizedSubject = await personalizationEngine.processContent(subject, to);
