@@ -78,6 +78,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to preview personalized content" });
     }
   });
+
+  // Send personalized test email
+  app.post("/api/email/send-personalized-test", async (req: Request, res: Response) => {
+    try {
+      const { to, subject, content } = req.body;
+      
+      if (!to || !subject || !content) {
+        return res.status(400).json({ message: "Missing required fields: to, subject, content" });
+      }
+      
+      const { personalizationEngine } = await import('./lib/personalization');
+      const { sendEmail } = await import('./lib/mailgun');
+      
+      // Process personalization tokens
+      const personalizedSubject = await personalizationEngine.processContent(subject, to);
+      const personalizedContent = await personalizationEngine.processContent(content, to);
+      
+      // Send the email
+      const success = await sendEmail({
+        from: process.env.DEFAULT_FROM_EMAIL || 'noreply@example.com',
+        to,
+        subject: `[TEST] ${personalizedSubject}`,
+        html: personalizedContent,
+        text: personalizedContent.replace(/<[^>]*>/g, '') // Strip HTML for text version
+      });
+      
+      if (!success) {
+        throw new Error('Failed to send email through Mailgun');
+      }
+      
+      // Log the email
+      const emailLog = await storage.createEmailLog({
+        from: process.env.DEFAULT_FROM_EMAIL || 'noreply@example.com',
+        to,
+        subject: `[TEST] ${personalizedSubject}`,
+        body: personalizedContent,
+        status: 'sent',
+        metadata: { 
+          testEmail: true,
+          originalSubject: subject,
+          originalContent: content,
+          personalizationApplied: true
+        }
+      });
+      
+      return res.json({ 
+        success: true, 
+        message: "Personalized test email sent successfully",
+        personalizedSubject,
+        emailLogId: emailLog.id
+      });
+    } catch (error) {
+      console.error("Error sending personalized test email:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to send personalized test email" 
+      });
+    }
+  });
   
   // Voice command routes
   app.post("/api/voice/interpret", async (req: Request, res: Response) => {

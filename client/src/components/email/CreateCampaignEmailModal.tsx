@@ -143,41 +143,35 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
     },
   });
 
-  // Send test email mutation
+  // Send personalized test email mutation
   const sendTestEmailMutation = useMutation({
-    mutationFn: async (data: { to: string; subject: string; body: string }) => {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch('/api/email/send', {
+    mutationFn: async (data: { to: string; subject: string; content: string }) => {
+      const response = await fetch('/api/email/send-personalized-test', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          from: 'noreply@mail.aicrm.co.uk',
-          to: data.to,
-          subject: `[TEST] ${data.subject}`,
-          body: data.body,
-        }),
+        credentials: 'include',
+        body: JSON.stringify(data),
       });
       
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send test email');
+        throw new Error(errorData.message || 'Failed to send personalized test email');
       }
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
-        title: "Test email sent",
-        description: "Your test email has been sent successfully",
+        title: "Personalized test email sent",
+        description: `Email sent with subject: "${data.personalizedSubject}"`,
       });
     },
     onError: (error: any) => {
       toast({
         title: "Test email failed",
-        description: error.message || "Failed to send test email",
+        description: error.message || "Failed to send personalized test email",
         variant: "destructive",
       });
     },
@@ -212,7 +206,7 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
     sendTestEmailMutation.mutate({
       to: testEmail,
       subject: formData.subject,
-      body: formData.emailContent,
+      content: formData.emailContent,
     });
   };
 
