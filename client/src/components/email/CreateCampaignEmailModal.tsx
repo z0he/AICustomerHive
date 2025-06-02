@@ -127,6 +127,18 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
       // Determine the API endpoint based on send type
       const endpoint = data.sendType === 'scheduled' ? '/api/email/schedule' : '/api/email/send-campaign';
       
+      // Get user's custom Mailgun configuration from localStorage
+      const mailgunConfig = localStorage.getItem('mailgun-config');
+      let parsedMailgunConfig = null;
+      
+      if (mailgunConfig) {
+        try {
+          parsedMailgunConfig = JSON.parse(mailgunConfig);
+        } catch (e) {
+          console.warn('Invalid Mailgun config in localStorage');
+        }
+      }
+      
       let requestBody = {
         campaignId: data.campaignId,
         subject: data.subject,
@@ -136,6 +148,7 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
         fromAddress: 'noreply@mail.aicrm.co.uk', // Using verified domain
         targetAudience: campaign?.targetAudience || 'Leads',
         templateId: data.useTemplate ? data.templateId : undefined,
+        mailgunConfig: parsedMailgunConfig, // Pass user's custom Mailgun credentials
       };
 
       // Add scheduling fields if scheduling
