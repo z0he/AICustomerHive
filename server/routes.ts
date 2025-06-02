@@ -1582,6 +1582,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Filter leads based on campaign criteria
             const allLeads = await storage.getLeads();
             console.log('Total leads in database:', allLeads.length);
+            if (allLeads.length > 0) {
+              console.log('Sample lead properties:', Object.keys(allLeads[0]));
+              console.log('First lead data:', {
+                id: allLeads[0].id,
+                email: allLeads[0].email,
+                leadSource: allLeads[0].leadSource,
+                leadStatus: allLeads[0].leadStatus,
+                source: allLeads[0].source,
+                status: allLeads[0].status
+              });
+            }
             
             targetLeads = allLeads.filter(lead => {
               if (targeting.filters.source && targeting.filters.source !== "all_sources") {
