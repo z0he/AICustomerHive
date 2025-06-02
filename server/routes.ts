@@ -1514,6 +1514,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Mailgun configuration status endpoint
+  app.get("/api/email/mailgun-config", async (req: Request, res: Response) => {
+    try {
+      const { isMailgunConfigured } = await import('./lib/mailgun');
+      const configured = isMailgunConfigured();
+      
+      const domain = process.env.MAILGUN_DOMAIN;
+      const isSandbox = domain?.includes('sandbox');
+      
+      return res.json({
+        configured,
+        domain: domain || null,
+        isSandbox: isSandbox || false
+      });
+    } catch (error) {
+      console.error("Mailgun config check error:", error);
+      return res.status(500).json({ 
+        configured: false,
+        domain: null,
+        isSandbox: false,
+        error: "Failed to check Mailgun configuration"
+      });
+    }
+  });
+
   // ===== CAMPAIGN EMAIL ROUTES =====
   
   app.post("/api/email/send-campaign", async (req: Request, res: Response) => {

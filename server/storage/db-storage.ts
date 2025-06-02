@@ -1083,8 +1083,9 @@ export class DbStorage implements IStorage {
       const { sendEmail } = await import('../lib/mailgun');
       
       // Send the email
+      let mailgunResult;
       try {
-        const success = await sendEmail({
+        mailgunResult = await sendEmail({
           from,
           to,
           subject,
@@ -1092,8 +1093,8 @@ export class DbStorage implements IStorage {
           text: options.text || body.replace(/<[^>]*>?/gm, '') // Strip HTML if no text provided
         });
         
-        if (!success) {
-          throw new Error('Mailgun returned false - email not sent');
+        if (!mailgunResult.success) {
+          throw new Error(mailgunResult.error || 'Mailgun returned false - email not sent');
         }
       } catch (mailgunError) {
         // Handle specific Mailgun errors
@@ -1102,7 +1103,7 @@ export class DbStorage implements IStorage {
         throw new Error(`Mailgun delivery failed: ${errorMessage}`);
       }
       
-      // Log the email
+      // Log the email with Mailgun tracking ID
       const emailLog = await this.createEmailLog({
         from,
         to,
@@ -1113,7 +1114,11 @@ export class DbStorage implements IStorage {
         relatedEntityType: options.relatedEntityType,
         relatedEntityId: options.relatedEntityId,
         templateId: options.templateId,
-        metadata: options.metadata || {}
+        metadata: {
+          ...options.metadata,
+          mailgunId: mailgunResult.mailgunId,
+          deliveryStatus: 'sent_to_mailgun'
+        }
       });
       
       return emailLog;

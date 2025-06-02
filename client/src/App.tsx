@@ -28,6 +28,7 @@ import SystemNotifications from "@/pages/SystemNotifications";
 import FeedbackList from "@/pages/FeedbackList";
 import SimpleFeedback from "@/pages/SimpleFeedback";
 import ScheduledEmails from "@/pages/ScheduledEmails";
+import EmailDeliveryStatus from "@/pages/EmailDeliveryStatus";
 import Landing from "@/pages/Landing";
 import Features from "@/pages/Features";
 import Pricing from "@/pages/Pricing";
@@ -69,6 +70,7 @@ function Router() {
       <ProtectedRoute path="/customer-data" component={CustomerData} />
       <ProtectedRoute path="/email" component={EmailManagement} />
       <ProtectedRoute path="/scheduled-emails" component={ScheduledEmails} />
+      <ProtectedRoute path="/email-delivery" component={EmailDeliveryStatus} />
       <ProtectedRoute path="/calendar" component={CalendarManagement} />
       <ProtectedRoute path="/marketing-forms" component={MarketingForms} />
       

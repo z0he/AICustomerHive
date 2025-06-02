@@ -45,7 +45,7 @@ interface EmailParams {
 export async function sendEmail(params: EmailParams): Promise<{ success: boolean; mailgunId?: string; error?: string }> {
   if (!mg || !process.env.MAILGUN_DOMAIN) {
     console.error('Mailgun client not initialized. Check your API key and domain.');
-    return false;
+    return { success: false, error: 'Mailgun client not initialized' };
   }
 
   try {
