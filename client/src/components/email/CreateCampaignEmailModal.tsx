@@ -130,6 +130,7 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
       let requestBody = {
         campaignId: data.campaignId,
         subject: data.subject,
+        emailContent: data.emailContent, // Changed from htmlContent to emailContent
         htmlContent: data.emailContent,
         textContent: data.emailContent.replace(/<[^>]*>/g, ''), // Strip HTML for text version
         fromAddress: 'noreply@mail.aicrm.co.uk', // Using verified domain
