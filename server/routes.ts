@@ -1622,12 +1622,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const emailResults = [];
       for (const lead of targetLeads) {
         try {
-          // Personalize the email content
+          // Personalize the email content using the same system as test emails
           let personalizedContent = emailContent;
+          
+          // Contact tokens
+          personalizedContent = personalizedContent.replace(/\{\{contact\.firstName\}\}/g, lead.name?.split(' ')[0] || 'Valued Customer');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.lastName\}\}/g, lead.name?.split(' ').slice(1).join(' ') || '');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.email\}\}/g, lead.email || '');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.company\}\}/g, lead.company || 'Your Company');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.phone\}\}/g, lead.phone || '');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.jobTitle\}\}/g, lead.jobTitle || '');
+          
+          // Lead tokens
+          personalizedContent = personalizedContent.replace(/\{\{lead\.status\}\}/g, lead.leadStatus || '');
+          personalizedContent = personalizedContent.replace(/\{\{lead\.score\}\}/g, lead.score?.toString() || '');
+          personalizedContent = personalizedContent.replace(/\{\{lead\.source\}\}/g, lead.leadSource || '');
+          personalizedContent = personalizedContent.replace(/\{\{lead\.value\}\}/g, lead.value?.toString() || '');
+          personalizedContent = personalizedContent.replace(/\{\{lead\.priority\}\}/g, lead.priority || '');
+          personalizedContent = personalizedContent.replace(/\{\{lead\.assignedTo\}\}/g, lead.leadOwner || '');
+          
+          // Legacy simple tokens for backward compatibility
           personalizedContent = personalizedContent.replace(/\{\{firstName\}\}/g, lead.name?.split(' ')[0] || 'Valued Customer');
           personalizedContent = personalizedContent.replace(/\{\{lastName\}\}/g, lead.name?.split(' ').slice(1).join(' ') || '');
           personalizedContent = personalizedContent.replace(/\{\{company\}\}/g, lead.company || 'Your Company');
           personalizedContent = personalizedContent.replace(/\{\{email\}\}/g, lead.email || '');
+          
+          console.log('Personalized content sample:', personalizedContent.substring(0, 200) + '...');
           
           console.log('Sending campaign email to', lead.email, 'with Mailgun config:', !!mailgunConfig);
           
