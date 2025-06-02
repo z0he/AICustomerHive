@@ -27,6 +27,7 @@ import SettingsPage from "@/pages/Settings";
 import SystemNotifications from "@/pages/SystemNotifications";
 import FeedbackList from "@/pages/FeedbackList";
 import SimpleFeedback from "@/pages/SimpleFeedback";
+import ScheduledEmails from "@/pages/ScheduledEmails";
 import Landing from "@/pages/Landing";
 import Features from "@/pages/Features";
 import Pricing from "@/pages/Pricing";
@@ -67,6 +68,7 @@ function Router() {
       <ProtectedRoute path="/leads" component={LeadManagement} />
       <ProtectedRoute path="/customer-data" component={CustomerData} />
       <ProtectedRoute path="/email" component={EmailManagement} />
+      <ProtectedRoute path="/scheduled-emails" component={ScheduledEmails} />
       <ProtectedRoute path="/calendar" component={CalendarManagement} />
       <ProtectedRoute path="/marketing-forms" component={MarketingForms} />
       

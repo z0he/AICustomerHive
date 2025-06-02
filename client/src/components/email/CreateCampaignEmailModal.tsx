@@ -512,7 +512,7 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                     ) : (
                       <Send className="mr-2 h-4 w-4" />
                     )}
-                    Schedule Campaign Email
+                    {form.watch('sendType') === 'scheduled' ? 'Schedule Email' : 'Send Now'}
                   </Button>
                 </DialogFooter>
               </form>
