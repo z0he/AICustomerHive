@@ -47,7 +47,7 @@ const campaignEmailSchema = z.object({
   subject: z.string().min(1, "Subject is required"),
   emailContent: z.string().min(1, "Email content is required"),
   useTemplate: z.boolean().default(false),
-  testEmail: z.string().email().optional(),
+  testEmail: z.string().email().optional().or(z.literal('')),
   sendType: z.enum(['immediate', 'scheduled']).default('immediate'),
   scheduledDate: z.string().optional(),
   scheduledTime: z.string().optional(),
@@ -488,7 +488,7 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                   <Button type="button" variant="outline" onClick={onClose}>
                     Cancel
                   </Button>
-                  {form.watch('testEmail') && (
+                  {form.watch('testEmail') && form.watch('testEmail').trim() !== '' && (
                     <Button 
                       type="button" 
                       variant="outline"
