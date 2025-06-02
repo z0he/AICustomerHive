@@ -1092,6 +1092,7 @@ export class DbStorage implements IStorage {
           hasCustomMailgun: !!options.customMailgun,
           customMailgunKeys: options.customMailgun ? Object.keys(options.customMailgun) : []
         });
+        console.log('Email body being sent:', body.substring(0, 200) + '...');
         
         mailgunResult = await sendEmail({
           from,
