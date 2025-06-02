@@ -140,7 +140,7 @@ const Campaigns = () => {
   // Campaign mutation
   const createCampaignMutation = useMutation({
     mutationFn: async (campaignData: any) => {
-      return await apiRequest('POST', '/api/campaigns', campaignData);
+      return await apiRequest('/api/campaigns', 'POST', campaignData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: ['/api/campaigns']});
