@@ -11,6 +11,7 @@ import {
   messageVariants, type MessageVariant, type InsertMessageVariant,
   emailTemplates, type EmailTemplate, type InsertEmailTemplate,
   emailLogs, type EmailLog, type InsertEmailLog,
+  scheduledEmails, type ScheduledEmail, type InsertScheduledEmail,
   calendarEvents, type CalendarEvent, type InsertCalendarEvent,
   marketingForms, type MarketingForm, type InsertMarketingForm,
   formSubmissions, type FormSubmission, type InsertFormSubmission,

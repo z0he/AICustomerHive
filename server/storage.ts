@@ -9,6 +9,7 @@ import {
   calendarEvents, type CalendarEvent, type InsertCalendarEvent,
   emailTemplates, type EmailTemplate, type InsertEmailTemplate,
   emailLogs, type EmailLog, type InsertEmailLog,
+  scheduledEmails, type ScheduledEmail, type InsertScheduledEmail,
   marketingForms, type MarketingForm, type InsertMarketingForm,
   formSubmissions, type FormSubmission, type InsertFormSubmission,
   webVisitors, type WebVisitor, type InsertWebVisitor,
@@ -130,6 +131,14 @@ export interface IStorage {
   createEmailLog(log: InsertEmailLog): Promise<EmailLog>;
   sendEmail(from: string, to: string, subject: string, body: string, options?: any): Promise<EmailLog>;
   sendEmailWithTemplate(templateId: number, to: string, data: any, options?: any): Promise<EmailLog>;
+  
+  // Scheduled emails
+  getScheduledEmails(status?: string): Promise<ScheduledEmail[]>;
+  getScheduledEmail(id: number): Promise<ScheduledEmail | undefined>;
+  createScheduledEmail(scheduledEmail: InsertScheduledEmail): Promise<ScheduledEmail>;
+  updateScheduledEmail(id: number, data: Partial<ScheduledEmail>): Promise<ScheduledEmail>;
+  deleteScheduledEmail(id: number): Promise<boolean>;
+  getScheduledEmailsReady(): Promise<ScheduledEmail[]>;
   
   // Marketing Forms
   getMarketingForms(folder?: string): Promise<MarketingForm[]>;

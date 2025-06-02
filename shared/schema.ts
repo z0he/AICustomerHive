@@ -340,6 +340,44 @@ export const insertEmailLogSchema = createInsertSchema(emailLogs).pick({
 export type InsertEmailLog = z.infer<typeof insertEmailLogSchema>;
 export type EmailLog = typeof emailLogs.$inferSelect;
 
+// Scheduled Emails table
+export const scheduledEmails = pgTable("scheduled_emails", {
+  id: serial("id").primaryKey(),
+  campaignId: integer("campaign_id"),
+  templateId: integer("template_id"),
+  subject: text("subject").notNull(),
+  fromAddress: text("from_address").notNull(),
+  toAddress: text("to_address").notNull(),
+  htmlContent: text("html_content").notNull(),
+  textContent: text("text_content"),
+  scheduledFor: timestamp("scheduled_for").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  status: text("status").default("pending"), // pending, processing, sent, failed, cancelled
+  targetAudience: json("target_audience"), // filters and targeting info
+  recipientCount: integer("recipient_count").default(0),
+  sentAt: timestamp("sent_at"),
+  errorMessage: text("error_message"),
+  metadata: json("metadata"), // personalization data, retry attempts, etc.
+});
+
+export const insertScheduledEmailSchema = createInsertSchema(scheduledEmails).pick({
+  campaignId: true,
+  templateId: true,
+  subject: true,
+  fromAddress: true,
+  toAddress: true,
+  htmlContent: true,
+  textContent: true,
+  scheduledFor: true,
+  status: true,
+  targetAudience: true,
+  recipientCount: true,
+  metadata: true,
+});
+
+export type InsertScheduledEmail = z.infer<typeof insertScheduledEmailSchema>;
+export type ScheduledEmail = typeof scheduledEmails.$inferSelect;
+
 // Marketing Forms table
 export const marketingForms = pgTable("marketing_forms", {
   id: serial("id").primaryKey(),
