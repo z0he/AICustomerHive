@@ -321,6 +321,9 @@ const SettingsPage: React.FC = () => {
       };
       localStorage.setItem('mailgun-config', JSON.stringify(mailgunConfig));
       
+      // Debug: verify it was saved
+      console.log('Mailgun config saved to localStorage:', localStorage.getItem('mailgun-config'));
+      
       toast({
         title: 'API Key Configured',
         description: 'Mailgun API key and domain have been successfully configured.',
