@@ -1569,11 +1569,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get leads based on campaign targeting
       let targetLeads = [];
       try {
+        console.log('Campaign targeting check:', {
+          hasTargetAudience: !!campaign.targetAudience,
+          targetAudience: campaign.targetAudience
+        });
+        
         if (campaign.targetAudience && campaign.targetAudience !== "All leads") {
           const targeting = JSON.parse(campaign.targetAudience);
+          console.log('Parsed targeting:', targeting);
+          
           if (targeting.type === "Leads" && targeting.filters) {
             // Filter leads based on campaign criteria
             const allLeads = await storage.getLeads();
+            console.log('Total leads in database:', allLeads.length);
+            
             targetLeads = allLeads.filter(lead => {
               if (targeting.filters.source && targeting.filters.source !== "all_sources") {
                 if (lead.source !== targeting.filters.source) return false;
@@ -1591,8 +1600,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       } catch (e) {
         // If targeting parsing fails, get all leads
+        console.log('Targeting parsing failed, getting all leads:', e.message);
         targetLeads = await storage.getLeads();
       }
+      
+      console.log('Final target leads count:', targetLeads.length);
+      console.log('Target leads emails:', targetLeads.map(l => l.email));
       
       // Send emails to all target leads
       const emailResults = [];
