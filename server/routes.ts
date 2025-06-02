@@ -1545,6 +1545,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { campaignId, subject, emailContent, testEmail, mailgunConfig } = req.body;
       
+      console.log('Campaign email request received:', {
+        campaignId,
+        subject,
+        hasEmailContent: !!emailContent,
+        hasMailgunConfig: !!mailgunConfig,
+        mailgunConfigKeys: mailgunConfig ? Object.keys(mailgunConfig) : []
+      });
+      
       if (!campaignId || !subject || !emailContent) {
         return res.status(400).json({ 
           message: "Missing required fields. Please provide campaignId, subject, and emailContent."
