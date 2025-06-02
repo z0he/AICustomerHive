@@ -1543,7 +1543,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/email/send-campaign", async (req: Request, res: Response) => {
     try {
-      const { campaignId, subject, emailContent, testEmail } = req.body;
+      const { campaignId, subject, emailContent, testEmail, mailgunConfig } = req.body;
       
       if (!campaignId || !subject || !emailContent) {
         return res.status(400).json({ 
@@ -1604,7 +1604,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             {
               campaignId: campaignId,
               relatedEntityType: 'lead',
-              relatedEntityId: lead.id
+              relatedEntityId: lead.id,
+              customMailgun: mailgunConfig
             }
           );
           

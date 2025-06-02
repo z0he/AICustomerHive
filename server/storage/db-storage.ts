@@ -1091,7 +1091,7 @@ export class DbStorage implements IStorage {
           subject,
           html: body,
           text: options.text || body.replace(/<[^>]*>?/gm, '') // Strip HTML if no text provided
-        });
+        }, options.customMailgun);
         
         if (!mailgunResult.success) {
           throw new Error(mailgunResult.error || 'Mailgun returned false - email not sent');

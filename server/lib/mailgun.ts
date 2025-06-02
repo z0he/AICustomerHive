@@ -40,10 +40,19 @@ interface EmailParams {
 }
 
 /**
- * Send an email using Mailgun
+ * Send an email using Mailgun with custom credentials if provided
  */
-export async function sendEmail(params: EmailParams): Promise<{ success: boolean; mailgunId?: string; error?: string }> {
-  if (!mg || !process.env.MAILGUN_DOMAIN) {
+export async function sendEmail(params: EmailParams, customCredentials?: { apiKey: string; domain: string }): Promise<{ success: boolean; mailgunId?: string; error?: string }> {
+  let mailgunClient = mg;
+  let domain = process.env.MAILGUN_DOMAIN;
+
+  // Use custom credentials if provided (for user-specific configs)
+  if (customCredentials) {
+    const customMailgun = new Mailgun(formData);
+    mailgunClient = customMailgun.client({ username: 'api', key: customCredentials.apiKey });
+    domain = customCredentials.domain;
+    console.log('Using custom Mailgun credentials for domain:', customCredentials.domain);
+  } else if (!mg || !process.env.MAILGUN_DOMAIN) {
     console.error('Mailgun client not initialized. Check your API key and domain.');
     return { success: false, error: 'Mailgun client not initialized' };
   }
@@ -55,7 +64,7 @@ export async function sendEmail(params: EmailParams): Promise<{ success: boolean
       text: params.text || params.html || ' ' // Use empty space as fallback if neither text nor html provided
     };
     
-    const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, messageParams);
+    const result = await mailgunClient.messages.create(domain, messageParams);
     console.log('Email sent successfully:', result);
     
     // Return both success status and Mailgun ID for tracking
