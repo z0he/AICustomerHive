@@ -1302,6 +1302,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // ===== SCHEDULED EMAILS ROUTES =====
+  
+  app.get("/api/email/scheduled", async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as string;
+      const scheduledEmails = await storage.getScheduledEmails(status);
+      return res.json(scheduledEmails);
+    } catch (error) {
+      console.error("Get scheduled emails error:", error);
+      return res.status(500).json({ message: "Failed to fetch scheduled emails" });
+    }
+  });
+  
+  app.get("/api/email/scheduled/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid scheduled email ID" });
+      }
+      
+      const scheduledEmail = await storage.getScheduledEmail(id);
+      if (!scheduledEmail) {
+        return res.status(404).json({ message: "Scheduled email not found" });
+      }
+      
+      return res.json(scheduledEmail);
+    } catch (error) {
+      console.error("Get scheduled email error:", error);
+      return res.status(500).json({ message: "Failed to fetch scheduled email" });
+    }
+  });
+  
+  app.post("/api/email/schedule", async (req: Request, res: Response) => {
+    try {
+      const { templateId, campaignId, scheduledFor, targetAudience, subject, htmlContent, textContent, fromAddress } = req.body;
+      
+      if (!scheduledFor || !targetAudience || !subject || !htmlContent || !fromAddress) {
+        return res.status(400).json({ 
+          message: "Missing required fields: scheduledFor, targetAudience, subject, htmlContent, fromAddress" 
+        });
+      }
+      
+      const scheduledDate = new Date(scheduledFor);
+      if (scheduledDate <= new Date()) {
+        return res.status(400).json({ message: "Scheduled time must be in the future" });
+      }
+      
+      const scheduledEmail = await storage.createScheduledEmail({
+        templateId,
+        campaignId,
+        scheduledFor: scheduledDate,
+        targetAudience,
+        subject,
+        htmlContent,
+        textContent,
+        fromAddress,
+        status: 'pending',
+        createdAt: new Date(),
+        metadata: {
+          createdBy: 'user', // In a real app, this would be the authenticated user ID
+          createdAt: new Date().toISOString()
+        }
+      });
+      
+      return res.status(201).json(scheduledEmail);
+    } catch (error) {
+      console.error("Schedule email error:", error);
+      return res.status(500).json({ message: "Failed to schedule email" });
+    }
+  });
+  
+  app.patch("/api/email/scheduled/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid scheduled email ID" });
+      }
+      
+      const updatedEmail = await storage.updateScheduledEmail(id, req.body);
+      return res.json(updatedEmail);
+    } catch (error) {
+      console.error("Update scheduled email error:", error);
+      return res.status(500).json({ message: "Failed to update scheduled email" });
+    }
+  });
+  
+  app.delete("/api/email/scheduled/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid scheduled email ID" });
+      }
+      
+      // Update status to cancelled instead of deleting
+      await storage.updateScheduledEmail(id, { status: 'cancelled' });
+      return res.json({ success: true });
+    } catch (error) {
+      console.error("Cancel scheduled email error:", error);
+      return res.status(500).json({ message: "Failed to cancel scheduled email" });
+    }
+  });
+  
+  app.post("/api/email/scheduled/:id/send-now", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid scheduled email ID" });
+      }
+      
+      // Update the scheduled time to now and let the scheduler pick it up
+      await storage.updateScheduledEmail(id, { 
+        scheduledFor: new Date(),
+        status: 'pending'
+      });
+      
+      return res.json({ success: true, message: "Email will be sent shortly" });
+    } catch (error) {
+      console.error("Send now error:", error);
+      return res.status(500).json({ message: "Failed to trigger immediate send" });
+    }
+  });
+
   // ===== EMAIL SENDING & LOGS ROUTES =====
   
   app.get("/api/email/logs", async (req: Request, res: Response) => {

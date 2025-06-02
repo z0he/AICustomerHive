@@ -1241,6 +1241,95 @@ export class DbStorage implements IStorage {
     }
   }
 
+  // ----- Scheduled Email methods -----
+  
+  async getScheduledEmails(status?: string): Promise<ScheduledEmail[]> {
+    try {
+      let query = db.select().from(scheduledEmails);
+      
+      if (status) {
+        query = query.where(eq(scheduledEmails.status, status));
+      }
+      
+      return await query.orderBy(desc(scheduledEmails.createdAt));
+    } catch (error) {
+      console.error("Failed to get scheduled emails:", error);
+      return [];
+    }
+  }
+  
+  async getScheduledEmail(id: number): Promise<ScheduledEmail | undefined> {
+    try {
+      const result = await db.select().from(scheduledEmails).where(eq(scheduledEmails.id, id));
+      return result[0];
+    } catch (error) {
+      console.error("Failed to get scheduled email:", error);
+      return undefined;
+    }
+  }
+  
+  async createScheduledEmail(scheduledEmail: InsertScheduledEmail): Promise<ScheduledEmail> {
+    try {
+      const emailData = {
+        ...scheduledEmail,
+        createdAt: new Date(),
+        status: scheduledEmail.status || 'pending'
+      };
+      
+      const result = await db.insert(scheduledEmails).values(emailData as any).returning();
+      return result[0];
+    } catch (error) {
+      console.error("Failed to create scheduled email:", error);
+      throw new Error("Failed to create scheduled email");
+    }
+  }
+  
+  async updateScheduledEmail(id: number, data: Partial<ScheduledEmail>): Promise<ScheduledEmail> {
+    try {
+      const result = await db.update(scheduledEmails)
+        .set(data)
+        .where(eq(scheduledEmails.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error("Scheduled email not found");
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error("Failed to update scheduled email:", error);
+      throw new Error("Failed to update scheduled email");
+    }
+  }
+  
+  async deleteScheduledEmail(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(scheduledEmails).where(eq(scheduledEmails.id, id));
+      return true;
+    } catch (error) {
+      console.error("Failed to delete scheduled email:", error);
+      return false;
+    }
+  }
+  
+  async getScheduledEmailsReady(): Promise<ScheduledEmail[]> {
+    try {
+      const now = new Date();
+      return await db.select()
+        .from(scheduledEmails)
+        .where(
+          and(
+            eq(scheduledEmails.status, 'pending'),
+            lte(scheduledEmails.scheduledFor, now)
+          )
+        )
+        .orderBy(asc(scheduledEmails.scheduledFor));
+    } catch (error) {
+      console.error("Failed to get ready scheduled emails:", error);
+      return [];
+    }
+  }
+
   // ----- Calendar/Events methods -----
   
   async getCalendarEvents(startDate?: Date, endDate?: Date): Promise<CalendarEvent[]> {
