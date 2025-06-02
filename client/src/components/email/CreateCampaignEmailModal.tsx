@@ -131,12 +131,17 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
       const mailgunConfig = localStorage.getItem('mailgun-config');
       let parsedMailgunConfig = null;
       
+      console.log('Campaign email - checking localStorage:', mailgunConfig);
+      
       if (mailgunConfig) {
         try {
           parsedMailgunConfig = JSON.parse(mailgunConfig);
+          console.log('Campaign email - parsed Mailgun config:', parsedMailgunConfig);
         } catch (e) {
           console.warn('Invalid Mailgun config in localStorage');
         }
+      } else {
+        console.warn('No Mailgun config found in localStorage for campaign email');
       }
       
       let requestBody = {
