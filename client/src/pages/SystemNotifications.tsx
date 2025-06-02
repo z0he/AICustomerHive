@@ -58,7 +58,7 @@ const SystemNotifications = () => {
     queryKey: ['/api/admin/notifications'],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', '/api/admin/notifications');
+        const response = await apiRequest('/api/admin/notifications', 'GET');
         const data = await response.json();
         console.log("API response received:", data);
         if (Array.isArray(data)) {
@@ -79,7 +79,7 @@ const SystemNotifications = () => {
     queryKey: ['/api/admin/notifications/count'],
     queryFn: async () => {
       try {
-        const response = await apiRequest('GET', '/api/admin/notifications/count');
+        const response = await apiRequest('/api/admin/notifications/count', 'GET');
         const data = await response.json();
         return data as { total: number; unread: number };
       } catch (error) {
