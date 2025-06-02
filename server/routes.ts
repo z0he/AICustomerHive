@@ -1605,6 +1605,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           personalizedContent = personalizedContent.replace(/\{\{company\}\}/g, lead.company || 'Your Company');
           personalizedContent = personalizedContent.replace(/\{\{email\}\}/g, lead.email || '');
           
+          console.log('Sending campaign email to', lead.email, 'with Mailgun config:', !!mailgunConfig);
+          
           const emailLog = await storage.sendEmail(
             'noreply@mail.aicrm.co.uk',
             lead.email,
