@@ -1550,7 +1550,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subject,
         hasEmailContent: !!emailContent,
         hasMailgunConfig: !!mailgunConfig,
-        mailgunConfigKeys: mailgunConfig ? Object.keys(mailgunConfig) : []
+        mailgunConfigKeys: mailgunConfig ? Object.keys(mailgunConfig) : [],
+        mailgunConfigData: mailgunConfig
       });
       
       if (!campaignId || !subject || !emailContent) {
