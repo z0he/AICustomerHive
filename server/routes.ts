@@ -1585,10 +1585,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             targetLeads = allLeads.filter(lead => {
               if (targeting.filters.source && targeting.filters.source !== "all_sources") {
-                if (lead.source !== targeting.filters.source) return false;
+                if (lead.leadSource !== targeting.filters.source) return false;
               }
               if (targeting.filters.status && targeting.filters.status !== "all_statuses") {
-                if (lead.status !== targeting.filters.status) return false;
+                if (lead.leadStatus !== targeting.filters.status) return false;
               }
               return true;
             });
