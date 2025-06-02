@@ -1622,6 +1622,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const emailResults = [];
       for (const lead of targetLeads) {
         try {
+          console.log('Lead data for personalization:', {
+            name: lead.name,
+            email: lead.email,
+            company: lead.company,
+            firstName: lead.name?.split(' ')[0],
+            lastName: lead.name?.split(' ').slice(1).join(' ')
+          });
+          console.log('Original email content:', emailContent.substring(0, 200) + '...');
+          
           // Personalize the email content using the same system as test emails
           let personalizedContent = emailContent;
           
