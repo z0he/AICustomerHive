@@ -1083,16 +1083,23 @@ export class DbStorage implements IStorage {
       const { sendEmail } = await import('../lib/mailgun');
       
       // Send the email
-      const success = await sendEmail({
-        from,
-        to,
-        subject,
-        html: body,
-        text: options.text || body.replace(/<[^>]*>?/gm, '') // Strip HTML if no text provided
-      });
-      
-      if (!success) {
-        throw new Error('Failed to send email through Mailgun');
+      try {
+        const success = await sendEmail({
+          from,
+          to,
+          subject,
+          html: body,
+          text: options.text || body.replace(/<[^>]*>?/gm, '') // Strip HTML if no text provided
+        });
+        
+        if (!success) {
+          throw new Error('Mailgun returned false - email not sent');
+        }
+      } catch (mailgunError) {
+        // Handle specific Mailgun errors
+        const errorMessage = mailgunError instanceof Error ? mailgunError.message : String(mailgunError);
+        console.error("Mailgun error:", errorMessage);
+        throw new Error(`Mailgun delivery failed: ${errorMessage}`);
       }
       
       // Log the email

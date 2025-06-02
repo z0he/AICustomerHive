@@ -42,7 +42,7 @@ interface EmailParams {
 /**
  * Send an email using Mailgun
  */
-export async function sendEmail(params: EmailParams): Promise<boolean> {
+export async function sendEmail(params: EmailParams): Promise<{ success: boolean; mailgunId?: string; error?: string }> {
   if (!mg || !process.env.MAILGUN_DOMAIN) {
     console.error('Mailgun client not initialized. Check your API key and domain.');
     return false;
@@ -57,7 +57,9 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     
     const result = await mg.messages.create(process.env.MAILGUN_DOMAIN, messageParams);
     console.log('Email sent successfully:', result);
-    return true;
+    
+    // Return both success status and Mailgun ID for tracking
+    return { success: true, mailgunId: result.id };
   } catch (error) {
     console.error('Mailgun email error:', error);
     
@@ -71,7 +73,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
       throw new Error('Mailgun sandbox domains only allow sending to verified recipients. Please authorize the recipient email in your Mailgun console or upgrade to a paid account.');
     }
     
-    return false;
+    return { success: false, error: error.message };
   }
 }
 
