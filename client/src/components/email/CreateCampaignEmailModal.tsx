@@ -48,6 +48,17 @@ const campaignEmailSchema = z.object({
   emailContent: z.string().min(1, "Email content is required"),
   useTemplate: z.boolean().default(false),
   testEmail: z.string().email().optional(),
+  sendType: z.enum(['immediate', 'scheduled']).default('immediate'),
+  scheduledDate: z.string().optional(),
+  scheduledTime: z.string().optional(),
+}).refine((data) => {
+  if (data.sendType === 'scheduled') {
+    return data.scheduledDate && data.scheduledTime;
+  }
+  return true;
+}, {
+  message: "Date and time are required when scheduling",
+  path: ["scheduledDate"],
 });
 
 type CampaignEmailFormData = z.infer<typeof campaignEmailSchema>;
@@ -75,6 +86,9 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
       emailContent: '',
       useTemplate: false,
       testEmail: '',
+      sendType: 'immediate',
+      scheduledDate: '',
+      scheduledTime: '',
     }
   });
 
@@ -110,27 +124,51 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
   // Create campaign email mutation
   const createCampaignEmailMutation = useMutation({
     mutationFn: async (data: CampaignEmailFormData) => {
-      const response = await fetch('/api/email/send-campaign', {
+      // Determine the API endpoint based on send type
+      const endpoint = data.sendType === 'scheduled' ? '/api/email/schedule' : '/api/email/send-campaign';
+      
+      let requestBody = {
+        campaignId: data.campaignId,
+        subject: data.subject,
+        htmlContent: data.emailContent,
+        textContent: data.emailContent.replace(/<[^>]*>/g, ''), // Strip HTML for text version
+        fromAddress: 'noreply@mail.aicrm.co.uk', // Using verified domain
+        targetAudience: campaign?.targetAudience || 'Leads',
+        templateId: data.useTemplate ? data.templateId : undefined,
+      };
+
+      // Add scheduling fields if scheduling
+      if (data.sendType === 'scheduled' && data.scheduledDate && data.scheduledTime) {
+        const scheduledDateTime = new Date(`${data.scheduledDate}T${data.scheduledTime}`);
+        requestBody.scheduledFor = scheduledDateTime.toISOString();
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(data),
+        body: JSON.stringify(requestBody),
       });
       
       if (!response.ok) {
-        throw new Error('Failed to create campaign email');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create campaign email');
       }
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      const isScheduled = variables.sendType === 'scheduled';
       toast({
-        title: "Campaign email created",
-        description: "Your email has been scheduled successfully",
+        title: isScheduled ? "Email scheduled successfully" : "Campaign email sent",
+        description: isScheduled 
+          ? `Your email will be sent on ${variables.scheduledDate} at ${variables.scheduledTime}`
+          : "Your email has been sent to the target audience",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/campaigns'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/email/scheduled'] });
       onClose();
       form.reset();
     },
@@ -359,6 +397,71 @@ const CreateCampaignEmailModal: React.FC<CreateCampaignEmailModalProps> = ({
                     </FormItem>
                   )}
                 />
+
+                {/* Send Type Selection */}
+                <FormField
+                  control={form.control}
+                  name="sendType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Send Options</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose when to send" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="immediate">Send Immediately</SelectItem>
+                          <SelectItem value="scheduled">Schedule for Later</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Choose to send immediately or schedule for a specific date and time
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Scheduling fields - only show when scheduled is selected */}
+                {form.watch('sendType') === 'scheduled' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="scheduledDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Scheduled Date</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="date"
+                              min={new Date().toISOString().split('T')[0]}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="scheduledTime"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Scheduled Time</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="time"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
 
                 <FormField
                   control={form.control}
