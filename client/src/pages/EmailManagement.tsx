@@ -159,7 +159,14 @@ const EmailManagement: React.FC = () => {
       const response = await apiRequest('/api/config/mailgun', 'POST', data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Save Mailgun config to localStorage for campaign emails
+      const mailgunConfig = {
+        apiKey: variables.apiKey,
+        domain: variables.domain
+      };
+      localStorage.setItem('mailgun-config', JSON.stringify(mailgunConfig));
+      
       toast({
         title: 'API Key Configured',
         description: 'Mailgun API key and domain have been successfully configured.',
