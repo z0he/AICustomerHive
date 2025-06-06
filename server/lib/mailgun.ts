@@ -61,7 +61,10 @@ export async function sendEmail(params: EmailParams, customCredentials?: { apiKe
     // Ensure text field is always provided (Mailgun requires it)
     const messageParams = {
       ...params,
-      text: params.text || params.html || ' ' // Use empty space as fallback if neither text nor html provided
+      text: params.text || params.html || ' ', // Use empty space as fallback if neither text nor html provided
+      'o:tracking': 'no', // Disable open tracking
+      'o:tracking-clicks': 'no', // Disable click tracking
+      'o:tracking-opens': 'no' // Disable open tracking (alternative syntax)
     };
     
     const result = await mailgunClient.messages.create(domain, messageParams);
