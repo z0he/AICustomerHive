@@ -13,6 +13,8 @@ interface PersonalizationData {
     state?: string;
     country?: string;
     jobTitle?: string;
+    industry?: string;
+    createdAt?: string;
   };
   lead?: {
     status?: string;
@@ -112,7 +114,9 @@ export class PersonalizationEngine {
           email: lead.email ?? '',
           company: lead.company ?? '',
           phone: lead.phone ?? '',
-          jobTitle: lead.jobTitle ?? ''
+          jobTitle: lead.jobTitle ?? '',
+          industry: lead.industry ?? '',
+          createdAt: lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : ''
         };
         data.lead = {
           status: lead.leadStatus || 'new',
@@ -137,7 +141,9 @@ export class PersonalizationEngine {
             email: customer.email,
             company: customer.company || '',
             phone: customer.phone || '',
-            jobTitle: customer.jobTitle || ''
+            jobTitle: customer.jobTitle || '',
+            industry: customer.contactIndustry || '',
+            createdAt: customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : ''
           };
         }
       }
@@ -215,6 +221,8 @@ export class PersonalizationEngine {
       { token: 'contact.company', label: 'Company', category: 'Contact' },
       { token: 'contact.phone', label: 'Phone Number', category: 'Contact' },
       { token: 'contact.jobTitle', label: 'Job Title', category: 'Contact' },
+      { token: 'contact.industry', label: 'Industry', category: 'Contact' },
+      { token: 'contact.createdAt', label: 'Created Date', category: 'Contact' },
       
       // Lead tokens
       { token: 'lead.status', label: 'Lead Status', category: 'Lead' },
@@ -246,7 +254,9 @@ export class PersonalizationEngine {
           email: 'john@example.com',
           company: 'Acme Corp',
           phone: '(555) 123-4567',
-          jobTitle: 'Marketing Manager'
+          jobTitle: 'Marketing Manager',
+          industry: 'Technology',
+          createdAt: new Date().toLocaleDateString()
         },
         lead: {
           status: 'Qualified',

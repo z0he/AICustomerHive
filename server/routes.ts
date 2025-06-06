@@ -1641,6 +1641,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           personalizedContent = personalizedContent.replace(/\{\{contact\.company\}\}/g, lead.company || 'Your Company');
           personalizedContent = personalizedContent.replace(/\{\{contact\.phone\}\}/g, lead.phone || '');
           personalizedContent = personalizedContent.replace(/\{\{contact\.jobTitle\}\}/g, lead.jobTitle || '');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.industry\}\}/g, lead.industry || '');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.createdAt\}\}/g, lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : '');
           
           // Lead tokens
           personalizedContent = personalizedContent.replace(/\{\{lead\.status\}\}/g, lead.leadStatus || '');
