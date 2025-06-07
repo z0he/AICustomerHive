@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { insertLeadSchema } from "@shared/schema";
+import { LEAD_SOURCES, LEAD_STATUSES, CONTACT_TYPES, LIFECYCLE_STAGES, LEGAL_BASES, COUNTRIES, INDUSTRY_SUGGESTIONS } from "@shared/constants";
 
 // Extend the insert schema with additional validations
 const leadFormSchema = insertLeadSchema.extend({
@@ -84,77 +85,6 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
     
     onSubmit(completeData);
   };
-
-  const industrySuggestions = [
-    "Technology",
-    "Finance",
-    "Healthcare",
-    "Education",
-    "Retail",
-    "Manufacturing",
-    "Consulting",
-    "Entertainment",
-    "Real Estate",
-    "Transportation",
-    "Agriculture",
-    "Energy",
-    "Hospitality",
-    "Government",
-    "Non-profit",
-  ];
-  
-  const leadSources = [
-    { id: "website", name: "Website" },
-    { id: "referral", name: "Referral" },
-    { id: "advertisement", name: "Advertisement" },
-    { id: "social_media", name: "Social Media" },
-    { id: "email", name: "Email" },
-    { id: "event", name: "Event" },
-    { id: "partner", name: "Partner" },
-    { id: "other", name: "Other" },
-  ];
-  
-  const leadStatuses = [
-    { id: "new", name: "New" },
-    { id: "contacted", name: "Contacted" },
-    { id: "qualified", name: "Qualified" },
-    { id: "proposal", name: "Proposal" },
-    { id: "negotiation", name: "Negotiation" },
-    { id: "won", name: "Won" },
-    { id: "lost", name: "Lost" },
-  ];
-  
-  const contactTypes = [
-    { id: "business", name: "Business" },
-    { id: "individual", name: "Individual" },
-  ];
-  
-  const lifecycleStages = [
-    { id: "lead", name: "Lead" },
-    { id: "customer", name: "Customer" },
-    { id: "opportunity", name: "Opportunity" },
-    { id: "subscriber", name: "Subscriber" },
-  ];
-  
-  const legalBases = [
-    { id: "consent", name: "Consent" },
-    { id: "contract", name: "Contract" },
-    { id: "legitimate_interest", name: "Legitimate Interest" },
-    { id: "legal_obligation", name: "Legal Obligation" },
-  ];
-  
-  const countries = [
-    { id: "us", name: "United States" },
-    { id: "ca", name: "Canada" },
-    { id: "uk", name: "United Kingdom" },
-    { id: "au", name: "Australia" },
-    { id: "fr", name: "France" },
-    { id: "de", name: "Germany" },
-    { id: "jp", name: "Japan" },
-    { id: "cn", name: "China" },
-    { id: "in", name: "India" },
-    { id: "br", name: "Brazil" },
-  ];
 
   return (
     <Form {...form}>

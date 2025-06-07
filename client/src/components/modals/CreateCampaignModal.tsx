@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
+import { LEAD_SOURCES, LEAD_STATUSES } from "@shared/constants";
 
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
@@ -617,15 +618,11 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="all_sources">All sources</SelectItem>
-                            <SelectItem value="website">Website</SelectItem>
-                            <SelectItem value="referral">Referral</SelectItem>
-                            <SelectItem value="advertisement">Advertisement</SelectItem>
-                            <SelectItem value="social_media">Social Media</SelectItem>
-                            <SelectItem value="email">Email</SelectItem>
-                            <SelectItem value="event">Event</SelectItem>
-                            <SelectItem value="partner">Partner</SelectItem>
-                            <SelectItem value="import">Import</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            {LEAD_SOURCES.map((source) => (
+                              <SelectItem key={source.id} value={source.id}>
+                                {source.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -650,13 +647,11 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="all_statuses">All statuses</SelectItem>
-                            <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="contacted">Contacted</SelectItem>
-                            <SelectItem value="qualified">Qualified</SelectItem>
-                            <SelectItem value="proposal">Proposal</SelectItem>
-                            <SelectItem value="negotiation">Negotiation</SelectItem>
-                            <SelectItem value="won">Won</SelectItem>
-                            <SelectItem value="lost">Lost</SelectItem>
+                            {LEAD_STATUSES.map((status) => (
+                              <SelectItem key={status.id} value={status.id}>
+                                {status.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
