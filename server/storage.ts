@@ -16,8 +16,7 @@ import {
   pageViews, type PageView, type InsertPageView,
   trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation,
   chatConversations, type ChatConversation, type InsertChatConversation,
-  chatMessages, type ChatMessage, type InsertChatMessage,
-  userConfigurations, type UserConfiguration, type InsertUserConfiguration
+  chatMessages, type ChatMessage, type InsertChatMessage
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
 
@@ -29,12 +28,6 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
-  // User Configuration methods
-  getUserConfiguration(userId: number, configType: string): Promise<UserConfiguration | undefined>;
-  createUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration>;
-  updateUserConfiguration(userId: number, configType: string, configData: any): Promise<UserConfiguration>;
-  deleteUserConfiguration(userId: number, configType: string): Promise<boolean>;
   
   // Campaign methods
   getCampaigns(period?: string): Promise<Campaign[]>;
@@ -200,12 +193,6 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage & { createdAt: Date }): Promise<ChatMessage>;
   updateChatMessage(id: number, messageData: Partial<ChatMessage>): Promise<ChatMessage>;
   deleteChatMessage(id: number): Promise<void>;
-  
-  // User Configuration methods
-  getUserConfiguration(userId: number): Promise<UserConfiguration | undefined>;
-  setUserConfiguration(userId: number, config: Partial<Omit<UserConfiguration, 'id' | 'userId'>>): Promise<UserConfiguration>;
-  updateUserConfiguration(userId: number, config: Partial<Omit<UserConfiguration, 'id' | 'userId'>>): Promise<UserConfiguration>;
-  deleteUserConfiguration(userId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -561,7 +548,6 @@ export class MemStorage implements IStorage {
   private trackingInstallations: Map<number, TrackingInstallation>;
   private chatConversations: Map<number, ChatConversation>;
   private chatMessages: Map<number, ChatMessage>;
-  private userConfigurations: Map<number, UserConfiguration>;
   
   private userCurrentId: number;
   private campaignCurrentId: number;
@@ -598,7 +584,6 @@ export class MemStorage implements IStorage {
     this.trackingInstallations = new Map();
     this.chatConversations = new Map();
     this.chatMessages = new Map();
-    this.userConfigurations = new Map();
     
     this.userCurrentId = 1;
     this.campaignCurrentId = 1;
@@ -2123,49 +2108,6 @@ export class MemStorage implements IStorage {
     }
     
     this.chatMessages.delete(id);
-  }
-
-  // ----- User Configuration methods -----
-  async getUserConfiguration(userId: number): Promise<UserConfiguration | undefined> {
-    return this.userConfigurations.get(userId);
-  }
-
-  async setUserConfiguration(userId: number, config: Partial<Omit<UserConfiguration, 'id' | 'userId'>>): Promise<UserConfiguration> {
-    const existingConfig = this.userConfigurations.get(userId);
-    
-    const newConfig: UserConfiguration = {
-      id: existingConfig?.id || Date.now(),
-      userId,
-      openaiApiKey: config.openaiApiKey || null,
-      mailgunApiKey: config.mailgunApiKey || null,
-      mailgunDomain: config.mailgunDomain || null,
-      createdAt: existingConfig?.createdAt || new Date(),
-      updatedAt: new Date()
-    };
-    
-    this.userConfigurations.set(userId, newConfig);
-    return newConfig;
-  }
-
-  async updateUserConfiguration(userId: number, config: Partial<Omit<UserConfiguration, 'id' | 'userId'>>): Promise<UserConfiguration> {
-    const existingConfig = this.userConfigurations.get(userId);
-    
-    if (!existingConfig) {
-      return this.setUserConfiguration(userId, config);
-    }
-    
-    const updatedConfig: UserConfiguration = {
-      ...existingConfig,
-      ...config,
-      updatedAt: new Date()
-    };
-    
-    this.userConfigurations.set(userId, updatedConfig);
-    return updatedConfig;
-  }
-
-  async deleteUserConfiguration(userId: number): Promise<boolean> {
-    return this.userConfigurations.delete(userId);
   }
 }
 

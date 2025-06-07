@@ -424,18 +424,23 @@ const Dashboard = () => {
   
   // Check if OpenAI API key is configured
   useEffect(() => {
-    // Check user's OpenAI configuration status
+    // Make a simple test request to check if OpenAI integration is working
     const checkOpenAIConfig = async () => {
       try {
-        const response = await fetch('/api/user/config/openai/status', {
+        const response = await fetch('/api/voice/interpret', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ transcript: "test configuration" }),
           credentials: 'include'
         });
         
         if (response.ok) {
           const data = await response.json();
-          setHasOpenAIKey(data.configured);
-        } else {
-          setHasOpenAIKey(false);
+          // If the response contains "intent" and not "unknown", it's likely using OpenAI
+          // or at least the interpretation is working properly
+          setHasOpenAIKey(data.intent && data.intent !== "unknown");
         }
       } catch (error) {
         console.error("Error checking OpenAI configuration:", error);

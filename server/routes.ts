@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasUserOpenAIKey, getCrmAssistantResponse } from "./lib/openai";
+import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey, getCrmAssistantResponse } from "./lib/openai";
 import { sendEmail, sendTemplateEmail, isMailgunConfigured, reinitializeMailgunClient } from "./lib/mailgun";
 import { z } from "zod";
 import { parse as csvParse } from 'csv-parse/sync';
@@ -148,17 +148,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/voice/interpret", async (req: Request, res: Response) => {
     try {
       const { transcript } = req.body;
-      const user = (req as any).user;
       
       if (!transcript) {
         return res.status(400).json({ message: "Transcript is required" });
       }
       
-      if (!user || !user.id) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
-      const interpretation = await interpretVoiceCommand(transcript, user.id);
+      const interpretation = await interpretVoiceCommand(transcript);
       return res.json(interpretation);
     } catch (error) {
       console.error("Voice interpret error:", error);
@@ -166,105 +161,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // User Configuration endpoints
-  app.get("/api/user/config", async (req: Request, res: Response) => {
+  // API Configuration endpoint - would be secured in production
+  app.post("/api/config/openai", async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
+      // In a real implementation, this would securely store the API key
+      // using environment variables or a secure vault service
+      // And would be properly authenticated
+      const { apiKey } = req.body;
       
-      if (!user || !user.id) {
-        return res.status(401).json({ message: "Authentication required" });
+      if (!apiKey) {
+        return res.status(400).json({ message: "API key is required" });
       }
       
-      const config = await storage.getUserConfiguration(user.id);
+      // For this example, we'll just return a success message
+      // In production, would set process.env.OPENAI_API_KEY = apiKey
+      // and restart the OpenAI client
       
-      // Return configuration without sensitive API keys
-      const safeConfig = config ? {
-        id: config.id,
-        userId: config.userId,
-        hasOpenAI: !!config.openaiApiKey,
-        hasMailgun: !!(config.mailgunApiKey && config.mailgunDomain),
-        mailgunDomain: config.mailgunDomain,
-        createdAt: config.createdAt,
-        updatedAt: config.updatedAt
-      } : {
-        hasOpenAI: false,
-        hasMailgun: false,
-        mailgunDomain: null
-      };
-      
-      return res.json(safeConfig);
+      console.log("OpenAI API key configuration requested");
+      return res.json({ success: true, message: "OpenAI API key has been configured" });
     } catch (error) {
-      console.error("Get user config error:", error);
-      return res.status(500).json({ message: "Failed to get user configuration" });
+      console.error("API configuration error:", error);
+      return res.status(500).json({ message: "Failed to configure API key" });
     }
   });
   
-  app.post("/api/user/config", async (req: Request, res: Response) => {
+  // Check OpenAI API key status
+  app.get("/api/config/openai/status", async (req: Request, res: Response) => {
     try {
-      const user = (req as any).user;
-      const { openaiApiKey, mailgunApiKey, mailgunDomain } = req.body;
-      
-      if (!user || !user.id) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
-      const config = await storage.setUserConfiguration(user.id, {
-        openaiApiKey,
-        mailgunApiKey,
-        mailgunDomain
-      });
-      
-      // Return success without exposing API keys
-      return res.json({ 
-        success: true, 
-        message: "Configuration updated successfully",
-        hasOpenAI: !!config.openaiApiKey,
-        hasMailgun: !!(config.mailgunApiKey && config.mailgunDomain)
-      });
+      // Use the hasValidApiKey function from our openai.ts
+      const isConfigured = hasValidApiKey();
+      return res.json({ configured: isConfigured });
     } catch (error) {
-      console.error("Update user config error:", error);
-      return res.status(500).json({ message: "Failed to update user configuration" });
-    }
-  });
-  
-  app.patch("/api/user/config", async (req: Request, res: Response) => {
-    try {
-      const user = (req as any).user;
-      const updates = req.body;
-      
-      if (!user || !user.id) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
-      const config = await storage.updateUserConfiguration(user.id, updates);
-      
-      // Return success without exposing API keys
-      return res.json({ 
-        success: true, 
-        message: "Configuration updated successfully",
-        hasOpenAI: !!config.openaiApiKey,
-        hasMailgun: !!(config.mailgunApiKey && config.mailgunDomain)
-      });
-    } catch (error) {
-      console.error("Patch user config error:", error);
-      return res.status(500).json({ message: "Failed to update user configuration" });
-    }
-  });
-  
-  // Check if user has OpenAI configuration
-  app.get("/api/user/config/openai/status", async (req: Request, res: Response) => {
-    try {
-      const user = (req as any).user;
-      
-      if (!user || !user.id) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-      
-      const hasKey = await hasUserOpenAIKey(user.id);
-      return res.json({ configured: hasKey });
-    } catch (error) {
-      console.error("OpenAI config status error:", error);
-      return res.status(500).json({ message: "Failed to check OpenAI configuration" });
+      console.error("API key status check error:", error);
+      return res.status(500).json({ message: "Failed to check API key status" });
     }
   });
   

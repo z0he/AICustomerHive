@@ -26,27 +26,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// User API Configurations table - stores API keys per user
-export const userConfigurations = pgTable("user_configurations", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
-  configType: text("config_type").notNull(), // 'openai', 'mailgun'
-  configData: jsonb("config_data").notNull(), // Encrypted API keys and settings
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").notNull(),
-  updatedAt: timestamp("updated_at"),
-});
-
-export const insertUserConfigurationSchema = createInsertSchema(userConfigurations).pick({
-  userId: true,
-  configType: true,
-  configData: true,
-  isActive: true,
-});
-
-export type InsertUserConfiguration = z.infer<typeof insertUserConfigurationSchema>;
-export type UserConfiguration = typeof userConfigurations.$inferSelect;
-
 // Campaigns table
 export const campaigns = pgTable("campaigns", {
   id: serial("id").primaryKey(),
