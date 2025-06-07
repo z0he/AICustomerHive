@@ -207,6 +207,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       setShowLocationSelector(targetAudience === "Specific Location Customers");
       setShowIndustrySelector(targetAudience === "Industry-Specific Customers");
       setShowSeasonalSelector(targetAudience === "Seasonal Campaign");
+      setShowLeadFilters(targetAudience === "Leads");
       
       // Default values for secondary fields if selected
       let location = "";
