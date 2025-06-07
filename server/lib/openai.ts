@@ -81,12 +81,15 @@ export async function interpretVoiceCommand(text: string): Promise<{
           intent: "create_campaign",
           action: "Create a new email campaign for customers"
         };
-      } else if (textLower.includes("performance") || textLower.includes("stats")) {
+      } else if (textLower.includes("performance") || textLower.includes("stats") || 
+                 textLower.includes("latest campaign") || textLower.includes("recent campaign") ||
+                 (textLower.includes("show") && textLower.includes("campaign") && !textLower.includes("create")) ||
+                 (textLower.includes("campaign") && (textLower.includes("how") || textLower.includes("doing")))) {
         return {
           intent: "show_campaign_performance",
           action: "Show me campaign performance data"
         };
-      } else if (textLower.includes("status")) {
+      } else if (textLower.includes("status") && !textLower.includes("create")) {
         return {
           intent: "show_campaign_status",
           action: "Check the status of running campaigns"
@@ -158,11 +161,35 @@ export async function interpretVoiceCommand(text: string): Promise<{
     }
   } catch (error) {
     console.error("Error interpreting voice command:", error);
-    // Provide fallback so the feature works even without API key
-    return {
-      intent: "create_campaign",
-      action: "Create a new marketing campaign"
-    };
+    // Provide a more intelligent fallback based on simple pattern matching
+    const textLower = text.toLowerCase();
+    
+    if (textLower.includes("campaign") && textLower.includes("create")) {
+      return {
+        intent: "create_campaign",
+        action: "Create a new marketing campaign"
+      };
+    } else if (textLower.includes("performance") || textLower.includes("campaign")) {
+      return {
+        intent: "show_campaign_performance",
+        action: "Show me campaign performance data"
+      };
+    } else if (textLower.includes("leads")) {
+      return {
+        intent: "show_leads",
+        action: "Show me top leads"
+      };
+    } else if (textLower.includes("customers")) {
+      return {
+        intent: "show_customers",
+        action: "Show me my customers"
+      };
+    } else {
+      return {
+        intent: "unknown",
+        action: `I didn't understand the command: "${text}". Please try again.`
+      };
+    }
   }
 }
 
