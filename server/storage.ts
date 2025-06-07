@@ -28,6 +28,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPersonalKeys(userId: number, keys: { openaiKey?: string; mailgunKey?: string; mailgunDomain?: string }): Promise<User>;
   
   // Campaign methods
   getCampaigns(period?: string): Promise<Campaign[]>;
@@ -627,6 +628,23 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async updateUserPersonalKeys(userId: number, keys: { openaiKey?: string; mailgunKey?: string; mailgunDomain?: string }): Promise<User> {
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    const updatedUser = {
+      ...user,
+      personalOpenAIKey: keys.openaiKey || user.personalOpenAIKey,
+      personalMailgunKey: keys.mailgunKey || user.personalMailgunKey,
+      personalMailgunDomain: keys.mailgunDomain || user.personalMailgunDomain
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
   }
   
   // ----- Campaign methods -----

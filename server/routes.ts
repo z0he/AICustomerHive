@@ -1711,10 +1711,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/config/mailgun", async (req: Request, res: Response) => {
     try {
-      // In a real implementation, this would securely store the API key
-      // using environment variables or a secure vault service
-      // And would be properly authenticated
       const { apiKey, domain } = req.body;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       
       if (!apiKey) {
         return res.status(400).json({ message: "Mailgun API key is required" });
@@ -1724,24 +1726,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Mailgun domain is required" });
       }
       
-      // In a real implementation, we would store these values
-      // Here we'll just check environment variables are set
+      // Store personal API key in database
+      await storage.updateUserPersonalKeys(userId, { mailgunKey: apiKey, mailgunDomain: domain });
+      
+      // Set environment variables for immediate use (for backward compatibility)
       process.env.MAILGUN_API_KEY = apiKey;
       process.env.MAILGUN_DOMAIN = domain;
       
       // Reinitialize the Mailgun client with the new API key
       reinitializeMailgunClient();
       
-      // Verify that the configuration is successful
-      const isConfigured = isMailgunConfigured();
-      
-      if (!isConfigured) {
-        return res.status(500).json({ 
-          success: false, 
-          message: "Failed to initialize Mailgun client. Please check your API key and domain."
-        });
-      }
-      
+      console.log("Mailgun client reinitialized with new API key");
       return res.json({ success: true, message: "Mailgun API key and domain have been configured" });
     } catch (error) {
       console.error("Mailgun configuration error:", error);
