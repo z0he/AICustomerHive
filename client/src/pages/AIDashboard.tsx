@@ -18,7 +18,7 @@ export function AIDashboard() {
 
   // Check if OpenAI integration is configured with a valid API key
   const { data: hasValidApiKey = false } = useQuery({
-    queryKey: ['/api/config/openai/status'],
+    queryKey: ['/api/user/config/openai/status'],
     refetchOnWindowFocus: false,
   });
 
@@ -28,7 +28,7 @@ export function AIDashboard() {
 
   const handleSaveApiKey = async () => {
     try {
-      await apiRequest('/api/config/openai', 'POST', { apiKey });
+      await apiRequest('/api/user/config', 'POST', { openaiApiKey: apiKey });
       setIsSettingsOpen(false);
       
       // Force a refresh to update the API key status

@@ -122,12 +122,12 @@ const VoiceCommandModal: FC<VoiceCommandModalProps> = ({
                     const apiKey = prompt('Please enter your OpenAI API key:');
                     if (apiKey && apiKey.trim()) {
                       try {
-                        const response = await fetch('/api/config/openai', {
+                        const response = await fetch('/api/user/config', {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
                           },
-                          body: JSON.stringify({ apiKey: apiKey.trim() }),
+                          body: JSON.stringify({ openaiApiKey: apiKey.trim() }),
                           credentials: 'include'
                         });
                         
