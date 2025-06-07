@@ -243,7 +243,7 @@ const Dashboard = () => {
   // Voice command suggestions
   const commandSuggestions = [
     { id: 1, text: "Show me the performance of my latest campaign", command: "Show me the performance of my latest campaign" },
-    { id: 2, text: "Create a new campaign for inactive customers", command: "Create a new campaign targeting customers who haven't purchased in 3 months" },
+    { id: 2, text: "Create a campaign for qualified leads", command: "Create a campaign for qualified leads" },
     { id: 3, text: "Send a promotional email to my top customers", command: "Send a promotional email to my top 100 customers" },
     { id: 4, text: "What's the status of my nurture campaign?", command: "What's the status of my nurture campaign?" }
   ];

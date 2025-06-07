@@ -97,13 +97,52 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       
       const command = voiceData.command.toLowerCase();
       
-      if (command.includes("inactive") || command.includes("haven't purchased")) {
+      // Lead-specific targeting
+      if (command.includes("leads")) {
+        targetAudience = "Leads";
+        
+        // Set lead status based on command
+        if (command.includes("qualified")) {
+          campaignName = "Qualified Leads Campaign";
+          form.setValue("leadStatus", "qualified");
+        } else if (command.includes("new") && command.includes("leads")) {
+          campaignName = "New Lead Nurture Campaign";
+          form.setValue("leadStatus", "new");
+        } else if (command.includes("contacted")) {
+          campaignName = "Contacted Leads Follow-up";
+          form.setValue("leadStatus", "contacted");
+        } else if (command.includes("proposal")) {
+          campaignName = "Proposal Stage Campaign";
+          form.setValue("leadStatus", "proposal");
+        } else if (command.includes("negotiation")) {
+          campaignName = "Negotiation Stage Campaign";
+          form.setValue("leadStatus", "negotiation");
+        } else {
+          campaignName = "Lead Campaign";
+          form.setValue("leadStatus", "all_statuses");
+        }
+        
+        // Set lead source based on command
+        if (command.includes("website")) {
+          form.setValue("leadSource", "website");
+        } else if (command.includes("referral")) {
+          form.setValue("leadSource", "referral");
+        } else if (command.includes("import")) {
+          form.setValue("leadSource", "import");
+        } else if (command.includes("manual")) {
+          form.setValue("leadSource", "manual");
+        } else {
+          form.setValue("leadSource", "all_sources");
+        }
+      }
+      // Customer-specific targeting
+      else if (command.includes("inactive") || command.includes("haven't purchased")) {
         targetAudience = "Inactive Customers";
         campaignName = "Re-engagement Campaign";
       } else if (command.includes("top") || command.includes("best") || command.includes("vip")) {
         targetAudience = "Top Customers";
         campaignName = "VIP Customer Campaign";
-      } else if (command.includes("new")) {
+      } else if (command.includes("new") && !command.includes("leads")) {
         targetAudience = "New Customers";
         campaignName = "New Customer Welcome";
       } else if (command.includes("recurring") || command.includes("regular")) {
