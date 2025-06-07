@@ -1,15 +1,16 @@
 import OpenAI from "openai";
+import { UserConfigService } from "./user-config";
 
-// Initialize OpenAI client
-// The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || undefined
-});
+// Function to create user-specific OpenAI client
+function createOpenAIClient(apiKey: string): OpenAI {
+  return new OpenAI({ 
+    apiKey: apiKey
+  });
+}
 
 // Function to check if we have a valid API key (not undefined, empty or a placeholder)
-export function hasValidApiKey(): boolean {
-  const key = process.env.OPENAI_API_KEY;
-  return key !== undefined && key.trim() !== '' && !key.includes('demo') && !key.includes('placeholder');
+function isValidApiKey(key: string | null): boolean {
+  return key !== null && key !== undefined && key.trim() !== '' && !key.includes('demo') && !key.includes('placeholder');
 }
 
 // Helper function to safely parse JSON from OpenAI response
@@ -27,17 +28,19 @@ function safeJsonParse(content: string | null): any {
 /**
  * Interprets a voice command and determines its intent and action
  */
-export async function interpretVoiceCommand(text: string): Promise<{
+export async function interpretVoiceCommand(text: string, userId: number): Promise<{
   intent: string;
   action: string;
 }> {
-  // For development/demo purposes, use a simple pattern matching for quick responses
-  // and to avoid API key requirements
   console.log("Interpreting voice command:", text);
   
   try {
+    // Get user's OpenAI API key
+    const userApiKey = await UserConfigService.getUserOpenAIKey(userId);
+    
     // Check if we have a valid API key before making OpenAI call
-    if (hasValidApiKey()) {
+    if (isValidApiKey(userApiKey)) {
+      const openai = createOpenAIClient(userApiKey!);
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -198,11 +201,16 @@ export async function interpretVoiceCommand(text: string): Promise<{
  */
 export async function generateCampaignSuggestions(
   campaignGoal: string,
-  targetAudience: string
+  targetAudience: string,
+  userId: number
 ): Promise<string[]> {
   try {
+    // Get user's OpenAI API key
+    const userApiKey = await UserConfigService.getUserOpenAIKey(userId);
+    
     // Check if we have a valid API key before making OpenAI call
-    if (hasValidApiKey()) {
+    if (isValidApiKey(userApiKey)) {
+      const openai = createOpenAIClient(userApiKey!);
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -293,13 +301,17 @@ export async function generateCampaignSuggestions(
 /**
  * Analyzes customer data to provide insights and recommendations
  */
-export async function analyzeCustomerData(customerData: any[]): Promise<{
+export async function analyzeCustomerData(customerData: any[], userId: number): Promise<{
   insights: string[];
   recommendations: string[];
 }> {
   try {
+    // Get user's OpenAI API key
+    const userApiKey = await UserConfigService.getUserOpenAIKey(userId);
+    
     // Check if we have a valid API key before making OpenAI call
-    if (hasValidApiKey()) {
+    if (isValidApiKey(userApiKey)) {
+      const openai = createOpenAIClient(userApiKey!);
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
@@ -374,6 +386,7 @@ export async function analyzeCustomerData(customerData: any[]): Promise<{
  */
 export async function getCrmAssistantResponse(
   userInput: string,
+  userId: number,
   conversationHistory: { role: string; content: string }[] = [],
   crmContext: Record<string, any> = {}
 ): Promise<{
@@ -381,8 +394,12 @@ export async function getCrmAssistantResponse(
   suggestedActions?: { label: string; action: string }[];
 }> {
   try {
+    // Get user's OpenAI API key
+    const userApiKey = await UserConfigService.getUserOpenAIKey(userId);
+    
     // Check if we have a valid API key before making OpenAI call
-    if (hasValidApiKey()) {
+    if (isValidApiKey(userApiKey)) {
+      const openai = createOpenAIClient(userApiKey!);
       // Build the conversation history with system message
       const systemMessage = {
         role: "system" as const,
@@ -528,4 +545,7 @@ export async function getCrmAssistantResponse(
   }
 }
 
-export default openai;
+// Export user configuration checking function
+export async function hasUserOpenAIKey(userId: number): Promise<boolean> {
+  return await UserConfigService.hasUserOpenAI(userId);
+}

@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey, getCrmAssistantResponse } from "./lib/openai";
+import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasUserOpenAIKey, getCrmAssistantResponse } from "./lib/openai";
 import { sendEmail, sendTemplateEmail, isMailgunConfigured, reinitializeMailgunClient } from "./lib/mailgun";
 import { z } from "zod";
 import { parse as csvParse } from 'csv-parse/sync';
