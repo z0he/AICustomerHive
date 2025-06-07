@@ -227,7 +227,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
                       <SelectValue placeholder="Select lifecycle stage" />
                     </SelectTrigger>
                     <SelectContent>
-                      {lifecycleStages.map((stage) => (
+                      {LIFECYCLE_STAGES.map((stage) => (
                         <SelectItem key={stage.id} value={stage.id}>
                           {stage.name}
                         </SelectItem>
@@ -255,7 +255,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
                       <SelectValue placeholder="Select contact type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {contactTypes.map((type) => (
+                      {CONTACT_TYPES.map((type) => (
                         <SelectItem key={type.id} value={type.id}>
                           {type.name}
                         </SelectItem>
@@ -283,7 +283,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
                       <SelectValue placeholder="Select industry" />
                     </SelectTrigger>
                     <SelectContent>
-                      {industrySuggestions.map((industry) => (
+                      {INDUSTRY_SUGGESTIONS.map((industry) => (
                         <SelectItem key={industry} value={industry}>
                           {industry}
                         </SelectItem>
@@ -311,7 +311,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent>
-                      {countries.map((country) => (
+                      {COUNTRIES.map((country) => (
                         <SelectItem key={country.id} value={country.id}>
                           {country.name}
                         </SelectItem>
@@ -344,7 +344,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
                     <SelectContent>
-                      {leadSources.map((source) => (
+                      {LEAD_SOURCES.map((source) => (
                         <SelectItem key={source.id} value={source.id}>
                           {source.name}
                         </SelectItem>
@@ -372,7 +372,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      {leadStatuses.map((status) => (
+                      {LEAD_STATUSES.map((status) => (
                         <SelectItem key={status.id} value={status.id}>
                           {status.name}
                         </SelectItem>
@@ -400,7 +400,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
                       <SelectValue placeholder="Select legal basis" />
                     </SelectTrigger>
                     <SelectContent>
-                      {legalBases.map((basis) => (
+                      {LEGAL_BASES.map((basis) => (
                         <SelectItem key={basis.id} value={basis.id}>
                           {basis.name}
                         </SelectItem>
