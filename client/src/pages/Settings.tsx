@@ -821,40 +821,72 @@ const SettingsPage: React.FC = () => {
                       OpenAI Integration
                     </CardTitle>
                     <CardDescription>
-                      Configure your OpenAI API key to enable AI features
+                      Configure your personal OpenAI API key for unlimited AI features
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="mb-6">
-                      <h3 className="text-lg font-medium mb-2">API Status</h3>
-                      {isOpenAIStatusLoading ? (
+                    {/* Usage Info */}
+                    <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-medium">Current Status</h3>
+                        {usageData?.aiPromptsUsed !== undefined && (
+                          <span className="text-sm text-muted-foreground">
+                            {usageData.aiPromptsUsed} / {usageData.limits?.aiPrompts || 20} prompts used
+                          </span>
+                        )}
+                      </div>
+                      {apiKeyStatus?.openai ? (
                         <div className="flex items-center">
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Checking status...
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                          <span className="text-green-700 font-medium">Using your personal API key - Unlimited access</span>
                         </div>
                       ) : (
-                        <div className="flex items-center">
-                          {openaiStatus?.configured ? (
-                            <>
-                              <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                              <span>OpenAI API is properly configured and ready to use.</span>
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                              <span>OpenAI API is not configured. Please add your API key below.</span>
-                            </>
+                        <div>
+                          <div className="flex items-center mb-2">
+                            <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+                            <span className="text-amber-700">Using shared API keys - Limited to {usageData?.limits?.aiPrompts || 20} prompts</span>
+                          </div>
+                          {usageData?.aiPromptsUsed >= (usageData?.limits?.aiPrompts || 20) && (
+                            <div className="text-sm text-red-600">
+                              Limit reached! Add your API key below to continue using AI features.
+                            </div>
                           )}
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="ml-2" 
-                            onClick={() => refetchOpenAIStatus()}
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
                         </div>
                       )}
+                    </div>
+
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium mb-2">API Configuration</h3>
+                      <div className="flex items-center mb-4">
+                        {isOpenAIStatusLoading ? (
+                          <div className="flex items-center">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Checking status...
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            {openaiStatus?.configured ? (
+                              <>
+                                <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                                <span>OpenAI API is properly configured and ready to use.</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+                                <span>OpenAI API is not configured. Please add your API key below.</span>
+                              </>
+                            )}
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="ml-2" 
+                              onClick={() => refetchOpenAIStatus()}
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
                     <Form {...openAIForm}>
@@ -864,12 +896,12 @@ const SettingsPage: React.FC = () => {
                           name="apiKey"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>OpenAI API Key</FormLabel>
+                              <FormLabel>Personal OpenAI API Key</FormLabel>
                               <FormControl>
                                 <Input type="password" placeholder="sk-..." {...field} />
                               </FormControl>
                               <FormDescription>
-                                Your API key is securely stored and never shared with third parties
+                                Add your personal API key to bypass usage limits and get unlimited AI prompts
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -896,40 +928,72 @@ const SettingsPage: React.FC = () => {
                       Mailgun Integration
                     </CardTitle>
                     <CardDescription>
-                      Configure your Mailgun API key to enable email capabilities
+                      Configure your personal Mailgun API key for unlimited email sending
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="mb-6">
-                      <h3 className="text-lg font-medium mb-2">API Status</h3>
-                      {isMailgunStatusLoading ? (
+                    {/* Usage Info */}
+                    <div className="mb-6 p-4 bg-green-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-lg font-medium">Current Status</h3>
+                        {usageData?.emailsSent !== undefined && (
+                          <span className="text-sm text-muted-foreground">
+                            {usageData.emailsSent} / {usageData.limits?.emails || 50} emails sent
+                          </span>
+                        )}
+                      </div>
+                      {apiKeyStatus?.mailgun ? (
                         <div className="flex items-center">
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Checking status...
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                          <span className="text-green-700 font-medium">Using your personal API key - Unlimited sending</span>
                         </div>
                       ) : (
-                        <div className="flex items-center">
-                          {mailgunStatus?.configured ? (
-                            <>
-                              <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                              <span>Mailgun API is properly configured and ready to use.</span>
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                              <span>Mailgun API is not configured. Please add your API key and domain below.</span>
-                            </>
+                        <div>
+                          <div className="flex items-center mb-2">
+                            <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+                            <span className="text-amber-700">Using shared API keys - Limited to {usageData?.limits?.emails || 50} emails</span>
+                          </div>
+                          {usageData?.emailsSent >= (usageData?.limits?.emails || 50) && (
+                            <div className="text-sm text-red-600">
+                              Limit reached! Add your API key below to continue sending emails.
+                            </div>
                           )}
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="ml-2" 
-                            onClick={() => refetchMailgunStatus()}
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
                         </div>
                       )}
+                    </div>
+
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium mb-2">API Configuration</h3>
+                      <div className="flex items-center mb-4">
+                        {isMailgunStatusLoading ? (
+                          <div className="flex items-center">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            Checking status...
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            {mailgunStatus?.configured ? (
+                              <>
+                                <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                                <span>Mailgun API is properly configured and ready to use.</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+                                <span>Mailgun API is not configured. Please add your API key and domain below.</span>
+                              </>
+                            )}
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="ml-2" 
+                              onClick={() => refetchMailgunStatus()}
+                            >
+                              <RefreshCw className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     
                     <Form {...mailgunForm}>
@@ -939,10 +1003,13 @@ const SettingsPage: React.FC = () => {
                           name="apiKey"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Mailgun API Key</FormLabel>
+                              <FormLabel>Personal Mailgun API Key</FormLabel>
                               <FormControl>
                                 <Input type="password" placeholder="key-..." {...field} />
                               </FormControl>
+                              <FormDescription>
+                                Add your personal API key to bypass usage limits and get unlimited email sending
+                              </FormDescription>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -958,7 +1025,7 @@ const SettingsPage: React.FC = () => {
                                 <Input placeholder="mg.yourdomain.com" {...field} />
                               </FormControl>
                               <FormDescription>
-                                For sandbox accounts, use your sandbox domain (e.g., sandbox123.mailgun.org)
+                                Your verified Mailgun domain for sending emails (e.g., mg.yourdomain.com or sandbox123.mailgun.org)
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -974,6 +1041,18 @@ const SettingsPage: React.FC = () => {
                         </Button>
                       </form>
                     </Form>
+
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div className="text-sm">
+                          <p className="font-medium text-blue-900">Secure Storage</p>
+                          <p className="text-blue-700">
+                            Your API keys are encrypted and stored securely. They are never shared with third parties.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1399,129 +1478,33 @@ const SettingsPage: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Personal API Keys Card */}
+                {/* Upgrade Guidance Card */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Key className="h-5 w-5" />
-                      Personal API Keys
+                      <Zap className="h-5 w-5" />
+                      Need More Access?
                     </CardTitle>
                     <CardDescription>
-                      Add your own API keys to bypass usage limits and unlock unlimited access
+                      Add your own API keys to bypass usage limits and get unlimited access
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="mb-6">
-                      <h3 className="text-lg font-medium mb-2">API Key Status</h3>
-                      {keyStatusLoading ? (
-                        <div className="flex items-center">
-                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                          Checking API key status...
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="flex items-center">
-                            {apiKeyStatus?.openai ? (
-                              <>
-                                <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                                <span>OpenAI API key configured</span>
-                              </>
-                            ) : (
-                              <>
-                                <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                                <span>OpenAI API key not configured</span>
-                              </>
-                            )}
-                          </div>
-                          <div className="flex items-center">
-                            {apiKeyStatus?.mailgun ? (
-                              <>
-                                <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                                <span>Mailgun API key configured</span>
-                              </>
-                            ) : (
-                              <>
-                                <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                                <span>Mailgun API key not configured</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <Form {...personalAPIKeysForm}>
-                      <form onSubmit={personalAPIKeysForm.handleSubmit(onPersonalAPIKeysSubmit)} className="space-y-4">
-                        <FormField
-                          control={personalAPIKeysForm.control}
-                          name="openaiKey"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>OpenAI API Key</FormLabel>
-                              <FormControl>
-                                <Input type="password" placeholder="sk-..." {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Your OpenAI API key enables unlimited AI features
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={personalAPIKeysForm.control}
-                          name="mailgunKey"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Mailgun API Key</FormLabel>
-                              <FormControl>
-                                <Input type="password" placeholder="key-..." {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Your Mailgun API key enables unlimited email sending
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={personalAPIKeysForm.control}
-                          name="mailgunDomain"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Mailgun Domain</FormLabel>
-                              <FormControl>
-                                <Input placeholder="yourdomain.com" {...field} />
-                              </FormControl>
-                              <FormDescription>
-                                Your verified Mailgun domain for sending emails
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <Button 
-                          type="submit" 
-                          disabled={personalAPIKeysMutation.isPending}
-                          className="w-full"
-                        >
-                          {personalAPIKeysMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          Save API Keys
-                        </Button>
-                      </form>
-                    </Form>
-
-                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
                       <div className="flex items-start gap-3">
-                        <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div className="text-sm">
-                          <p className="font-medium text-blue-900">Secure Storage</p>
-                          <p className="text-blue-700">
-                            Your API keys are encrypted and stored securely. They are never shared with third parties.
+                        <Key className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div>
+                          <p className="font-medium text-gray-900 mb-2">Unlock Unlimited Access</p>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Add your personal OpenAI and Mailgun API keys to remove all usage limits and get unlimited AI prompts and email sending.
                           </p>
+                          <Button 
+                            onClick={() => setActiveTab('integrations')}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Key className="h-4 w-4 mr-2" />
+                            Configure API Keys
+                          </Button>
                         </div>
                       </div>
                     </div>

@@ -162,21 +162,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // API Configuration endpoint - would be secured in production
+  // Personal OpenAI API Configuration endpoint
   app.post("/api/config/openai", async (req: Request, res: Response) => {
     try {
-      // In a real implementation, this would securely store the API key
-      // using environment variables or a secure vault service
-      // And would be properly authenticated
       const { apiKey } = req.body;
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       
       if (!apiKey) {
         return res.status(400).json({ message: "API key is required" });
       }
       
-      // For this example, we'll just return a success message
-      // In production, would set process.env.OPENAI_API_KEY = apiKey
-      // and restart the OpenAI client
+      // Store personal API key in database
+      await storage.updateUserPersonalKeys(userId, { openaiKey: apiKey });
       
       console.log("OpenAI API key configuration requested");
       return res.json({ success: true, message: "OpenAI API key has been configured" });
