@@ -3,6 +3,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey, getCrmAssistantResponse } from "./lib/openai";
+import { usageService } from "./lib/usage-service";
 import { sendEmail, sendTemplateEmail, isMailgunConfigured, reinitializeMailgunClient } from "./lib/mailgun";
 import { z } from "zod";
 import { parse as csvParse } from 'csv-parse/sync';
@@ -2062,6 +2063,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get customer segments error:", error);
       return res.status(500).json({ message: "Failed to fetch customer segments" });
+    }
+  });
+
+  // ===== USAGE TRACKING AND API KEY MANAGEMENT ROUTES =====
+  
+  // Get user's current usage statistics
+  app.get("/api/usage", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const usage = await usageService.getUserUsage(userId);
+      return res.json(usage);
+    } catch (error) {
+      console.error("Get usage error:", error);
+      return res.status(500).json({ message: "Failed to fetch usage data" });
+    }
+  });
+
+  // Store user's personal API keys
+  app.post("/api/settings/api-keys", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { openaiKey, mailgunKey, mailgunDomain } = req.body;
+      
+      if (!openaiKey && !mailgunKey) {
+        return res.status(400).json({ message: "At least one API key is required" });
+      }
+
+      await usageService.storePersonalAPIKeys(userId, {
+        openaiKey,
+        mailgunKey,
+        mailgunDomain
+      });
+
+      return res.json({ message: "API keys saved successfully" });
+    } catch (error) {
+      console.error("Save API keys error:", error);
+      return res.status(500).json({ message: "Failed to save API keys" });
+    }
+  });
+
+  // Get user's personal API key status (without revealing the keys)
+  app.get("/api/settings/api-keys/status", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const keys = await usageService.getPersonalAPIKeys(userId);
+      
+      return res.json({
+        hasOpenAIKey: !!keys.openaiKey,
+        hasMailgunKey: !!keys.mailgunKey,
+        hasMailgunDomain: !!keys.mailgunDomain
+      });
+    } catch (error) {
+      console.error("Get API key status error:", error);
+      return res.status(500).json({ message: "Failed to get API key status" });
+    }
+  });
+
+  // Update voice command to pass userId for usage tracking
+  app.post("/api/voice-command", async (req: Request, res: Response) => {
+    try {
+      const { text } = req.body;
+      const userId = (req as any).user?.id;
+      
+      if (!text) {
+        return res.status(400).json({ message: "Text is required" });
+      }
+
+      const result = await interpretVoiceCommand(text, userId);
+      
+      if (result.limitReached) {
+        return res.status(429).json({ 
+          message: result.action,
+          limitReached: true 
+        });
+      }
+
+      return res.json(result);
+    } catch (error) {
+      console.error("Voice command error:", error);
+      return res.status(500).json({ message: "Failed to process voice command" });
     }
   });
 

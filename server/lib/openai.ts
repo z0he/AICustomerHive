@@ -530,7 +530,7 @@ export async function getCrmAssistantResponse(
         { role: "user" as const, content: userInput }
       ];
       
-      const response = await openai.chat.completions.create({
+      const response = await globalOpenAI.chat.completions.create({
         model: "gpt-4o",
         messages: messages,
         temperature: 0.7,
