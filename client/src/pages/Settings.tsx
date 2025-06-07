@@ -47,9 +47,19 @@ import {
   Code,
   Copy,
   CheckCircle2,
+  TrendingUp,
+  Zap,
+  Users,
+  DollarSign,
 } from 'lucide-react';
 
 // Form schemas
+const personalAPIKeysSchema = z.object({
+  openaiKey: z.string().optional(),
+  mailgunKey: z.string().optional(),
+  mailgunDomain: z.string().optional(),
+});
+
 const openAIConfigSchema = z.object({
   apiKey: z.string().min(1, "API key is required"),
 });
@@ -108,6 +118,7 @@ type OpenAIConfigFormData = z.infer<typeof openAIConfigSchema>;
 type MailgunConfigFormData = z.infer<typeof mailgunConfigSchema>;
 type ProfileSettingsFormData = z.infer<typeof profileSettingsSchema>;
 type NotificationSettingsFormData = z.infer<typeof notificationSettingsSchema>;
+type PersonalAPIKeysFormData = z.infer<typeof personalAPIKeysSchema>;
 
 const SettingsPage: React.FC = () => {
   // Get URL parameters to check for 'tab' parameter
@@ -115,7 +126,7 @@ const SettingsPage: React.FC = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      return tabParam && ['profile', 'notifications', 'integrations', 'tracking', 'appearance'].includes(tabParam)
+      return tabParam && ['profile', 'notifications', 'integrations', 'tracking', 'appearance', 'usage'].includes(tabParam)
         ? tabParam
         : 'profile';
     }
@@ -128,6 +139,57 @@ const SettingsPage: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
   const [trackingActiveTab, setTrackingActiveTab] = useState('code');
+
+  // Usage tracking queries
+  const { data: usageData, isLoading: usageLoading } = useQuery({
+    queryKey: ['/api/usage'],
+    enabled: true
+  });
+
+  const { data: apiKeyStatus, isLoading: keyStatusLoading } = useQuery({
+    queryKey: ['/api/settings/api-keys/status'],
+    enabled: true
+  });
+
+  // Personal API Keys form
+  const personalAPIKeysForm = useForm<PersonalAPIKeysFormData>({
+    resolver: zodResolver(personalAPIKeysSchema),
+    defaultValues: {
+      openaiKey: '',
+      mailgunKey: '',
+      mailgunDomain: '',
+    },
+  });
+
+  // Personal API Keys mutation
+  const personalAPIKeysMutation = useMutation({
+    mutationFn: async (data: PersonalAPIKeysFormData) => {
+      return apiRequest('/api/settings/api-keys', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "API Keys Updated",
+        description: "Your personal API keys have been saved securely.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/settings/api-keys/status'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/usage'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update API keys",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Form submission handlers
+  const onPersonalAPIKeysSubmit = (data: PersonalAPIKeysFormData) => {
+    personalAPIKeysMutation.mutate(data);
+  };
   
   // Update URL when tab changes
   useEffect(() => {
