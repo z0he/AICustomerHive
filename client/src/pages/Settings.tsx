@@ -829,13 +829,13 @@ const SettingsPage: React.FC = () => {
                     <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-lg font-medium">Current Status</h3>
-                        {usageData?.aiPromptsUsed !== undefined && (
+                        {usageData?.aiPrompts?.used !== undefined && (
                           <span className="text-sm text-muted-foreground">
-                            {usageData.aiPromptsUsed} / {usageData.limits?.aiPrompts || 20} prompts used
+                            {usageData.aiPrompts.used} / {usageData.aiPrompts.hasPersonalKey ? '∞' : usageData.aiPrompts.limit} prompts used
                           </span>
                         )}
                       </div>
-                      {apiKeyStatus?.openai ? (
+                      {usageData?.aiPrompts?.hasPersonalKey ? (
                         <div className="flex items-center">
                           <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
                           <span className="text-green-700 font-medium">Using your personal API key - Unlimited access</span>
@@ -844,9 +844,9 @@ const SettingsPage: React.FC = () => {
                         <div>
                           <div className="flex items-center mb-2">
                             <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                            <span className="text-amber-700">Using shared API keys - Limited to {usageData?.limits?.aiPrompts || 20} prompts</span>
+                            <span className="text-amber-700">Using shared API keys - Limited to {usageData?.aiPrompts?.limit || 20} prompts</span>
                           </div>
-                          {usageData?.aiPromptsUsed >= (usageData?.limits?.aiPrompts || 20) && (
+                          {(usageData?.aiPrompts?.used || 0) >= (usageData?.aiPrompts?.limit || 20) && (
                             <div className="text-sm text-red-600">
                               Limit reached! Add your API key below to continue using AI features.
                             </div>
@@ -936,13 +936,13 @@ const SettingsPage: React.FC = () => {
                     <div className="mb-6 p-4 bg-green-50 rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-lg font-medium">Current Status</h3>
-                        {usageData?.emailsSent !== undefined && (
+                        {usageData?.emails?.used !== undefined && (
                           <span className="text-sm text-muted-foreground">
-                            {usageData.emailsSent} / {usageData.limits?.emails || 50} emails sent
+                            {usageData.emails.used} / {usageData.emails.hasPersonalKey ? '∞' : usageData.emails.limit} emails sent
                           </span>
                         )}
                       </div>
-                      {apiKeyStatus?.mailgun ? (
+                      {usageData?.emails?.hasPersonalKey ? (
                         <div className="flex items-center">
                           <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
                           <span className="text-green-700 font-medium">Using your personal API key - Unlimited sending</span>
@@ -951,9 +951,9 @@ const SettingsPage: React.FC = () => {
                         <div>
                           <div className="flex items-center mb-2">
                             <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-                            <span className="text-amber-700">Using shared API keys - Limited to {usageData?.limits?.emails || 50} emails</span>
+                            <span className="text-amber-700">Using shared API keys - Limited to {usageData?.emails?.limit || 50} emails</span>
                           </div>
-                          {usageData?.emailsSent >= (usageData?.limits?.emails || 50) && (
+                          {(usageData?.emails?.used || 0) >= (usageData?.emails?.limit || 50) && (
                             <div className="text-sm text-red-600">
                               Limit reached! Add your API key below to continue sending emails.
                             </div>
