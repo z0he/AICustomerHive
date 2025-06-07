@@ -16,7 +16,8 @@ import {
   pageViews, type PageView, type InsertPageView,
   trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation,
   chatConversations, type ChatConversation, type InsertChatConversation,
-  chatMessages, type ChatMessage, type InsertChatMessage
+  chatMessages, type ChatMessage, type InsertChatMessage,
+  userConfigurations, type UserConfiguration, type InsertUserConfiguration
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
 
@@ -28,6 +29,12 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // User Configuration methods
+  getUserConfiguration(userId: number, configType: string): Promise<UserConfiguration | undefined>;
+  createUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration>;
+  updateUserConfiguration(userId: number, configType: string, configData: any): Promise<UserConfiguration>;
+  deleteUserConfiguration(userId: number, configType: string): Promise<boolean>;
   
   // Campaign methods
   getCampaigns(period?: string): Promise<Campaign[]>;

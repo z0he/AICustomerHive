@@ -19,10 +19,79 @@ import {
   pageViews, type PageView, type InsertPageView,
   trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation,
   chatConversations, type ChatConversation, type InsertChatConversation,
-  chatMessages, type ChatMessage, type InsertChatMessage
+  chatMessages, type ChatMessage, type InsertChatMessage,
+  userConfigurations, type UserConfiguration, type InsertUserConfiguration
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {
+  // ----- User Configuration methods -----
+  
+  async getUserConfiguration(userId: number, configType: string): Promise<UserConfiguration | undefined> {
+    const result = await db.select()
+      .from(userConfigurations)
+      .where(and(
+        eq(userConfigurations.userId, userId),
+        eq(userConfigurations.configType, configType),
+        eq(userConfigurations.isActive, true)
+      ));
+    return result[0];
+  }
+
+  async createUserConfiguration(config: InsertUserConfiguration): Promise<UserConfiguration> {
+    const configData = {
+      ...config,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const result = await db.insert(userConfigurations)
+      .values(configData as any)
+      .returning();
+    return result[0];
+  }
+
+  async updateUserConfiguration(userId: number, configType: string, configData: any): Promise<UserConfiguration> {
+    const updateData = {
+      configData,
+      updatedAt: new Date()
+    };
+    
+    const result = await db.update(userConfigurations)
+      .set(updateData)
+      .where(and(
+        eq(userConfigurations.userId, userId),
+        eq(userConfigurations.configType, configType)
+      ))
+      .returning();
+      
+    if (result.length === 0) {
+      // Create new configuration if it doesn't exist
+      return this.createUserConfiguration({
+        userId,
+        configType,
+        configData,
+        isActive: true
+      });
+    }
+    
+    return result[0];
+  }
+
+  async deleteUserConfiguration(userId: number, configType: string): Promise<boolean> {
+    try {
+      await db.update(userConfigurations)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(and(
+          eq(userConfigurations.userId, userId),
+          eq(userConfigurations.configType, configType)
+        ));
+      return true;
+    } catch (error) {
+      console.error('Error deleting user configuration:', error);
+      return false;
+    }
+  }
+
   // ----- Marketing Forms methods -----
   
   async getMarketingForms(): Promise<MarketingForm[]> {
