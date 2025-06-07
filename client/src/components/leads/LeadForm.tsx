@@ -64,9 +64,9 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
       jobTitle: defaultValues?.jobTitle || "",
       leadSource: defaultValues?.leadSource || "website",
       leadStatus: defaultValues?.leadStatus || "new",
-      contactIndustry: defaultValues?.contactIndustry || "",
-      country: defaultValues?.country || "",
-      contactSource: defaultValues?.contactSource || "",
+      contactIndustry: defaultValues?.industry || "", // Map industry to contactIndustry
+      country: defaultValues?.location || "", // Map location to country for now
+      contactSource: defaultValues?.leadSource || "",
       contactType: defaultValues?.contactType || "",
       linkedinUrl: defaultValues?.linkedinUrl || "",
       legalBasis: defaultValues?.legalBasis || "",
