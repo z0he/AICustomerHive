@@ -561,6 +561,12 @@ const SettingsPage: React.FC = () => {
                     <span>Appearance</span>
                   </div>
                 </TabsTrigger>
+                <TabsTrigger value="usage">
+                  <div className="flex items-center">
+                    <TrendingUp className="h-4 w-4 mr-2" />
+                    <span>Usage & Billing</span>
+                  </div>
+                </TabsTrigger>
               </TabsList>
               
               {/* Profile Tab */}
@@ -1289,6 +1295,237 @@ const SettingsPage: React.FC = () => {
                       Save Appearance Settings
                     </Button>
                   </CardFooter>
+                </Card>
+              </TabsContent>
+
+              {/* Usage & Billing Tab */}
+              <TabsContent value="usage" className="mt-4 space-y-6">
+                {/* Current Usage Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Current Usage
+                    </CardTitle>
+                    <CardDescription>
+                      Track your AI prompts and email usage against your plan limits
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {usageLoading ? (
+                      <div className="flex items-center">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Loading usage data...
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* AI Prompts Usage */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">AI Prompts</span>
+                            <span className="text-sm text-muted-foreground">
+                              {usageData?.aiPromptsUsed || 0} / {usageData?.limits?.aiPrompts || 20}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                              style={{ 
+                                width: `${Math.min(((usageData?.aiPromptsUsed || 0) / (usageData?.limits?.aiPrompts || 20)) * 100, 100)}%` 
+                              }}
+                            />
+                          </div>
+                          {usageData?.aiPromptsUsed >= (usageData?.limits?.aiPrompts || 20) && (
+                            <div className="flex items-center text-sm text-amber-600">
+                              <AlertCircle className="h-4 w-4 mr-1" />
+                              Limit reached - Add your own OpenAI key to continue
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Email Usage */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">Emails Sent</span>
+                            <span className="text-sm text-muted-foreground">
+                              {usageData?.emailsSent || 0} / {usageData?.limits?.emails || 50}
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                              style={{ 
+                                width: `${Math.min(((usageData?.emailsSent || 0) / (usageData?.limits?.emails || 50)) * 100, 100)}%` 
+                              }}
+                            />
+                          </div>
+                          {usageData?.emailsSent >= (usageData?.limits?.emails || 50) && (
+                            <div className="flex items-center text-sm text-amber-600">
+                              <AlertCircle className="h-4 w-4 mr-1" />
+                              Limit reached - Add your own Mailgun key to continue
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <Separator className="my-6" />
+
+                    {/* Current Plan */}
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-medium">Current Plan</h3>
+                      <div className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Users className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{usageData?.tier === 'free' ? 'Free Plan' : 'Personal Plan'}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {usageData?.tier === 'free' 
+                                ? '20 AI prompts • 50 emails per month' 
+                                : 'Unlimited with your API keys'
+                              }
+                            </p>
+                          </div>
+                        </div>
+                        {usageData?.tier === 'free' && (
+                          <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
+                            Current
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Personal API Keys Card */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Key className="h-5 w-5" />
+                      Personal API Keys
+                    </CardTitle>
+                    <CardDescription>
+                      Add your own API keys to bypass usage limits and unlock unlimited access
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-6">
+                      <h3 className="text-lg font-medium mb-2">API Key Status</h3>
+                      {keyStatusLoading ? (
+                        <div className="flex items-center">
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Checking API key status...
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center">
+                            {apiKeyStatus?.openai ? (
+                              <>
+                                <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                                <span>OpenAI API key configured</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+                                <span>OpenAI API key not configured</span>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center">
+                            {apiKeyStatus?.mailgun ? (
+                              <>
+                                <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                                <span>Mailgun API key configured</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+                                <span>Mailgun API key not configured</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <Form {...personalAPIKeysForm}>
+                      <form onSubmit={personalAPIKeysForm.handleSubmit(onPersonalAPIKeysSubmit)} className="space-y-4">
+                        <FormField
+                          control={personalAPIKeysForm.control}
+                          name="openaiKey"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>OpenAI API Key</FormLabel>
+                              <FormControl>
+                                <Input type="password" placeholder="sk-..." {...field} />
+                              </FormControl>
+                              <FormDescription>
+                                Your OpenAI API key enables unlimited AI features
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={personalAPIKeysForm.control}
+                          name="mailgunKey"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Mailgun API Key</FormLabel>
+                              <FormControl>
+                                <Input type="password" placeholder="key-..." {...field} />
+                              </FormControl>
+                              <FormDescription>
+                                Your Mailgun API key enables unlimited email sending
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={personalAPIKeysForm.control}
+                          name="mailgunDomain"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Mailgun Domain</FormLabel>
+                              <FormControl>
+                                <Input placeholder="yourdomain.com" {...field} />
+                              </FormControl>
+                              <FormDescription>
+                                Your verified Mailgun domain for sending emails
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button 
+                          type="submit" 
+                          disabled={personalAPIKeysMutation.isPending}
+                          className="w-full"
+                        >
+                          {personalAPIKeysMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Save API Keys
+                        </Button>
+                      </form>
+                    </Form>
+
+                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div className="text-sm">
+                          <p className="font-medium text-blue-900">Secure Storage</p>
+                          <p className="text-blue-700">
+                            Your API keys are encrypted and stored securely. They are never shared with third parties.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
                 </Card>
               </TabsContent>
             </Tabs>
