@@ -101,7 +101,7 @@ export default function LeadManagement() {
     data: selectedLead,
     isLoading: isLoadingSelectedLead
   } = useQuery({
-    queryKey: ["/api/leads", selectedLeadId],
+    queryKey: [`/api/leads/${selectedLeadId}`],
     enabled: !!selectedLeadId,
     retry: 1
   });
@@ -157,7 +157,7 @@ export default function LeadManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       queryClient.invalidateQueries({ queryKey: ["/api/leads/top"] });
       if (selectedLeadId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/leads", selectedLeadId] });
+        queryClient.invalidateQueries({ queryKey: [`/api/leads/${selectedLeadId}`] });
       }
     },
     onError: (error) => {
@@ -183,7 +183,7 @@ export default function LeadManagement() {
       // Refetch lead data
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       if (selectedLeadId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/leads", selectedLeadId] });
+        queryClient.invalidateQueries({ queryKey: [`/api/leads/${selectedLeadId}`] });
       }
     },
     onError: (error) => {
