@@ -1,10 +1,16 @@
 import OpenAI from "openai";
+import { usageService } from './usage-service';
 
-// Initialize OpenAI client
+// Initialize OpenAI client with global API key
 // The newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ 
+const globalOpenAI = new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY || undefined
 });
+
+// Create OpenAI client with user's personal API key
+function createPersonalOpenAI(apiKey: string): OpenAI {
+  return new OpenAI({ apiKey });
+}
 
 // Function to check if we have a valid API key (not undefined, empty or a placeholder)
 export function hasValidApiKey(): boolean {
@@ -26,19 +32,49 @@ function safeJsonParse(content: string | null): any {
 
 /**
  * Interprets a voice command and determines its intent and action
+ * Uses hybrid model: checks user limits and uses personal API keys when available
  */
-export async function interpretVoiceCommand(text: string): Promise<{
+export async function interpretVoiceCommand(text: string, userId?: number): Promise<{
   intent: string;
   action: string;
+  limitReached?: boolean;
 }> {
-  // For development/demo purposes, use a simple pattern matching for quick responses
-  // and to avoid API key requirements
   console.log("Interpreting voice command:", text);
   
   try {
+    let openaiClient = globalOpenAI;
+    let canUseAPI = true;
+    
+    // If userId provided, check usage limits and personal API keys
+    if (userId) {
+      const usageCheck = await usageService.canUseAIPrompt(userId);
+      
+      if (!usageCheck.canUse && !usageCheck.hasPersonalKey) {
+        // User has reached free tier limit and has no personal key
+        return {
+          intent: "limit_reached",
+          action: "You've reached your free usage limit. Please add your own OpenAI API key to continue.",
+          limitReached: true,
+        };
+      }
+      
+      // If user has personal API key, use it
+      if (usageCheck.hasPersonalKey) {
+        const personalKeys = await usageService.getPersonalAPIKeys(userId);
+        if (personalKeys.openaiKey) {
+          openaiClient = createPersonalOpenAI(personalKeys.openaiKey);
+        }
+      }
+      
+      // Increment usage counter if using global API
+      if (!usageCheck.hasPersonalKey && usageCheck.canUse) {
+        await usageService.incrementAIUsage(userId);
+      }
+    }
+    
     // Check if we have a valid API key before making OpenAI call
-    if (hasValidApiKey()) {
-      const response = await openai.chat.completions.create({
+    if (hasValidApiKey() || (userId && openaiClient !== globalOpenAI)) {
+      const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
@@ -198,12 +234,38 @@ export async function interpretVoiceCommand(text: string): Promise<{
  */
 export async function generateCampaignSuggestions(
   campaignGoal: string,
-  targetAudience: string
+  targetAudience: string,
+  userId?: number
 ): Promise<string[]> {
   try {
+    let openaiClient = globalOpenAI;
+    
+    // Check usage limits and personal keys if userId provided
+    if (userId) {
+      const usageCheck = await usageService.canUseAIPrompt(userId);
+      
+      if (!usageCheck.canUse && !usageCheck.hasPersonalKey) {
+        // Return empty array if limits reached
+        return [];
+      }
+      
+      // Use personal API key if available
+      if (usageCheck.hasPersonalKey) {
+        const personalKeys = await usageService.getPersonalAPIKeys(userId);
+        if (personalKeys.openaiKey) {
+          openaiClient = createPersonalOpenAI(personalKeys.openaiKey);
+        }
+      }
+      
+      // Increment usage if using global API
+      if (!usageCheck.hasPersonalKey && usageCheck.canUse) {
+        await usageService.incrementAIUsage(userId);
+      }
+    }
+    
     // Check if we have a valid API key before making OpenAI call
-    if (hasValidApiKey()) {
-      const response = await openai.chat.completions.create({
+    if (hasValidApiKey() || (userId && openaiClient !== globalOpenAI)) {
+      const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
@@ -293,14 +355,41 @@ export async function generateCampaignSuggestions(
 /**
  * Analyzes customer data to provide insights and recommendations
  */
-export async function analyzeCustomerData(customerData: any[]): Promise<{
+export async function analyzeCustomerData(customerData: any[], userId?: number): Promise<{
   insights: string[];
   recommendations: string[];
 }> {
   try {
+    let openaiClient = globalOpenAI;
+    
+    // Check usage limits and personal keys if userId provided
+    if (userId) {
+      const usageCheck = await usageService.canUseAIPrompt(userId);
+      
+      if (!usageCheck.canUse && !usageCheck.hasPersonalKey) {
+        return {
+          insights: ["Usage limit reached. Please add your OpenAI API key to continue."],
+          recommendations: []
+        };
+      }
+      
+      // Use personal API key if available
+      if (usageCheck.hasPersonalKey) {
+        const personalKeys = await usageService.getPersonalAPIKeys(userId);
+        if (personalKeys.openaiKey) {
+          openaiClient = createPersonalOpenAI(personalKeys.openaiKey);
+        }
+      }
+      
+      // Increment usage if using global API
+      if (!usageCheck.hasPersonalKey && usageCheck.canUse) {
+        await usageService.incrementAIUsage(userId);
+      }
+    }
+    
     // Check if we have a valid API key before making OpenAI call
-    if (hasValidApiKey()) {
-      const response = await openai.chat.completions.create({
+    if (hasValidApiKey() || (userId && openaiClient !== globalOpenAI)) {
+      const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
@@ -528,4 +617,4 @@ export async function getCrmAssistantResponse(
   }
 }
 
-export default openai;
+export default globalOpenAI;

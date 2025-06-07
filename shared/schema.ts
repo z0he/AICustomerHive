@@ -13,6 +13,20 @@ export const users = pgTable("users", {
   initials: text("initials").notNull(),
   googleId: text("google_id"),
   isAdmin: boolean("is_admin").default(false),
+  // API Usage Tracking for hybrid model
+  aiPromptsUsed: integer("ai_prompts_used").default(0),
+  emailsSent: integer("emails_sent").default(0),
+  // User tier for future Stripe integration
+  userTier: text("user_tier").default("free"), // free, pro, enterprise
+  // Personal API keys (encrypted storage)
+  personalOpenAIKey: text("personal_openai_key"), // Will be encrypted
+  personalMailgunKey: text("personal_mailgun_key"), // Will be encrypted
+  personalMailgunDomain: text("personal_mailgun_domain"),
+  // Subscription management
+  stripeCustomerId: text("stripe_customer_id"),
+  subscriptionStatus: text("subscription_status").default("trial"), // trial, active, canceled, past_due
+  trialEndsAt: timestamp("trial_ends_at"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
