@@ -166,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/config/openai", async (req: Request, res: Response) => {
     try {
       const { apiKey } = req.body;
-      const userId = req.user?.id;
+      const userId = (req as any).user?.id;
       
       if (!userId) {
         return res.status(401).json({ message: "Authentication required" });
@@ -1712,7 +1712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/config/mailgun", async (req: Request, res: Response) => {
     try {
       const { apiKey, domain } = req.body;
-      const userId = req.user?.id;
+      const userId = (req as any).user?.id;
       
       if (!userId) {
         return res.status(401).json({ message: "Authentication required" });
