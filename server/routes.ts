@@ -148,12 +148,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/voice/interpret", async (req: Request, res: Response) => {
     try {
       const { transcript } = req.body;
+      const user = (req as any).user;
       
       if (!transcript) {
         return res.status(400).json({ message: "Transcript is required" });
       }
       
-      const interpretation = await interpretVoiceCommand(transcript);
+      if (!user || !user.id) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      const interpretation = await interpretVoiceCommand(transcript, user.id);
       return res.json(interpretation);
     } catch (error) {
       console.error("Voice interpret error:", error);

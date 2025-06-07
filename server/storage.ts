@@ -200,6 +200,12 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage & { createdAt: Date }): Promise<ChatMessage>;
   updateChatMessage(id: number, messageData: Partial<ChatMessage>): Promise<ChatMessage>;
   deleteChatMessage(id: number): Promise<void>;
+  
+  // User Configuration methods
+  getUserConfiguration(userId: number): Promise<UserConfiguration | undefined>;
+  setUserConfiguration(userId: number, config: Partial<Omit<UserConfiguration, 'id' | 'userId'>>): Promise<UserConfiguration>;
+  updateUserConfiguration(userId: number, config: Partial<Omit<UserConfiguration, 'id' | 'userId'>>): Promise<UserConfiguration>;
+  deleteUserConfiguration(userId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -555,6 +561,7 @@ export class MemStorage implements IStorage {
   private trackingInstallations: Map<number, TrackingInstallation>;
   private chatConversations: Map<number, ChatConversation>;
   private chatMessages: Map<number, ChatMessage>;
+  private userConfigurations: Map<number, UserConfiguration>;
   
   private userCurrentId: number;
   private campaignCurrentId: number;
@@ -591,6 +598,7 @@ export class MemStorage implements IStorage {
     this.trackingInstallations = new Map();
     this.chatConversations = new Map();
     this.chatMessages = new Map();
+    this.userConfigurations = new Map();
     
     this.userCurrentId = 1;
     this.campaignCurrentId = 1;
