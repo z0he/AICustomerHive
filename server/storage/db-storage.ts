@@ -352,6 +352,31 @@ export class DbStorage implements IStorage {
     
     return result[0];
   }
+
+  async updateUserPersonalKeys(userId: number, keys: { openaiKey?: string; mailgunKey?: string; mailgunDomain?: string }): Promise<User> {
+    const updateData: any = {};
+    
+    if (keys.openaiKey !== undefined) {
+      updateData.personalOpenAIKey = keys.openaiKey;
+    }
+    if (keys.mailgunKey !== undefined) {
+      updateData.personalMailgunKey = keys.mailgunKey;
+    }
+    if (keys.mailgunDomain !== undefined) {
+      updateData.personalMailgunDomain = keys.mailgunDomain;
+    }
+    
+    const result = await db.update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (result.length === 0) {
+      throw new Error('User not found');
+    }
+    
+    return result[0];
+  }
   
   // ----- Campaign methods -----
   
