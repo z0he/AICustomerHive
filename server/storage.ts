@@ -2124,6 +2124,49 @@ export class MemStorage implements IStorage {
     
     this.chatMessages.delete(id);
   }
+
+  // ----- User Configuration methods -----
+  async getUserConfiguration(userId: number): Promise<UserConfiguration | undefined> {
+    return this.userConfigurations.get(userId);
+  }
+
+  async setUserConfiguration(userId: number, config: Partial<Omit<UserConfiguration, 'id' | 'userId'>>): Promise<UserConfiguration> {
+    const existingConfig = this.userConfigurations.get(userId);
+    
+    const newConfig: UserConfiguration = {
+      id: existingConfig?.id || Date.now(),
+      userId,
+      openaiApiKey: config.openaiApiKey || null,
+      mailgunApiKey: config.mailgunApiKey || null,
+      mailgunDomain: config.mailgunDomain || null,
+      createdAt: existingConfig?.createdAt || new Date(),
+      updatedAt: new Date()
+    };
+    
+    this.userConfigurations.set(userId, newConfig);
+    return newConfig;
+  }
+
+  async updateUserConfiguration(userId: number, config: Partial<Omit<UserConfiguration, 'id' | 'userId'>>): Promise<UserConfiguration> {
+    const existingConfig = this.userConfigurations.get(userId);
+    
+    if (!existingConfig) {
+      return this.setUserConfiguration(userId, config);
+    }
+    
+    const updatedConfig: UserConfiguration = {
+      ...existingConfig,
+      ...config,
+      updatedAt: new Date()
+    };
+    
+    this.userConfigurations.set(userId, updatedConfig);
+    return updatedConfig;
+  }
+
+  async deleteUserConfiguration(userId: number): Promise<boolean> {
+    return this.userConfigurations.delete(userId);
+  }
 }
 
 // Use DbStorage to connect to a real PostgreSQL database
