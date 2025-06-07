@@ -543,6 +543,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.get("/api/leads/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid lead ID" });
+      }
+      
+      const lead = await storage.getLead(id);
+      if (!lead) {
+        return res.status(404).json({ message: "Lead not found" });
+      }
+      
+      return res.json(lead);
+    } catch (error) {
+      console.error("Get lead error:", error);
+      return res.status(500).json({ message: "Failed to fetch lead" });
+    }
+  });
+  
   app.patch("/api/leads/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
