@@ -161,11 +161,11 @@ const Features: React.FC = () => {
             Try our CRM risk-free today and discover how these powerful features can transform your business.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/auth?tab=register">
+            <a href="https://aicrm.co.uk/auth?tab=register" target="_blank" rel="noopener noreferrer">
               <Button className="px-8 py-3 text-base">
                 Try it FREE — No credit card required
               </Button>
-            </Link>
+            </a>
           </div>
         </div>
       </section>
