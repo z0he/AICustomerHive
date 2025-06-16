@@ -43,7 +43,7 @@ export default function LandingPage() {
             Try it FREE — No credit card required
           </Button>
           <Button size="lg" variant="outline" className="py-6 px-6 text-lg" onClick={() => window.open('https://app.arcade.software/share/lUpQ9EzkDA2vPyNM5PUe', '_blank')}>
-            Try our Interactive Demo
+            Or Explore the Interactive Demo
           </Button>
         </div>
       </section>
