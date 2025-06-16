@@ -342,16 +342,12 @@ const Landing: React.FC = () => {
                 Try it FREE — No credit card required
               </AccentButton>
             </a>
-            <Link href="/demo">
-              <button className="bg-white text-[#0082AE] hover:bg-white/90 px-8 py-3 rounded-md font-medium text-base">
-                Watch a 3-minute demo
-              </button>
-            </Link>
-            <Link href="/contact">
-              <button className="bg-transparent border border-white text-white hover:bg-white/10 px-8 py-3 rounded-md font-medium text-base">
-                Book a call with our team
-              </button>
-            </Link>
+            <button 
+              className="bg-white text-[#0082AE] hover:bg-white/90 px-8 py-3 rounded-md font-medium text-base"
+              onClick={() => window.open('https://app.arcade.software/share/lUpQ9EzkDA2vPyNM5PUe', '_blank')}
+            >
+              Explore AICRM with the Interactive Demo
+            </button>
           </div>
         </div>
       </section>
