@@ -51,12 +51,12 @@ const Landing: React.FC = () => {
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <a href="https://ai-crmuk.replit.app/auth?tab=register" target="_blank" rel="noopener noreferrer">
-                <AccentButton className="px-8 py-3 text-base">
+                <AccentButton className="px-8 h-9 text-base">
                   Try it FREE
                 </AccentButton>
               </a>
               <button 
-                className="bg-white text-[#0082AE] hover:bg-white/90 px-8 py-3 rounded-md font-medium text-base"
+                className="bg-white text-[#0082AE] hover:bg-white/90 px-8 h-9 rounded-md font-medium text-base inline-flex items-center justify-center"
                 onClick={() => window.open('https://app.arcade.software/share/lUpQ9EzkDA2vPyNM5PUe', '_blank')}
               >
                 Or Explore the Interactive Demo
