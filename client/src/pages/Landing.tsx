@@ -338,12 +338,12 @@ const Landing: React.FC = () => {
           <h2 className="text-3xl font-bold mb-4">Let Go of the CRM Bloat. Embrace Growth Without the Guesswork.</h2>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row mt-8">
             <a href="https://aicrm.co.uk/auth?tab=register" target="_blank" rel="noopener noreferrer">
-              <AccentButton className="px-8 py-3 text-base">
+              <AccentButton className="px-8 h-12 text-base inline-flex items-center justify-center">
                 Try it FREE — No credit card required
               </AccentButton>
             </a>
             <button 
-              className="bg-white text-[#0082AE] hover:bg-white/90 px-8 py-3 rounded-md font-medium text-base"
+              className="bg-white text-[#0082AE] hover:bg-white/90 px-8 h-12 rounded-md font-medium text-base inline-flex items-center justify-center"
               onClick={() => window.open('https://app.arcade.software/share/lUpQ9EzkDA2vPyNM5PUe', '_blank')}
             >
               Explore AICRM with the Interactive Demo
