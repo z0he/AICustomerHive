@@ -42,8 +42,8 @@ export default function LandingPage() {
           <Button size="lg" className="py-6 px-6 text-lg" onClick={() => navigate("/auth?tab=register")}>
             Try it FREE — No credit card required
           </Button>
-          <Button size="lg" variant="outline" className="py-6 px-6 text-lg">
-            Watch a 3-minute demo
+          <Button size="lg" variant="outline" className="py-6 px-6 text-lg" onClick={() => window.open('https://app.arcade.software/share/lUpQ9EzkDA2vPyNM5PUe', '_blank')}>
+            Try our Interactive Demo
           </Button>
         </div>
       </section>

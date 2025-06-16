@@ -56,11 +56,12 @@ const Landing: React.FC = () => {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </AccentButton>
               </a>
-              <Link href="/demo">
-                <button className="bg-white text-[#0082AE] hover:bg-white/90 px-8 py-3 rounded-md font-medium text-base">
-                  Watch a 3-minute demo
-                </button>
-              </Link>
+              <button 
+                className="bg-white text-[#0082AE] hover:bg-white/90 px-8 py-3 rounded-md font-medium text-base"
+                onClick={() => window.open('https://app.arcade.software/share/lUpQ9EzkDA2vPyNM5PUe', '_blank')}
+              >
+                Try our Interactive Demo
+              </button>
             </div>
           </div>
         </div>
