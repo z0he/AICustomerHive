@@ -111,9 +111,9 @@ const Pricing: React.FC = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-4 bg-slate-50 pb-8">
-                <Link href="/auth?tab=register">
+                <a href="https://aicrm.co.uk/auth?tab=register">
                   <Button className="w-full py-6 text-lg">Try it FREE — No credit card required</Button>
-                </Link>
+                </a>
                 <p className="text-center text-slate-500 text-sm">No credit card required. Start using the full platform immediately.</p>
               </CardFooter>
             </Card>
@@ -137,11 +137,11 @@ const Pricing: React.FC = () => {
             Join thousands of businesses who've already simplified their customer relationship management.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/auth?tab=register">
+            <a href="https://aicrm.co.uk/auth?tab=register">
               <Button className="px-8 py-3 text-base">
                 Try it FREE Today
               </Button>
-            </Link>
+            </a>
           </div>
         </div>
       </section>
