@@ -53,7 +53,6 @@ const Landing: React.FC = () => {
               <a href="https://ai-crmuk.replit.app/auth?tab=register" target="_blank" rel="noopener noreferrer">
                 <AccentButton className="px-8 py-3 text-base">
                   Try it FREE
-                  <ArrowRight className="ml-2 h-5 w-5" />
                 </AccentButton>
               </a>
               <button 
