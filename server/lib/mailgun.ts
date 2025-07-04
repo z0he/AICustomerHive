@@ -1,12 +1,14 @@
 import formData from 'form-data';
 import Mailgun from 'mailgun.js';
+import { getEmailDomain, validateEmailConfig, PRIMARY_EMAIL_DOMAIN } from './email-domain-service';
 
 if (!process.env.MAILGUN_API_KEY) {
   console.warn("MAILGUN_API_KEY environment variable is not set");
 }
 
 if (!process.env.MAILGUN_DOMAIN) {
-  console.warn("MAILGUN_DOMAIN environment variable is not set");
+  console.warn("MAILGUN_DOMAIN environment variable is not set, using default domain");
+  process.env.MAILGUN_DOMAIN = PRIMARY_EMAIL_DOMAIN;
 }
 
 // Initialize Mailgun with API key
@@ -37,55 +39,82 @@ interface EmailParams {
   template?: string;
   'h:X-Mailgun-Variables'?: string;
   attachment?: any[];
+  [key: string]: any; // Allow additional tracking options
 }
 
 /**
  * Send an email using Mailgun with custom credentials if provided
  */
 export async function sendEmail(params: EmailParams, customCredentials?: { apiKey: string; domain: string }): Promise<{ success: boolean; mailgunId?: string; error?: string }> {
+  // Validate and normalize email configuration
+  const validation = validateEmailConfig({
+    from: params.from,
+    domain: customCredentials?.domain || process.env.MAILGUN_DOMAIN,
+    apiKey: customCredentials?.apiKey || process.env.MAILGUN_API_KEY
+  });
+
+  if (!validation.isValid) {
+    console.error('Email configuration validation failed:', validation.error);
+    return { success: false, error: validation.error };
+  }
+
+  // Use the validated domain and normalized from address
+  const emailDomain = getEmailDomain(customCredentials?.domain);
+  const normalizedParams = {
+    ...params,
+    from: validation.normalizedFrom || params.from
+  };
+
   let mailgunClient = mg;
-  let domain = process.env.MAILGUN_DOMAIN;
 
   // Use custom credentials if provided (for user-specific configs)
   if (customCredentials) {
     const customMailgun = new Mailgun(formData);
     mailgunClient = customMailgun.client({ username: 'api', key: customCredentials.apiKey });
-    domain = customCredentials.domain;
-    console.log('Using custom Mailgun credentials for domain:', customCredentials.domain);
+    console.log('Using custom Mailgun credentials for domain:', emailDomain);
   } else if (!mg || !process.env.MAILGUN_DOMAIN) {
     console.error('Mailgun client not initialized. Check your API key and domain.');
     return { success: false, error: 'Mailgun client not initialized' };
   }
 
   try {
+    if (!mailgunClient) {
+      return { success: false, error: 'Mailgun client not initialized' };
+    }
+
     // Ensure text field is always provided (Mailgun requires it)
-    const messageParams = {
-      ...params,
-      text: params.text || params.html || ' ', // Use empty space as fallback if neither text nor html provided
+    const messageParams: any = {
+      ...normalizedParams,
+      text: normalizedParams.text || normalizedParams.html || ' ', // Use empty space as fallback if neither text nor html provided
       'o:tracking': 'no', // Disable open tracking
       'o:tracking-clicks': 'no', // Disable click tracking
       'o:tracking-opens': 'no' // Disable open tracking (alternative syntax)
     };
+
+    // Remove undefined template to avoid Mailgun API issues
+    if (!messageParams.template) {
+      delete messageParams.template;
+    }
     
-    const result = await mailgunClient.messages.create(domain, messageParams);
-    console.log('Email sent successfully:', result);
+    const result = await (mailgunClient as any).messages.create(emailDomain, messageParams);
+    console.log('Email sent successfully to domain:', emailDomain, 'Result:', result);
     
     // Return both success status and Mailgun ID for tracking
     return { success: true, mailgunId: result.id };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Mailgun email error:', error);
     
     // Check for sandbox domain activation error
-    if (error.status === 403 && error.details && error.details.includes('Please activate your Mailgun account')) {
+    if (error?.status === 403 && error?.details && error.details.includes('Please activate your Mailgun account')) {
       throw new Error('Mailgun account needs activation. Please check your email for the activation link from Mailgun or log in to your Mailgun control panel to activate your account.');
     }
     
     // Check for sandbox domain recipient verification error
-    if (error.status === 403 && error.details && error.details.includes('not authorized to send')) {
+    if (error?.status === 403 && error?.details && error.details.includes('not authorized to send')) {
       throw new Error('Mailgun sandbox domains only allow sending to verified recipients. Please authorize the recipient email in your Mailgun console or upgrade to a paid account.');
     }
     
-    return { success: false, error: error.message };
+    return { success: false, error: error?.message || 'Unknown error occurred' };
   }
 }
 
@@ -98,7 +127,7 @@ export async function sendTemplateEmail(
   subject: string,
   templateVariables: Record<string, any>,
   templateName: string
-): Promise<boolean> {
+): Promise<{ success: boolean; mailgunId?: string; error?: string }> {
   return sendEmail({
     to,
     from,

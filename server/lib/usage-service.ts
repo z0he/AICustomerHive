@@ -47,6 +47,16 @@ export class UsageService {
     const used = user.aiPromptsUsed || 0;
     const hasPersonalKey = !!user.personalOpenAIKey;
 
+    // If user is paid, they bypass usage limits with system keys
+    if (user.isPaid) {
+      return {
+        canUse: true,
+        used,
+        limit: -1,
+        hasPersonalKey: false,
+      };
+    }
+
     // If user has personal API key, they can use unlimited prompts
     if (hasPersonalKey) {
       return {
@@ -57,7 +67,7 @@ export class UsageService {
       };
     }
 
-    // Check against tier limits
+    // Check against tier limits for free users
     const canUse = limit === -1 || used < limit;
 
     return {
@@ -88,6 +98,16 @@ export class UsageService {
     const used = user.emailsSent || 0;
     const hasPersonalKey = !!user.personalMailgunKey;
 
+    // If user is paid, they bypass usage limits with system keys
+    if (user.isPaid) {
+      return {
+        canUse: true,
+        used,
+        limit: -1,
+        hasPersonalKey: false,
+      };
+    }
+
     // If user has personal API key, they can send unlimited emails
     if (hasPersonalKey) {
       return {
@@ -98,7 +118,7 @@ export class UsageService {
       };
     }
 
-    // Check against tier limits
+    // Check against tier limits for free users
     const canUse = limit === -1 || used < limit;
 
     return {
@@ -113,32 +133,30 @@ export class UsageService {
    * Increment AI prompt usage for a user
    */
   async incrementAIUsage(userId: number): Promise<void> {
-    await db
-      .update(users)
-      .set({
-        aiPromptsUsed: db
-          .select({ count: users.aiPromptsUsed })
-          .from(users)
-          .where(eq(users.id, userId))
-          .then(([user]) => (user?.count || 0) + 1),
-      })
-      .where(eq(users.id, userId));
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (user) {
+      await db
+        .update(users)
+        .set({
+          aiPromptsUsed: (user.aiPromptsUsed || 0) + 1,
+        })
+        .where(eq(users.id, userId));
+    }
   }
 
   /**
    * Increment email usage for a user
    */
   async incrementEmailUsage(userId: number): Promise<void> {
-    await db
-      .update(users)
-      .set({
-        emailsSent: db
-          .select({ count: users.emailsSent })
-          .from(users)
-          .where(eq(users.id, userId))
-          .then(([user]) => (user?.count || 0) + 1),
-      })
-      .where(eq(users.id, userId));
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (user) {
+      await db
+        .update(users)
+        .set({
+          emailsSent: (user.emailsSent || 0) + 1,
+        })
+        .where(eq(users.id, userId));
+    }
   }
 
   /**

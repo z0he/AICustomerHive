@@ -9,6 +9,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 // UI Components
 import AuthHeader from '@/components/auth/AuthHeader';
 import Sidebar from '@/components/layout/Sidebar';
+import UsageWarning from '@/components/usage/UsageWarning';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -140,11 +141,7 @@ const SettingsPage: React.FC = () => {
   const [generatedCode, setGeneratedCode] = useState('');
   const [trackingActiveTab, setTrackingActiveTab] = useState('code');
 
-  // Usage tracking queries
-  const { data: usageData, isLoading: usageLoading } = useQuery({
-    queryKey: ['/api/usage'],
-    enabled: true
-  });
+  // API key status for usage tracking
 
   const { data: apiKeyStatus, isLoading: keyStatusLoading } = useQuery({
     queryKey: ['/api/settings/api-keys/status'],
@@ -238,6 +235,12 @@ const SettingsPage: React.FC = () => {
   // Mailgun API status query
   const { data: mailgunStatus, isLoading: isMailgunStatusLoading, refetch: refetchMailgunStatus } = useQuery({
     queryKey: ['/api/config/mailgun/status'],
+    refetchOnWindowFocus: false,
+  });
+
+  // Usage data query
+  const { data: usageData, isLoading: usageLoading, refetch: refetchUsage } = useQuery({
+    queryKey: ['/api/usage'],
     refetchOnWindowFocus: false,
   });
 
@@ -1379,137 +1382,67 @@ const SettingsPage: React.FC = () => {
 
               {/* Usage & Billing Tab */}
               <TabsContent value="usage" className="mt-4 space-y-6">
-                {/* Current Usage Card */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      Current Usage
-                    </CardTitle>
-                    <CardDescription>
-                      Track your AI prompts and email usage against your plan limits
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {usageLoading ? (
-                      <div className="flex items-center">
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Loading usage data...
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* AI Prompts Usage */}
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">AI Prompts</span>
-                            <span className="text-sm text-muted-foreground">
-                              {usageData?.aiPromptsUsed || 0} / {usageData?.limits?.aiPrompts || 20}
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                              style={{ 
-                                width: `${Math.min(((usageData?.aiPromptsUsed || 0) / (usageData?.limits?.aiPrompts || 20)) * 100, 100)}%` 
-                              }}
-                            />
-                          </div>
-                          {usageData?.aiPromptsUsed >= (usageData?.limits?.aiPrompts || 20) && (
-                            <div className="flex items-center text-sm text-amber-600">
-                              <AlertCircle className="h-4 w-4 mr-1" />
-                              Limit reached - Add your own OpenAI key to continue
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Email Usage */}
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">Emails Sent</span>
-                            <span className="text-sm text-muted-foreground">
-                              {usageData?.emailsSent || 0} / {usageData?.limits?.emails || 50}
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                              style={{ 
-                                width: `${Math.min(((usageData?.emailsSent || 0) / (usageData?.limits?.emails || 50)) * 100, 100)}%` 
-                              }}
-                            />
-                          </div>
-                          {usageData?.emailsSent >= (usageData?.limits?.emails || 50) && (
-                            <div className="flex items-center text-sm text-amber-600">
-                              <AlertCircle className="h-4 w-4 mr-1" />
-                              Limit reached - Add your own Mailgun key to continue
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                {usageLoading ? (
+                  <div className="flex items-center justify-center p-8">
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                    Loading usage data...
+                  </div>
+                ) : (
+                  <>
+                    {/* Usage Dashboard */}
+                    {usageData && (
+                      <UsageWarning 
+                        usage={{
+                          aiPrompts: {
+                            used: usageData.aiPrompts?.used || 0,
+                            limit: usageData.aiPrompts?.limit || 20,
+                            hasPersonalKey: usageData.aiPrompts?.hasPersonalKey || false
+                          },
+                          emails: {
+                            used: usageData.emails?.used || 0,
+                            limit: usageData.emails?.limit || 50,
+                            hasPersonalKey: usageData.emails?.hasPersonalKey || false
+                          },
+                          tier: usageData.tier || 'free'
+                        }}
+                        showFullDashboard={true}
+                      />
                     )}
 
-                    <Separator className="my-6" />
-
-                    {/* Current Plan */}
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-medium">Current Plan</h3>
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <Users className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">{usageData?.tier === 'free' ? 'Free Plan' : 'Personal Plan'}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {usageData?.tier === 'free' 
-                                ? '20 AI prompts • 50 emails per month' 
-                                : 'Unlimited with your API keys'
-                              }
-                            </p>
+                    {/* Upgrade Guidance Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Zap className="h-5 w-5" />
+                          Need More Access?
+                        </CardTitle>
+                        <CardDescription>
+                          Add your own API keys to bypass usage limits and get unlimited access
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <Key className="h-5 w-5 text-blue-600 mt-0.5" />
+                            <div>
+                              <p className="font-medium text-gray-900 mb-2">Unlock Unlimited Access</p>
+                              <p className="text-sm text-gray-600 mb-4">
+                                Add your personal OpenAI and Mailgun API keys to remove all usage limits and get unlimited AI prompts and email sending.
+                              </p>
+                              <Button 
+                                onClick={() => setActiveTab('integrations')}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                <Key className="h-4 w-4 mr-2" />
+                                Configure API Keys
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                        {usageData?.tier === 'free' && (
-                          <span className="px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
-                            Current
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Upgrade Guidance Card */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Zap className="h-5 w-5" />
-                      Need More Access?
-                    </CardTitle>
-                    <CardDescription>
-                      Add your own API keys to bypass usage limits and get unlimited access
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <Key className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div>
-                          <p className="font-medium text-gray-900 mb-2">Unlock Unlimited Access</p>
-                          <p className="text-sm text-gray-600 mb-4">
-                            Add your personal OpenAI and Mailgun API keys to remove all usage limits and get unlimited AI prompts and email sending.
-                          </p>
-                          <Button 
-                            onClick={() => setActiveTab('integrations')}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Key className="h-4 w-4 mr-2" />
-                            Configure API Keys
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  </>
+                )}
               </TabsContent>
             </Tabs>
           </div>

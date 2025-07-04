@@ -1766,10 +1766,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/config/mailgun/status", async (req: Request, res: Response) => {
     try {
       const isConfigured = isMailgunConfigured();
-      return res.json({ configured: isConfigured });
+      const currentDomain = process.env.MAILGUN_DOMAIN;
+      
+      return res.json({ 
+        configured: isConfigured,
+        domain: currentDomain,
+        isProduction: !currentDomain?.includes('sandbox')
+      });
     } catch (error) {
       console.error("Mailgun status check error:", error);
       return res.status(500).json({ message: "Failed to check Mailgun configuration status" });
+    }
+  });
+
+  // Enhanced Mailgun configuration with domain validation
+  app.post("/api/config/mailgun", async (req: Request, res: Response) => {
+    try {
+      const { apiKey, domain } = req.body;
+      const userId = (req as any).user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
+      if (!apiKey) {
+        return res.status(400).json({ message: "Mailgun API key is required" });
+      }
+      
+      if (!domain) {
+        return res.status(400).json({ message: "Mailgun domain is required" });
+      }
+
+      // Validate the API key and domain
+      const { validateMailgunKey } = await import('./lib/api-key-validator');
+      const validation = await validateMailgunKey(apiKey, domain);
+      
+      if (!validation.isValid) {
+        return res.status(400).json({ 
+          message: validation.error || "Invalid Mailgun configuration"
+        });
+      }
+
+      // Store personal Mailgun credentials in database
+      await storage.updateUserPersonalKeys(userId, { 
+        mailgunKey: apiKey, 
+        mailgunDomain: domain 
+      });
+
+      return res.json({ 
+        success: true, 
+        message: "Mailgun API key and domain have been configured",
+        domain: domain
+      });
+    } catch (error) {
+      console.error("Mailgun configuration error:", error);
+      return res.status(500).json({ message: "Failed to configure Mailgun API key and domain" });
     }
   });
 
@@ -2144,6 +2195,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get API key status error:", error);
       return res.status(500).json({ message: "Failed to get API key status" });
+    }
+  });
+
+  // Validate API keys before saving
+  app.post("/api/settings/api-keys/validate", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { openaiKey, mailgunKey, mailgunDomain } = req.body;
+      
+      if (!openaiKey && !mailgunKey) {
+        return res.status(400).json({ message: "At least one API key is required for validation" });
+      }
+
+      const { performAPIHealthCheck } = await import('./lib/api-key-validator');
+      const validation = await performAPIHealthCheck(userId, {
+        openaiKey,
+        mailgunKey,
+        mailgunDomain
+      });
+
+      return res.json(validation);
+    } catch (error) {
+      console.error("API key validation error:", error);
+      return res.status(500).json({ message: "Failed to validate API keys" });
+    }
+  });
+
+  // Health check for user's stored API keys
+  app.get("/api/settings/api-keys/health", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const keys = await usageService.getPersonalAPIKeys(userId);
+      
+      if (!keys.openaiKey && !keys.mailgunKey) {
+        return res.json({
+          openai: { isValid: false, error: "No API key configured" },
+          mailgun: { isValid: false, error: "No API key configured" }
+        });
+      }
+
+      const { performAPIHealthCheck } = await import('./lib/api-key-validator');
+      const health = await performAPIHealthCheck(userId, keys);
+
+      return res.json(health);
+    } catch (error) {
+      console.error("API key health check error:", error);
+      return res.status(500).json({ message: "Failed to perform health check" });
     }
   });
 

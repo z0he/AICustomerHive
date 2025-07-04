@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import AuthHeader from "@/components/auth/AuthHeader";
 import Sidebar from "@/components/layout/Sidebar";
 import VoiceCommandInterface from "@/components/voice/VoiceCommandInterface";
+import UsageWarning from "@/components/usage/UsageWarning";
 import VoiceCommandModal from "@/components/modals/VoiceCommandModal";
 import CreateCampaignModal from "@/components/modals/CreateCampaignModal";
 import EmailPreviewModal from "@/components/modals/EmailPreviewModal";
@@ -167,6 +168,12 @@ const Dashboard = () => {
         { id: 3, name: "Product Launch", path: "/campaigns/3" }
       ];
     }
+  });
+
+  // Usage data query for usage warnings
+  const { data: usageData } = useQuery({
+    queryKey: ['/api/usage'],
+    refetchOnWindowFocus: false,
   });
   
   // Performance metrics for charts
@@ -536,6 +543,26 @@ const Dashboard = () => {
             userName={userData?.user?.name ? userData.user.name.split(' ')[0] : 'User'}
             isBrowserSupported={isBrowserSupported}
           />
+          
+          {/* Usage Warnings */}
+          {usageData && (
+            <UsageWarning 
+              usage={{
+                aiPrompts: {
+                  used: usageData.aiPrompts?.used || 0,
+                  limit: usageData.aiPrompts?.limit || 20,
+                  hasPersonalKey: usageData.aiPrompts?.hasPersonalKey || false
+                },
+                emails: {
+                  used: usageData.emails?.used || 0,
+                  limit: usageData.emails?.limit || 50,
+                  hasPersonalKey: usageData.emails?.hasPersonalKey || false
+                },
+                tier: usageData.tier || 'free'
+              }}
+              className="mb-6"
+            />
+          )}
           
           {/* Dashboard Content */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
