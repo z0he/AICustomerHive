@@ -1,0 +1,99 @@
+You are working on the AI-powered CRM project (AICRM).
+
+## GOAL:
+Implement a hybrid API model for Mailgun and OpenAI integrations, while preserving **all existing functionality** across the entire CRM platform.
+
+---
+
+## 🔧 TASKS TO IMPLEMENT:
+
+### 1. FIX: Mailgun Sandbox Domain Issue
+- Ensure all outgoing emails — including those from new or free-tier users — are sent from the correct Mailgun domain: `mail.aicrm.co.uk`.
+- DO NOT use the Mailgun **sandbox domain** (e.g., `postmaster@your-sandbox-domain.mailgun.org`) under any condition.
+- All test emails and actual campaign emails must route through `mail.aicrm.co.uk`, with correct API key setup.
+
+---
+
+### 2. HYBRID API LIMITS (Free Tier)
+Apply usage caps for new users using system-wide shared API keys:
+
+- **20 OpenAI prompt uses**
+- **50 outbound emails**
+
+Once the user exceeds these:
+- Prompt them to either:
+  a) Enter their own OpenAI and Mailgun API keys in the Settings panel  
+  b) Wait for a future upgrade plan (Stripe integration is NOT yet implemented)
+
+---
+
+### 3. CUSTOM API OVERRIDES
+- Allow users to save their own OpenAI and Mailgun API keys in Settings.
+- If present and valid, always **use the user’s API keys** instead of system keys.
+- If user keys are invalid or missing:
+  - Use shared keys **only if usage limits haven’t been reached**
+  - Show error/limit warning otherwise
+
+---
+
+### 4. PREPARE FOR FUTURE STRIPE INTEGRATION
+- Add a dummy boolean flag (e.g., `user.isPaid = true/false`)
+- When `isPaid = true`, bypass usage limits and allow:
+  - Unlimited or higher-tier AI prompt usage
+  - Unlimited email sending through system credentials
+
+---
+
+## 🚫 DO NOT DELETE OR BREAK THE FOLLOWING FEATURES
+
+**All of the following must be preserved as-is:**
+
+### 📩 Email Module
+- Configuration tab (Mailgun setup + test email sending)
+- Templates tab
+- Campaigns tab
+- Sequences tab
+- Analytics tab (within Email)
+
+### 📊 CRM Core
+- Dashboard analytics
+- Lead management
+- Campaign creation
+- Forms functionality
+- Automation tools
+
+### 🗂️ General CRM Sections
+- Email Status
+- Calendar
+- Data MGMT (Data Management)
+- Main Analytics section
+
+### 🔧 Other Functional Features
+- CRM Assistant
+- Feedback feature (user can send bugs, suggestions, etc.)
+
+### 🖥️ UI
+- Sidebar layout (e.g., gradient email button state)
+- Tab navigation and visual hierarchy
+
+⚠️ Do NOT rename, disable, or move these features. Add all new logic in a **non-destructive and modular way** to avoid regressions.
+
+---
+
+## ✅ TESTING INSTRUCTIONS
+- Confirm that test and live emails send correctly from `mail.aicrm.co.uk`
+- Validate OpenAI and email usage tracking
+- Ensure fallback and override behaviour works as described
+- Make sure UI communicates when a user needs to add their API key or upgrade
+- Ensure no existing feature functionality is changed or broken
+
+---
+
+## SUMMARY
+You are implementing a hybrid OpenAI and Mailgun API model that:
+- Prevents cost overrun from free-tier users
+- Allows upgrades via custom keys
+- Prepares for future Stripe billing
+- Ensures the full CRM platform remains intact and functional
+
+NO deletions. NO renames. Modular only.

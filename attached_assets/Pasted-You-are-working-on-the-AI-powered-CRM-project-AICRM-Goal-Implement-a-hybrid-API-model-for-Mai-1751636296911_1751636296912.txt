@@ -1,0 +1,42 @@
+You are working on the AI-powered CRM project (AICRM).
+
+Goal: Implement a hybrid API model for Mailgun and OpenAI integrations, without deleting or overriding any existing working features or logic.
+
+## Key Tasks:
+
+1. **Fix Email Sending Domain for Free-Tier Users**
+   - Ensure that all outgoing emails (including for new signups on the free plan) are sent from the correct Mailgun domain: `mail.aicrm.co.uk`.
+   - Do NOT use or assign the Mailgun sandbox domain (e.g., `your-sandbox-domain.mailgun.org`) under any condition.
+   - Validate that the app is using the production sending domain (`mail.aicrm.co.uk`) with correct API credentials for the free tier.
+
+2. **Set Usage Limits for Free-Tier Users**
+   - Allow new users up to:
+     - **20 OpenAI prompt uses**
+     - **50 outbound emails**
+   - After these limits are reached, prompt the user to either:
+     a) Add their own OpenAI and Mailgun API keys in Settings, OR  
+     b) Subscribe to a paid plan (Stripe integration to be added later)
+
+3. **Hybrid API Key Handling**
+   - By default, use the system/global OpenAI and Mailgun API keys for free-tier usage within the defined limits.
+   - Provide a Settings section where users can enter their own OpenAI and Mailgun API keys to unlock unlimited usage.
+   - When a user adds their own API key(s), prioritise using their keys instead of the system keys.
+
+4. **Preserve Existing Functionality**
+   - DO NOT delete, remove, or break any features already implemented — especially those related to:
+     - Lead management
+     - Campaign creation
+     - Dashboard analytics
+     - Forms or automation tools
+
+5. **Future-Proof for Stripe Integration**
+   - Add conditional logic that checks for a "paid user" status (currently dummy flag or environment variable is fine).
+   - Paid users will eventually have higher email and AI limits without needing to enter their own API keys.
+
+## Notes:
+- Add basic error handling if a user tries to send emails past their limit or if their personal API credentials fail.
+- Confirm email sending domain is set globally once per user and does not revert to sandbox for any reason.
+
+This update is critical to reduce friction for non-technical users, prevent email failures, and pave the way for monetisation.
+
+Implement in a modular, non-destructive way.
