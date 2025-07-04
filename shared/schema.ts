@@ -39,6 +39,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type SelectUser = typeof users.$inferSelect;
 
 // Campaigns table
 export const campaigns = pgTable("campaigns", {

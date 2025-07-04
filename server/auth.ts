@@ -8,7 +8,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { queryClient } from "./lib/db";
-import { User as SelectUser } from "@shared/schema";
+import { SelectUser } from "@shared/schema";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { notifyNewUserRegistration, notifySystemError } from "./lib/notification-service";
