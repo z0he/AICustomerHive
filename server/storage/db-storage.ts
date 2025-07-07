@@ -1139,6 +1139,7 @@ export class DbStorage implements IStorage {
       
       // Log the email with Mailgun tracking ID
       const emailLog = await this.createEmailLog({
+        userId: options.userId || 1, // Default to admin user if not specified
         from,
         to,
         subject,
@@ -1161,6 +1162,7 @@ export class DbStorage implements IStorage {
       
       // Log the failed email
       const emailLog = await this.createEmailLog({
+        userId: options.userId || 1, // Default to admin user if not specified
         from,
         to,
         subject,
@@ -1229,6 +1231,7 @@ export class DbStorage implements IStorage {
       
       // Log the email with personalized content
       const emailLog = await this.createEmailLog({
+        userId: options.userId || 1, // Default to admin user if not specified
         from,
         to,
         subject: personalizedSubject,
@@ -1267,6 +1270,7 @@ export class DbStorage implements IStorage {
       
       // Log the failed email
       const emailLog = await this.createEmailLog({
+        userId: options.userId || 1, // Default to admin user if not specified
         from: options.from || process.env.DEFAULT_FROM_EMAIL || 'noreply@example.com',
         to,
         subject: templateInfo.subject || 'Email with template',

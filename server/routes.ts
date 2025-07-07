@@ -1449,10 +1449,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/email/logs", async (req: Request, res: Response) => {
     try {
+      const userId = (req as any).user?.id;
+      const isAdmin = (req as any).user?.isAdmin;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const entityType = req.query.entityType as string;
       const entityId = req.query.entityId ? parseInt(req.query.entityId as string) : undefined;
       
-      const logs = await storage.getEmailLogs(entityType, entityId);
+      // Get all logs first
+      let logs = await storage.getEmailLogs(entityType, entityId);
+      
+      // Filter logs based on user permissions
+      if (!isAdmin) {
+        // Non-admin users should only see their own emails
+        logs = logs.filter(log => log.userId === userId);
+      }
+      
       return res.json(logs);
     } catch (error) {
       console.error("Get email logs error:", error);
@@ -1462,6 +1477,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/email/send", async (req: Request, res: Response) => {
     try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       const { from, to, subject, body, options } = req.body;
       
       if (!from || !to || !subject || !body) {
@@ -1478,7 +1498,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const emailLog = await storage.sendEmail(from, to, subject, body, options || {});
+      // Add userId to options for tracking
+      const emailOptions = { ...options, userId };
+      const emailLog = await storage.sendEmail(from, to, subject, body, emailOptions);
+      
+      // Track email usage for the user
+      await usageService.incrementEmailUsage(userId);
+      
       return res.json(emailLog);
     } catch (error) {
       console.error("Send email error:", error);
@@ -1505,6 +1531,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/email/send-template", async (req: Request, res: Response) => {
     try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       const { templateId, to, data, options } = req.body;
       
       if (!templateId || !to || !data) {
@@ -1518,7 +1549,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid template ID" });
       }
       
-      const emailLog = await storage.sendEmailWithTemplate(templateIdNumber, to, data, options || {});
+      // Add userId to options for tracking
+      const emailOptions = { ...options, userId };
+      const emailLog = await storage.sendEmailWithTemplate(templateIdNumber, to, data, emailOptions);
+      
+      // Track email usage for the user
+      await usageService.incrementEmailUsage(userId);
+      
       return res.json(emailLog);
     } catch (error) {
       console.error("Send templated email error:", error);
@@ -1564,6 +1601,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/email/send-campaign", async (req: Request, res: Response) => {
     try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       const { campaignId, subject, emailContent, testEmail, mailgunConfig } = req.body;
       
       console.log('Campaign email request received:', {
@@ -1689,12 +1731,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             subject,
             personalizedContent,
             {
+              userId: userId, // Track which user sent this email
               campaignId: campaignId,
               relatedEntityType: 'lead',
               relatedEntityId: lead.id,
               customMailgun: mailgunConfig
             }
           );
+
+          // Track email usage for the user
+          await usageService.incrementEmailUsage(userId);
           
           emailResults.push({
             leadId: lead.id,

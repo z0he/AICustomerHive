@@ -327,6 +327,7 @@ export type EmailTemplate = typeof emailTemplates.$inferSelect;
 // Email log (sent emails)
 export const emailLogs = pgTable("email_logs", {
   id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // Track which user sent the email
   from: text("from_address").notNull(),
   to: text("to_address").notNull(),
   subject: text("subject").notNull(),
@@ -341,6 +342,7 @@ export const emailLogs = pgTable("email_logs", {
 });
 
 export const insertEmailLogSchema = createInsertSchema(emailLogs).pick({
+  userId: true,
   from: true,
   to: true,
   subject: true,
