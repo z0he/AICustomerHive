@@ -1025,10 +1025,10 @@ const SettingsPage: React.FC = () => {
                             <FormItem>
                               <FormLabel>Mailgun Domain</FormLabel>
                               <FormControl>
-                                <Input placeholder="mg.yourdomain.com" {...field} />
+                                <Input placeholder="mail.aicrm.co.uk" {...field} />
                               </FormControl>
                               <FormDescription>
-                                Your verified Mailgun domain for sending emails (e.g., mg.yourdomain.com or sandbox123.mailgun.org)
+                                Must be mail.aicrm.co.uk - please ensure your Mailgun API key is associated with this domain
                               </FormDescription>
                               <FormMessage />
                             </FormItem>

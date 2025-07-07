@@ -128,6 +128,11 @@ AICRM is a comprehensive CRM platform that combines traditional customer relatio
 
 ```
 Changelog:
+- January 7, 2025. Enhanced hybrid API model with comprehensive domain validation
+  - Added strict domain enforcement to prevent sandbox domain usage
+  - Enhanced API key validation with clear error messages
+  - Added domain validation alerts and user guidance
+  - Fixed email domain enforcement to ensure all emails use mail.aicrm.co.uk
 - June 16, 2025. Initial setup
 ```
 

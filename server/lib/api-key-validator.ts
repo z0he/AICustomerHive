@@ -46,6 +46,17 @@ export async function validateMailgunKey(apiKey: string, domain: string): Promis
     return { isValid: false, error: 'Domain is required' };
   }
 
+  // Import domain validation functions
+  const { isValidEmailDomain, PRIMARY_EMAIL_DOMAIN } = await import('./email-domain-service');
+  
+  // First check if domain is allowed
+  if (!isValidEmailDomain(domain)) {
+    return { 
+      isValid: false, 
+      error: `Invalid domain. Only ${PRIMARY_EMAIL_DOMAIN} is allowed. Please ensure your Mailgun API key is associated with ${PRIMARY_EMAIL_DOMAIN}.` 
+    };
+  }
+
   try {
     const mailgun = new Mailgun(formData);
     const mg = mailgun.client({ username: 'api', key: apiKey });
@@ -62,7 +73,7 @@ export async function validateMailgunKey(apiKey: string, domain: string): Promis
     if (error?.status === 401) {
       return { isValid: false, error: 'Invalid Mailgun API key' };
     } else if (error?.status === 404) {
-      return { isValid: false, error: 'Domain not found in your Mailgun account' };
+      return { isValid: false, error: `Domain not found in your Mailgun account. Please ensure you have ${PRIMARY_EMAIL_DOMAIN} added to your Mailgun account.` };
     } else {
       return { isValid: false, error: `Mailgun validation failed: ${error?.message || 'Unknown error'}` };
     }

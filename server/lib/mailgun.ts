@@ -60,6 +60,13 @@ export async function sendEmail(params: EmailParams, customCredentials?: { apiKe
 
   // Use the validated domain and normalized from address
   const emailDomain = getEmailDomain(customCredentials?.domain);
+  
+  // Double-check domain is correct
+  if (emailDomain !== PRIMARY_EMAIL_DOMAIN) {
+    console.error(`Invalid email domain: ${emailDomain}. Only ${PRIMARY_EMAIL_DOMAIN} is allowed.`);
+    return { success: false, error: `Invalid email domain. Only ${PRIMARY_EMAIL_DOMAIN} is allowed.` };
+  }
+  
   const normalizedParams = {
     ...params,
     from: validation.normalizedFrom || params.from

@@ -2164,6 +2164,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "At least one API key is required" });
       }
 
+      // Validate Mailgun domain if provided
+      if (mailgunKey && mailgunDomain) {
+        const { isValidEmailDomain, PRIMARY_EMAIL_DOMAIN } = await import('./lib/email-domain-service');
+        
+        if (!isValidEmailDomain(mailgunDomain)) {
+          return res.status(400).json({ 
+            message: `Invalid Mailgun domain. Only ${PRIMARY_EMAIL_DOMAIN} is allowed. Please ensure your Mailgun API key is associated with ${PRIMARY_EMAIL_DOMAIN}.` 
+          });
+        }
+      }
+
       await usageService.storePersonalAPIKeys(userId, {
         openaiKey,
         mailgunKey,
@@ -2210,6 +2221,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!openaiKey && !mailgunKey) {
         return res.status(400).json({ message: "At least one API key is required for validation" });
+      }
+
+      // Validate Mailgun domain first if provided
+      if (mailgunKey && mailgunDomain) {
+        const { isValidEmailDomain, PRIMARY_EMAIL_DOMAIN } = await import('./lib/email-domain-service');
+        
+        if (!isValidEmailDomain(mailgunDomain)) {
+          return res.json({
+            openai: { isValid: false },
+            mailgun: { 
+              isValid: false, 
+              error: `Invalid domain. Only ${PRIMARY_EMAIL_DOMAIN} is allowed. Please ensure your Mailgun API key is associated with ${PRIMARY_EMAIL_DOMAIN}.`
+            }
+          });
+        }
       }
 
       const { performAPIHealthCheck } = await import('./lib/api-key-validator');

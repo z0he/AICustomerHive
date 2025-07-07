@@ -19,19 +19,19 @@ export function isValidEmailDomain(domain: string): boolean {
     return true;
   }
   
-  // In development, allow localhost testing
-  if (process.env.NODE_ENV === 'development' && domain.includes('sandbox')) {
-    console.warn(`Using sandbox domain ${domain} in development mode only`);
-    return true;
-  }
-  
-  // Block sandbox domains in production
-  if (domain.includes('sandbox') && process.env.NODE_ENV === 'production') {
-    console.error(`Sandbox domain ${domain} not allowed in production`);
+  // Block ALL sandbox domains - we only allow mail.aicrm.co.uk
+  if (domain.includes('sandbox')) {
+    console.error(`Sandbox domain ${domain} not allowed. Only ${PRIMARY_EMAIL_DOMAIN} is permitted.`);
     return false;
   }
   
-  return false;
+  // Block any domain that's not our primary domain
+  if (domain !== PRIMARY_EMAIL_DOMAIN) {
+    console.error(`Domain ${domain} not allowed. Only ${PRIMARY_EMAIL_DOMAIN} is permitted.`);
+    return false;
+  }
+  
+  return true;
 }
 
 /**
