@@ -128,6 +128,12 @@ AICRM is a comprehensive CRM platform that combines traditional customer relatio
 
 ```
 Changelog:
+- January 7, 2025. Fixed critical usage tracking and email security issues
+  - Fixed email usage tracking bug where sent emails weren't incrementing usage counts
+  - Enhanced email security - users now only see their own email logs (admin sees all)
+  - Added userId tracking to all email sending methods (campaigns, direct emails, templates)
+  - Updated campaign email sending to properly track user ID and increment usage
+  - Fixed email logging database schema to include userId field for proper user-based filtering
 - January 7, 2025. Enhanced hybrid API model with comprehensive domain validation
   - Added strict domain enforcement to prevent sandbox domain usage
   - Enhanced API key validation with clear error messages
