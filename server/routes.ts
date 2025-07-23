@@ -8,6 +8,14 @@ import { sendEmail, sendTemplateEmail, isMailgunConfigured, reinitializeMailgunC
 import { z } from "zod";
 import { parse as csvParse } from 'csv-parse/sync';
 import { stringify as csvStringify } from 'csv-stringify/sync';
+import { UploadedFile } from 'express-fileupload';
+
+// Extend Request type for file uploads
+interface RequestWithFiles extends Request {
+  files?: {
+    [fieldname: string]: UploadedFile | UploadedFile[];
+  } | UploadedFile | UploadedFile[];
+}
 import { 
   insertCampaignSchema, 
   insertCustomerSchema, 
@@ -84,6 +92,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/email/send-personalized-test", async (req: Request, res: Response) => {
     try {
       const { to, subject, content } = req.body;
+      const userId = (req as any).user?.id;
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
       
       if (!to || !subject || !content) {
         return res.status(400).json({ message: "Missing required fields: to, subject, content" });
@@ -118,6 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the email
       const fromEmail = process.env.DEFAULT_FROM_EMAIL || 'noreply@mail.aicrm.co.uk';
       const emailLog = await storage.createEmailLog({
+        userId,
         from: fromEmail,
         to,
         subject: `[TEST] ${personalizedSubject}`,
@@ -804,7 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get existing conversation or create a new one
       let conversation;
-      let conversationHistory = [];
+      let conversationHistory: Array<{role: 'user' | 'assistant', content: string}> = [];
       
       if (conversationId) {
         // Get existing conversation
@@ -816,7 +830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get conversation history
         const messages = await storage.getChatMessagesByConversationId(conversationId);
         conversationHistory = messages.map(msg => ({
-          role: msg.role === 'user' ? 'user' : 'assistant',
+          role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
           content: msg.content
         }));
       } else {
@@ -1002,7 +1016,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/customers/import", async (req: Request, res: Response) => {
+  app.post("/api/customers/import", async (req: RequestWithFiles, res: Response) => {
     try {
       const contentType = req.headers['content-type'] || '';
       let data;
@@ -1013,7 +1027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "No file uploaded" });
         }
         
-        const file = req.files.file as any;
+        const file = req.files.file as UploadedFile;
         const csvData = file.data.toString('utf8');
         
         // Parse CSV to JSON
@@ -1046,7 +1060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/leads/import", async (req: Request, res: Response) => {
+  app.post("/api/leads/import", async (req: RequestWithFiles, res: Response) => {
     try {
       const contentType = req.headers['content-type'] || '';
       let data;
@@ -1057,7 +1071,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "No file uploaded" });
         }
         
-        const file = req.files.file as any;
+        const file = req.files.file as UploadedFile;
         const csvData = file.data.toString('utf8');
         
         // Parse CSV to JSON
@@ -1652,8 +1666,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 email: allLeads[0].email,
                 leadSource: allLeads[0].leadSource,
                 leadStatus: allLeads[0].leadStatus,
-                source: allLeads[0].source,
-                status: allLeads[0].status
+                // source: allLeads[0].source, // Using leadSource instead
+                // status: allLeads[0].status  // Using leadStatus instead
               });
             }
             
@@ -1672,9 +1686,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           targetLeads = await storage.getLeads();
         }
-      } catch (e) {
+      } catch (e: unknown) {
         // If targeting parsing fails, get all leads
-        console.log('Targeting parsing failed, getting all leads:', e.message);
+        console.log('Targeting parsing failed, getting all leads:', e instanceof Error ? e.message : 'Unknown error');
         targetLeads = await storage.getLeads();
       }
       
@@ -1711,7 +1725,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           personalizedContent = personalizedContent.replace(/\{\{lead\.status\}\}/g, lead.leadStatus || '');
           personalizedContent = personalizedContent.replace(/\{\{lead\.score\}\}/g, lead.score?.toString() || '');
           personalizedContent = personalizedContent.replace(/\{\{lead\.source\}\}/g, lead.leadSource || '');
-          personalizedContent = personalizedContent.replace(/\{\{lead\.value\}\}/g, lead.value?.toString() || '');
+          personalizedContent = personalizedContent.replace(/\{\{lead\.value\}\}/g, lead.estimatedValue?.toString() || '');
           personalizedContent = personalizedContent.replace(/\{\{lead\.priority\}\}/g, lead.priority || '');
           personalizedContent = personalizedContent.replace(/\{\{lead\.assignedTo\}\}/g, lead.leadOwner || '');
           
@@ -1727,7 +1741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const emailLog = await storage.sendEmail(
             'noreply@mail.aicrm.co.uk',
-            lead.email,
+            lead.email || '',
             subject,
             personalizedContent,
             {
@@ -1748,13 +1762,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: 'sent',
             emailLogId: emailLog.id
           });
-        } catch (error) {
+        } catch (error: unknown) {
           console.error(`Failed to send email to ${lead.email}:`, error);
           emailResults.push({
             leadId: lead.id,
             email: lead.email,
             status: 'failed',
-            error: error.message
+            error: error instanceof Error ? error.message : 'Unknown error'
           });
         }
       }

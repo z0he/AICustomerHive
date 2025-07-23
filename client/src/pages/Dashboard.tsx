@@ -171,7 +171,11 @@ const Dashboard = () => {
   });
 
   // Usage data query for usage warnings
-  const { data: usageData } = useQuery({
+  const { data: usageData } = useQuery<{
+    aiPrompts: { used: number; limit: number; hasPersonalKey: boolean };
+    emails: { used: number; limit: number; hasPersonalKey: boolean };
+    tier: string;
+  }>({
     queryKey: ['/api/usage'],
     refetchOnWindowFocus: false,
   });
@@ -571,7 +575,12 @@ const Dashboard = () => {
               {/* Campaign Performance */}
               <div className="campaign-performance">
                 <CampaignPerformance 
-                  campaigns={campaigns || []}
+                  campaigns={(campaigns || []).map(c => ({
+                    ...c,
+                    conversions: c.conversions || 0,
+                    percentage: c.percentage || 0,
+                    isABTestActive: c.isABTestActive || false
+                  }))}
                   selectedPeriod={selectedPeriod}
                   onPeriodChange={setSelectedPeriod}
                 />
@@ -602,7 +611,19 @@ const Dashboard = () => {
               {/* Customer Activity */}
               <div className="customer-activity">
                 <CustomerActivity 
-                  recentActivity={recentActivity || []}
+                  recentActivity={(recentActivity || []).map((activity, index) => ({
+                    id: activity.id || index,
+                    customer: {
+                      id: activity.id || index,
+                      name: activity.name || 'Unknown',
+                      email: activity.email || '',
+                      initials: activity.initials || 'U'
+                    },
+                    action: 'Updated profile',
+                    campaign: 'N/A',
+                    date: activity.createdAt ? new Date(activity.createdAt).toLocaleDateString() : 'Unknown',
+                    status: 'active' as const
+                  }))}
                 />
               </div>
             </div>
@@ -626,13 +647,20 @@ const Dashboard = () => {
               {/* Lead Scoring */}
               <div className="lead-scoring">
                 <LeadScoring 
-                  topLeads={topLeads || []}
+                  topLeads={(topLeads || []).map(lead => ({
+                    ...lead,
+                    location: lead.location || 'Unknown',
+                    score: lead.score || 0
+                  }))}
                 />
               </div>
               
               {/* Next Actions */}
               <NextActions 
-                tasks={tasks || []}
+                tasks={(tasks || []).map(task => ({
+                  ...task,
+                  completed: task.completed || false
+                }))}
                 onToggleTask={toggleTask}
                 onAddTask={() => toast({ title: "Coming soon", description: "This feature is under development" })}
               />
