@@ -101,7 +101,27 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
       impressions?: number; 
       conversions?: number;
     }) => {
-      return apiRequest('POST', `/api/variants/${variantId}/stats`, { impressions, conversions });
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      const token = localStorage.getItem("auth_token");
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/variants/${variantId}/stats`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ impressions, conversions }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update variant stats');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'variants'] });
@@ -124,13 +144,41 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
     mutationFn: async (variantId: number) => {
       const impressions = Math.floor(Math.random() * 500) + 100;
       const conversions = Math.floor(Math.random() * impressions * 0.2);
-      return apiRequest('POST', `/api/variants/${variantId}/stats`, { impressions, conversions });
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      const token = localStorage.getItem("auth_token");
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`/api/variants/${variantId}/stats`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({ impressions, conversions }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update variant stats');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'variants'] });
       toast({
         title: "Test data added",
         description: "Sample performance data has been added to this variant.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to add test data",
+        description: error.message,
+        variant: "destructive",
       });
     },
   });
