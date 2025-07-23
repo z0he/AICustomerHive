@@ -32,7 +32,8 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Zap
+  Zap,
+  TestTube
 } from "lucide-react";
 import { Lead } from "@shared/schema";
 
@@ -379,6 +380,12 @@ export default function WorkflowAutomation({ leads = [] }: WorkflowAutomationPro
                     <span className="flex items-center">
                       <Workflow className="h-5 w-5 mr-2" />
                       {workflow.name}
+                      {workflow.name.includes('(Demo)') && (
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 ml-2">
+                          <TestTube className="h-3 w-3 mr-1" />
+                          Demo
+                        </Badge>
+                      )}
                     </span>
                     <div className="flex items-center gap-2">
                       <Badge variant={workflow.isActive ? "default" : "secondary"}>
@@ -545,7 +552,15 @@ export default function WorkflowAutomation({ leads = [] }: WorkflowAutomationPro
                           log.status === 'error' ? 'bg-red-500' : 'bg-yellow-500'
                         }`} />
                         <div>
-                          <div className="font-medium">{log.workflowName}</div>
+                          <div className="font-medium flex items-center gap-2">
+                            {log.workflowName}
+                            {log.workflowName.includes('(Demo)') && (
+                              <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-xs">
+                                <TestTube className="h-2 w-2 mr-1" />
+                                Demo
+                              </Badge>
+                            )}
+                          </div>
                           <div className="text-sm text-slate-500">
                             {log.leadName} • {log.action}
                           </div>

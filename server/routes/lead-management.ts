@@ -71,8 +71,8 @@ export const getCustomerSegments = async (req: Request, res: Response) => {
     const segments = [
       {
         id: 1,
-        name: "High-Value Prospects",
-        description: "Leads with scores above 80 points",
+        name: "High-Value Prospects (Demo)",
+        description: "Demo segment: Leads with scores above 80 points",
         criteria: {
           name: "High-Value Prospects",
           description: "Leads with scores above 80 points",
@@ -88,8 +88,8 @@ export const getCustomerSegments = async (req: Request, res: Response) => {
       },
       {
         id: 2,
-        name: "Technology Industry",
-        description: "All leads from technology companies",
+        name: "Technology Industry (Demo)",
+        description: "Demo segment: All leads from technology companies",
         criteria: {
           name: "Technology Industry",
           description: "All leads from technology companies",
@@ -105,8 +105,8 @@ export const getCustomerSegments = async (req: Request, res: Response) => {
       },
       {
         id: 3,
-        name: "Engaged but Unqualified",
-        description: "High engagement but low qualification status",
+        name: "Engaged but Unqualified (Demo)",
+        description: "Demo segment: High engagement but low qualification status",
         criteria: {
           name: "Engaged but Unqualified",
           description: "High engagement but low qualification status",
@@ -181,9 +181,9 @@ export const exportSegmentData = async (req: Request, res: Response) => {
     // Mock CSV export - in real implementation, generate actual CSV from segment data
     const csvHeader = "Name,Email,Company,Industry,Score,Status,Created\n";
     const csvData = [
-      "John Doe,john@example.com,Acme Corp,Technology,85,Qualified,2024-01-15",
-      "Jane Smith,jane@example.com,TechStart,Technology,90,Proposal,2024-01-10",
-      "Bob Johnson,bob@example.com,Innovation Ltd,Technology,78,Contacted,2024-01-20"
+      "John Doe (Demo),john.demo@example.com,Demo Corp,Technology,85,Qualified,2024-01-15",
+      "Jane Smith (Demo),jane.demo@example.com,Demo TechStart,Technology,90,Proposal,2024-01-10",
+      "Bob Johnson (Demo),bob.demo@example.com,Demo Innovation Ltd,Technology,78,Contacted,2024-01-20"
     ].join("\n");
 
     const fullCsv = csvHeader + csvData;
@@ -212,8 +212,8 @@ export const getWorkflows = async (req: Request, res: Response) => {
     const workflows = [
       {
         id: 1,
-        name: "High Score Lead Follow-up",
-        description: "Automatically follow up with leads when their score exceeds 80",
+        name: "High Score Lead Follow-up (Demo)",
+        description: "Demo workflow: Automatically follow up with leads when their score exceeds 80",
         isActive: true,
         trigger: {
           id: "high_score_trigger",
@@ -251,8 +251,8 @@ export const getWorkflows = async (req: Request, res: Response) => {
       },
       {
         id: 2,
-        name: "New Lead Nurture Sequence",
-        description: "Automated nurture sequence for new leads",
+        name: "New Lead Nurture Sequence (Demo)",
+        description: "Demo workflow: Automated nurture sequence for new leads",
         isActive: true,
         trigger: {
           id: "new_lead_trigger",
@@ -408,35 +408,35 @@ export const getWorkflowLogs = async (req: Request, res: Response) => {
       {
         id: 1,
         workflowId: 1,
-        workflowName: "High Score Lead Follow-up",
+        workflowName: "High Score Lead Follow-up (Demo)",
         leadId: 6,
-        leadName: "David Miller",
+        leadName: "David Miller (Demo Lead)",
         action: "Send High Priority Email",
         status: "success",
         timestamp: "2024-01-21T10:30:00Z",
-        details: "Email sent successfully to david@technovation.com"
+        details: "Demo: Email sent successfully to david@technovation.com"
       },
       {
         id: 2,
         workflowId: 2,
-        workflowName: "New Lead Nurture Sequence",
+        workflowName: "New Lead Nurture Sequence (Demo)",
         leadId: 8,
-        leadName: "Michael Chen",
+        leadName: "Michael Chen (Demo Lead)",
         action: "Send Welcome Email",
         status: "success",
         timestamp: "2024-01-21T09:15:00Z",
-        details: "Welcome email sent to michael@healthinnovate.org"
+        details: "Demo: Welcome email sent to michael@healthinnovate.org"
       },
       {
         id: 3,
         workflowId: 1,
-        workflowName: "High Score Lead Follow-up",
+        workflowName: "High Score Lead Follow-up (Demo)",
         leadId: 10,
-        leadName: "James Wilson",
+        leadName: "James Wilson (Demo Lead)",
         action: "Assign to Senior Rep",
         status: "error",
         timestamp: "2024-01-21T08:45:00Z",
-        details: "Senior rep assignment failed - no available representatives"
+        details: "Demo: Senior rep assignment failed - no available representatives"
       }
     ];
 

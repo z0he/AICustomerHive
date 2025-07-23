@@ -25,7 +25,8 @@ import {
   TrendingUp, 
   Mail, 
   PieChart, 
-  Download 
+  Download,
+  TestTube
 } from "lucide-react";
 import { Lead, Customer } from "@shared/schema";
 
@@ -312,9 +313,17 @@ export default function CustomerSegmentation() {
                       <Target className="h-5 w-5 mr-2" />
                       {segment.name}
                     </span>
-                    <Badge variant="outline">
-                      {segment.leadCount + segment.customerCount} contacts
-                    </Badge>
+                    <div className="flex gap-2">
+                      {segment.name.includes('(Demo)') && (
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                          <TestTube className="h-3 w-3 mr-1" />
+                          Demo
+                        </Badge>
+                      )}
+                      <Badge variant="outline">
+                        {segment.leadCount + segment.customerCount} contacts
+                      </Badge>
+                    </div>
                   </CardTitle>
                   <CardDescription>{segment.description}</CardDescription>
                 </CardHeader>

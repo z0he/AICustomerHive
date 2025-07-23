@@ -74,8 +74,8 @@ const DEFAULT_WEIGHTS: ScoringWeights = {
 const DEFAULT_SCORING_RULES: ScoringRule[] = [
   {
     id: 'high-engagement',
-    name: 'High Engagement Level',
-    description: 'Lead has high engagement (70%+)',
+    name: 'High Engagement Level (Demo Rule)',
+    description: 'Demo: Lead has high engagement (70%+)',
     condition: 'engagementLevel >= 70',
     points: 25,
     weight: 1,
@@ -83,8 +83,8 @@ const DEFAULT_SCORING_RULES: ScoringRule[] = [
   },
   {
     id: 'enterprise-company',
-    name: 'Enterprise Company',
-    description: 'Company size indicates enterprise potential',
+    name: 'Enterprise Company (Demo Rule)',
+    description: 'Demo: Company size indicates enterprise potential',
     condition: 'companySize === "enterprise"',
     points: 20,
     weight: 1,
@@ -92,8 +92,8 @@ const DEFAULT_SCORING_RULES: ScoringRule[] = [
   },
   {
     id: 'target-industry',
-    name: 'Target Industry Match',
-    description: 'Lead is in a target industry',
+    name: 'Target Industry Match (Demo Rule)',
+    description: 'Demo: Lead is in a target industry',
     condition: 'industry in ["Technology", "Healthcare", "Finance"]',
     points: 15,
     weight: 1,
