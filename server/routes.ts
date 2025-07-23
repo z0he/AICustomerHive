@@ -33,6 +33,7 @@ import marketingRoutes from "./routes/marketing";
 import notificationRoutes from "./routes/notifications";
 import feedbackRoutes from "./routes/feedback";
 import directFeedbackRoutes from "./routes/direct-feedback";
+import * as leadManagement from "./routes/lead-management.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -2072,6 +2073,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Failed to update sequence step" });
     }
   });
+
+  // ===== LEAD MANAGEMENT ROUTES =====
+  
+  // Lead scoring configuration
+  app.post("/api/lead-scoring/config", leadManagement.updateLeadScoringConfig);
+  app.post("/api/lead-scoring/recalculate", leadManagement.recalculateLeadScores);
+  
+  // Customer segmentation
+  app.get("/api/segments", leadManagement.getCustomerSegments);
+  app.post("/api/segments", leadManagement.createCustomerSegment);
+  app.get("/api/segments/:id/export", leadManagement.exportSegmentData);
+  
+  // Workflow automation
+  app.get("/api/workflows", leadManagement.getWorkflows);
+  app.post("/api/workflows", leadManagement.createWorkflow);
+  app.patch("/api/workflows/:id/toggle", leadManagement.toggleWorkflow);
+  app.post("/api/workflows/:id/test", leadManagement.testWorkflow);
+  app.get("/api/workflows/logs", leadManagement.getWorkflowLogs);
+  
+  // Enhanced lead management
+  app.post("/api/leads/:id/score", leadManagement.updateLeadScore);
+  app.post("/api/leads/:id/note", leadManagement.addLeadNote);
+  app.post("/api/leads/:id/owner", leadManagement.assignLeadOwner);
 
   // ===== EMAIL ANALYTICS ROUTES =====
   

@@ -12,6 +12,9 @@ import LeadDetails from "@/components/leads/LeadDetails";
 import LeadScoringCard from "@/components/leads/LeadScoringCard";
 import LeadStatusFilter from "@/components/leads/LeadStatusFilter";
 import { LeadVisualization } from "@/components/leads/LeadVisualization";
+import CustomerSegmentation from "@/components/leads/CustomerSegmentation";
+import LeadScoringAlgorithm from "@/components/leads/LeadScoringAlgorithm";
+import WorkflowAutomation from "@/components/leads/WorkflowAutomation";
 import { 
   Card, 
   CardContent, 
@@ -69,6 +72,7 @@ export default function LeadManagement() {
   const [showAddLeadDialog, setShowAddLeadDialog] = useState(false);
   const [sortField, setSortField] = useState<string>("score");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [activeTab, setActiveTab] = useState("leads");
   
   // API queries
   const { 
@@ -76,7 +80,7 @@ export default function LeadManagement() {
     isLoading: isLoadingLeads,
     error: leadsError,
     refetch: refetchLeads
-  } = useQuery({
+  } = useQuery<Lead[]>({
     queryKey: ["/api/leads"],
     retry: 1
   });
@@ -84,7 +88,7 @@ export default function LeadManagement() {
   const { 
     data: topLeads = [], 
     isLoading: isLoadingTopLeads 
-  } = useQuery({
+  } = useQuery<Lead[]>({
     queryKey: ["/api/leads/top"],
     retry: 1
   });
@@ -92,7 +96,7 @@ export default function LeadManagement() {
   const { 
     data: recentCampaigns = [], 
     isLoading: isLoadingCampaigns 
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: ["/api/campaigns/recent"],
     retry: 1
   });
@@ -100,7 +104,7 @@ export default function LeadManagement() {
   const { 
     data: selectedLead,
     isLoading: isLoadingSelectedLead
-  } = useQuery({
+  } = useQuery<Lead>({
     queryKey: [`/api/leads/${selectedLeadId}`],
     enabled: !!selectedLeadId,
     retry: 1
@@ -111,7 +115,7 @@ export default function LeadManagement() {
     data: filteredLeads = [], 
     isLoading: isLoadingFilteredLeads,
     refetch: refetchFilteredLeads
-  } = useQuery({
+  } = useQuery<Lead[]>({
     queryKey: ["/api/leads", { status: filterStatus !== "all" ? filterStatus : undefined, source: filterSource !== "all" ? filterSource : undefined }],
     enabled: filterStatus !== "all" || filterSource !== "all",
     retry: 1
@@ -248,25 +252,25 @@ export default function LeadManagement() {
   });
   
   // Helper function to handle lead filtering and sorting
-  const getFilteredAndSortedLeads = () => {
+  const getFilteredAndSortedLeads = (): Lead[] => {
     // Determine which leads array to use
-    let leadsToProcess = (filterStatus !== "all" || filterSource !== "all") 
+    let leadsToProcess: Lead[] = (filterStatus !== "all" || filterSource !== "all") 
       ? filteredLeads 
       : leads;
       
     // Apply search filter if there's a search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      leadsToProcess = leadsToProcess.filter(lead => 
-        lead.name.toLowerCase().includes(query) ||
-        lead.industry.toLowerCase().includes(query) ||
+      leadsToProcess = leadsToProcess.filter((lead: Lead) => 
+        lead.name?.toLowerCase().includes(query) ||
+        lead.industry?.toLowerCase().includes(query) ||
         (lead.company && lead.company.toLowerCase().includes(query)) ||
         (lead.email && lead.email.toLowerCase().includes(query))
       );
     }
     
     // Apply sorting
-    return [...leadsToProcess].sort((a, b) => {
+    return [...leadsToProcess].sort((a: Lead, b: Lead) => {
       let valueA = a[sortField as keyof Lead];
       let valueB = b[sortField as keyof Lead];
       
@@ -372,7 +376,7 @@ export default function LeadManagement() {
       
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <Sidebar recentCampaigns={recentCampaigns} />
+        <Sidebar recentCampaigns={recentCampaigns || []} />
         
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
@@ -384,30 +388,44 @@ export default function LeadManagement() {
                 <p className="text-slate-500 mt-1">Track, score, and nurture your leads effectively</p>
               </div>
               
-              <div className="mt-4 md:mt-0">
-                <Dialog open={showAddLeadDialog} onOpenChange={setShowAddLeadDialog}>
-                  <DialogTrigger asChild>
-                    <Button className="h-10 flex items-center font-semibold">
-                      <PlusCircle className="mr-2 h-5 w-5" />
-                      Add New Lead
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                      <DialogTitle>Add New Lead</DialogTitle>
-                    </DialogHeader>
-                    <LeadForm 
-                      onSubmit={(data) => createLeadMutation.mutate(data)} 
-                      isSubmitting={createLeadMutation.isPending} 
-                    />
-                  </DialogContent>
-                </Dialog>
-              </div>
+              {activeTab === "leads" && (
+                <div className="mt-4 md:mt-0">
+                  <Dialog open={showAddLeadDialog} onOpenChange={setShowAddLeadDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="h-10 flex items-center font-semibold">
+                        <PlusCircle className="mr-2 h-5 w-5" />
+                        Add New Lead
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[600px]">
+                      <DialogHeader>
+                        <DialogTitle>Add New Lead</DialogTitle>
+                      </DialogHeader>
+                      <LeadForm 
+                        onSubmit={(data) => createLeadMutation.mutate(data)} 
+                        isSubmitting={createLeadMutation.isPending} 
+                      />
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
             </div>
+
+            {/* Navigation Tabs */}
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full mb-6">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="leads">Lead Management</TabsTrigger>
+                <TabsTrigger value="segmentation">Customer Segmentation</TabsTrigger>
+                <TabsTrigger value="scoring">Scoring Algorithm</TabsTrigger>
+                <TabsTrigger value="automation">Workflow Automation</TabsTrigger>
+              </TabsList>
+
+              {/* Lead Management Tab */}
+              <TabsContent value="leads" className="space-y-6">
             
             {/* Lead Analytics Visualization */}
             <div className="mb-6">
-              <LeadVisualization leads={leads} />
+              <LeadVisualization leads={leads || []} />
             </div>
             
             {/* Lead Management Interface */}
@@ -621,7 +639,7 @@ export default function LeadManagement() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {topLeads.map((lead, index) => (
+                        {topLeads.map((lead: Lead, index: number) => (
                           <div 
                             key={lead.id} 
                             className="flex justify-between items-center cursor-pointer hover:bg-slate-50 p-2 rounded-md"
@@ -667,7 +685,7 @@ export default function LeadManagement() {
                     <LeadStatusFilter 
                       onFilterChange={(status) => setFilterStatus(status)} 
                       activeFilter={filterStatus}
-                      leads={leads}
+                      leads={leads || []}
                     />
                   </CardContent>
                 </Card>
@@ -738,7 +756,7 @@ export default function LeadManagement() {
                             <div className="font-medium">{owner.name}</div>
                           </div>
                           <Badge variant="outline">
-                            {leads.filter(l => l.leadOwner === owner.name).length} leads
+                            {leads.filter((l: Lead) => l.leadOwner === owner.name).length} leads
                           </Badge>
                         </div>
                       ))}
@@ -747,6 +765,28 @@ export default function LeadManagement() {
                 </Card>
               </div>
             </div>
+            </TabsContent>
+
+              {/* Customer Segmentation Tab */}
+              <TabsContent value="segmentation" className="space-y-6">
+                <CustomerSegmentation />
+              </TabsContent>
+
+              {/* Lead Scoring Algorithm Tab */}
+              <TabsContent value="scoring" className="space-y-6">
+                <LeadScoringAlgorithm 
+                  mode="global"
+                  onScoreUpdate={(newScore, breakdown) => {
+                    console.log("Global score update:", newScore, breakdown);
+                  }}
+                />
+              </TabsContent>
+
+              {/* Workflow Automation Tab */}
+              <TabsContent value="automation" className="space-y-6">
+                <WorkflowAutomation leads={leads || []} />
+              </TabsContent>
+            </Tabs>
           </div>
         </main>
       </div>

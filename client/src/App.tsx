@@ -67,6 +67,7 @@ function Router() {
       <ProtectedRoute path="/campaigns" component={Campaigns} />
       <ProtectedRoute path="/analytics" component={Analytics} />
       <ProtectedRoute path="/leads" component={LeadManagement} />
+      <ProtectedRoute path="/lead-management" component={LeadManagement} />
       <ProtectedRoute path="/customer-data" component={CustomerData} />
       <ProtectedRoute path="/email" component={EmailManagement} />
       <ProtectedRoute path="/scheduled-emails" component={ScheduledEmails} />
