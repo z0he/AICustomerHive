@@ -363,18 +363,55 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
           </ResponsiveContainer>
         </div>
 
-        {/* Winner summary */}
+        {/* Winner summary and insights */}
         {winner && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Award className="w-4 h-4 text-emerald-600" />
-              <span className="font-medium text-emerald-900">Best Performing Variant</span>
+          <div className="space-y-4">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Award className="w-4 h-4 text-emerald-600" />
+                <span className="font-medium text-emerald-900">Best Performing Variant</span>
+              </div>
+              <div className="text-sm text-emerald-700">
+                <p className="font-medium">{winner.name}</p>
+                <p className="mt-1">
+                  {winner.conversionRate}% conversion rate • {winner.conversions} conversions from {winner.impressions} impressions
+                </p>
+                {improvementPercentage > 0 && (
+                  <p className="mt-2 text-xs text-emerald-600">
+                    📈 This variant performs {improvementPercentage}% better than the control group
+                  </p>
+                )}
+              </div>
             </div>
-            <div className="text-sm text-emerald-700">
-              <p className="font-medium">{winner.name}</p>
-              <p className="mt-1">
-                {winner.conversionRate}% conversion rate • {winner.conversions} conversions from {winner.impressions} impressions
-              </p>
+            
+            {/* Test insights */}
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+              <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                A/B Test Insights
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-slate-600 mb-1">Total Impressions</p>
+                  <p className="font-semibold text-slate-900">
+                    {chartData.reduce((sum, variant) => sum + variant.impressions, 0).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-600 mb-1">Total Conversions</p>
+                  <p className="font-semibold text-slate-900">
+                    {chartData.reduce((sum, variant) => sum + variant.conversions, 0).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-600 mb-1">Variants Tested</p>
+                  <p className="font-semibold text-slate-900">{chartData.length}</p>
+                </div>
+                <div>
+                  <p className="text-slate-600 mb-1">Best Conversion Rate</p>
+                  <p className="font-semibold text-emerald-600">{winner.conversionRate}%</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
