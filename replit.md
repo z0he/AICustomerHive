@@ -128,6 +128,12 @@ AICRM is a comprehensive CRM platform that combines traditional customer relatio
 
 ```
 Changelog:
+- January 23, 2025. Enhanced demo data labeling for better user experience
+  - Added clear "Demo" badges with test tube icons throughout the lead management system
+  - Customer segments now display "Demo" labels on sample data
+  - Workflow automation shows demo indicators on sample workflows and execution logs
+  - Lead scoring rules marked as "Demo Rule" examples
+  - All demo descriptions include "Demo:" prefix for crystal clear distinction
 - January 7, 2025. Fixed critical usage tracking and email security issues
   - Fixed email usage tracking bug where sent emails weren't incrementing usage counts
   - Enhanced email security - users now only see their own email logs (admin sees all)
