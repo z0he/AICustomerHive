@@ -1,0 +1,90 @@
+1. AI-Powered Music Generation & Copyright Issues
+Problem: Who owns AI-generated music?
+Tool Example:
+
+Boomy – https://boomy.com
+Lets anyone create and publish AI-generated music in minutes. Raises copyright challenges for artists and platforms.
+Class Activity: Discuss whether Boomy songs deserve copyright protection and how royalties should be handled.
+
+2. Deepfake Voice & Licensing
+Problem: AI can clone voices, creating legal and ethical dilemmas.
+Tool Example:
+
+Voicemod AI Voices – https://www.voicemod.net/ai-voices/
+
+ElevenLabs – https://www.elevenlabs.io/
+Clone any voice for song vocals, radio, or narration. Used both for authorised and controversial deepfakes.
+Use Case: Grimes lets people use her AI voice model and profit-share via Elf.Tech https://elf.tech
+
+3. Royalty Tracking & Transparent Payments
+Problem: Artists don’t trust streaming royalty calculations.
+Tool Example:
+
+Revelator – https://www.revelator.com
+A music rights and royalty platform that uses blockchain and smart contracts to automate royalty splits.
+
+BeatBread – https://www.beatbread.com
+Offers advances to artists based on streaming data — AI determines funding risk.
+Activity: Analyse how smart contracts might replace traditional label accounting.
+
+4. AI for A&R Discovery
+Problem: Labels now use data instead of talent scouts.
+Tool Example:
+
+Chartmetric – https://www.chartmetric.com
+AI tracks engagement across Spotify, TikTok, Instagram, etc., to find emerging artists.
+
+Sodatone (by Warner Music) – https://sodatone.com
+Machine learning for scouting unsigned talent using fanbase growth & streaming trends.
+Student Task: Use Chartmetric to shortlist unsigned viral artists.
+
+5. Personalised Recommendations & Discovery Bias
+Problem: Recommendation engines promote already-popular artists, not new voices.
+Tool Example:
+
+Endlesss – https://endlesss.fm
+AI-powered collaborative music platform for community-led music discovery.
+
+Mubert – https://mubert.com
+AI-generated music tailored to user behaviour — also powers background tracks for apps.
+Debate Prompt: Should platforms be required to reveal how AI curates recommendations?
+
+6. AI-Driven Data Scraping and Playlist Analysis
+Problem: Scraping user playlists for training data is legally murky.
+Tool Example:
+
+Soundcharts – https://soundcharts.com
+Tracks radio airplay, charts, and playlists globally. Scrapes data, but via licensing.
+
+Musixmatch AI – https://about.musixmatch.com/
+Provides AI-generated lyrics, translations, and metadata—licensed by Spotify and others.
+Discussion: Where’s the line between “public data” and “protected data”?
+
+7. IP Protection in the Metaverse
+Problem: Virtual concerts and NFTs open up new IP risks.
+Tool Example:
+
+Async Music (by Async Art) – https://async.art/music
+Artists can mint multi-layered, programmable music NFTs.
+
+Arianee – https://www.arianee.org
+A blockchain-based digital certificate for ownership and rights management.
+Use Case: Show Travis Scott’s Fortnite concert and discuss how licensing differs from live gigs.
+
+8. Privacy Laws & Listener Data
+Problem: GDPR/CCPA restrict how platforms use listener behaviour data.
+Tool Example:
+
+Didomi Consent Platform – https://www.didomi.io/
+AI-based compliance tool for user consent management across global privacy laws.
+Group Activity: Draft a user data policy for a fictional AI streaming platform.
+
+Bonus Topic: AI for Music Education & DIY Distribution
+Tool Example:
+
+Loudly – https://loudly.com
+AI music creator for social and commercial use.
+
+Amper Music (by Shutterstock) – https://www.shutterstock.com/discover/ai-music
+Used by content creators for royalty-free, AI-generated soundtracks.
+Homework: Try generating a track and explore upload options via DistroKid, RouteNote, or Soundrop.
