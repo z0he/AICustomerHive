@@ -47,11 +47,18 @@ const CampaignCard = ({ campaign }: { campaign: Campaign }) => {
             <Megaphone className="text-primary-500" size={18} />
             <CardTitle className="text-base">{campaign.name}</CardTitle>
           </div>
-          <Badge 
-            variant={status === "active" ? "default" : status === "completed" ? "secondary" : "outline"}
-          >
-            {status === "active" ? "Active" : status === "completed" ? "Completed" : "Upcoming"}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant={status === "active" ? "default" : status === "completed" ? "secondary" : "outline"}
+            >
+              {status === "active" ? "Active" : status === "completed" ? "Completed" : "Upcoming"}
+            </Badge>
+            {campaign.isABTestActive && (
+              <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+                A/B Test
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-4 pt-3">
@@ -84,6 +91,12 @@ const CampaignCard = ({ campaign }: { campaign: Campaign }) => {
               {campaign.percentage !== null && (
                 <div className="flex items-center text-sm text-emerald-600">
                   <span>+{campaign.percentage}%</span>
+                </div>
+              )}
+              {campaign.isABTestActive && (
+                <div className="flex items-center text-sm text-purple-600">
+                  <BarChart size={14} className="mr-1 text-purple-400" />
+                  <span>A/B Testing</span>
                 </div>
               )}
             </div>

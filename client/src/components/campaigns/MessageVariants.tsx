@@ -26,7 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { BrainCircuit, Plus } from "lucide-react";
+import { BrainCircuit, Plus, TrendingUp, Eye, MousePointer, Trash2, Settings, Award, Beaker, Split } from "lucide-react";
 
 // Define types for message variants
 interface MessageVariant {
@@ -105,12 +105,32 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'variants'] });
+      toast({
+        title: "Stats updated",
+        description: "Variant statistics have been updated.",
+      });
     },
     onError: (error) => {
       toast({
         title: "Failed to update stats",
         description: error.message,
         variant: "destructive",
+      });
+    },
+  });
+
+  // Function to simulate adding test data for demo purposes
+  const addTestDataMutation = useMutation({
+    mutationFn: async (variantId: number) => {
+      const impressions = Math.floor(Math.random() * 500) + 100;
+      const conversions = Math.floor(Math.random() * impressions * 0.2);
+      return apiRequest('POST', `/api/variants/${variantId}/stats`, { impressions, conversions });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/campaigns', campaignId, 'variants'] });
+      toast({
+        title: "Test data added",
+        description: "Sample performance data has been added to this variant.",
       });
     },
   });
@@ -200,43 +220,116 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
   // Component for A/B test results visualization
   const TestResultsChart = ({ variants }: { variants: MessageVariant[] }) => {
     // Only include variants with impressions
-    const charData = variants
+    const chartData = variants
       .filter(v => v.impressions && v.impressions > 0)
       .map(v => ({
         name: v.variantName,
         conversionRate: v.conversionRate || 0,
+        impressions: v.impressions || 0,
+        conversions: v.conversions || 0,
         isControl: v.isControl,
-      }));
+      }))
+      .sort((a, b) => b.conversionRate - a.conversionRate);
 
-    if (charData.length < 2) {
+    if (chartData.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground">
-          <p>Not enough data to show comparison results.</p>
-          <p className="text-sm mt-2">
-            Add at least 2 variants and record impressions and conversions.
+        <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 bg-slate-50 rounded-lg mt-6">
+          <BarChart className="h-8 w-8 mb-3 text-slate-300" />
+          <h3 className="font-medium text-slate-700 mb-1">No Performance Data Yet</h3>
+          <p className="text-sm">
+            Add test data to your variants to see performance comparisons and insights.
           </p>
         </div>
       );
     }
 
+    if (chartData.length < 2) {
+      return (
+        <div className="flex flex-col items-center justify-center p-6 text-center text-slate-500 bg-slate-50 rounded-lg mt-6">
+          <TrendingUp className="h-8 w-8 mb-3 text-slate-300" />
+          <h3 className="font-medium text-slate-700 mb-1">Need More Variants</h3>
+          <p className="text-sm">
+            Add at least 2 variants with performance data to see A/B test comparisons.
+          </p>
+        </div>
+      );
+    }
+
+    const winner = chartData[0];
+    const controlVariant = chartData.find(v => v.isControl);
+    const improvementPercentage = controlVariant && winner !== controlVariant
+      ? Math.round(((winner.conversionRate - controlVariant.conversionRate) / controlVariant.conversionRate) * 100)
+      : 0;
+
     return (
-      <div className="h-64 w-full mt-4">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={charData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis label={{ value: 'Conversion Rate %', angle: -90, position: 'insideLeft' }} />
-            <Tooltip formatter={(value) => `${value}%`} />
-            <Bar dataKey="conversionRate" name="Conversion Rate">
-              {charData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={entry.isControl ? "#8884d8" : "#82ca9d"} 
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="mt-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-medium text-slate-900">Performance Comparison</h3>
+          {improvementPercentage > 0 && (
+            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              +{improvementPercentage}% improvement
+            </Badge>
+          )}
+        </div>
+        
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis 
+                dataKey="name" 
+                tick={{ fontSize: 12, fill: '#64748b' }}
+                axisLine={{ stroke: '#e2e8f0' }}
+              />
+              <YAxis 
+                label={{ value: 'Conversion Rate (%)', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle', fontSize: 12, fill: '#64748b' } }}
+                tick={{ fontSize: 12, fill: '#64748b' }}
+                axisLine={{ stroke: '#e2e8f0' }}
+              />
+              <Tooltip 
+                formatter={(value: any, name: any, props: any) => [
+                  `${value}%`,
+                  'Conversion Rate'
+                ]}
+                labelFormatter={(label: any) => `Variant: ${label}`}
+                contentStyle={{
+                  backgroundColor: 'white',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '12px'
+                }}
+              />
+              <Bar dataKey="conversionRate" name="Conversion Rate" radius={[4, 4, 0, 0]}>
+                {chartData.map((entry, index) => (
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={
+                      entry.isControl ? "#8b5cf6" : 
+                      index === 0 ? "#10b981" : "#3b82f6"
+                    }
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Winner summary */}
+        {winner && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Award className="w-4 h-4 text-emerald-600" />
+              <span className="font-medium text-emerald-900">Best Performing Variant</span>
+            </div>
+            <div className="text-sm text-emerald-700">
+              <p className="font-medium">{winner.name}</p>
+              <p className="mt-1">
+                {winner.conversionRate}% conversion rate • {winner.conversions} conversions from {winner.impressions} impressions
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -257,7 +350,10 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>A/B Testing</span>
+          <div className="flex items-center gap-2">
+            <Beaker className="h-5 w-5 text-purple-600" />
+            <span>A/B Testing</span>
+          </div>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline">
@@ -265,11 +361,11 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
                 Add Variant
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Create Message Variant</DialogTitle>
                 <DialogDescription>
-                  Create a new message variant to test against others.
+                  Create a new message variant to test against others. Each variant will be tested to determine which performs better.
                 </DialogDescription>
               </DialogHeader>
               <CreateVariantForm />
@@ -277,18 +373,23 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
           </Dialog>
         </CardTitle>
         <CardDescription>
-          Test different message variations to improve conversion rates.
+          Test different message variations to improve conversion rates. Compare performance and identify the most effective messaging.
         </CardDescription>
       </CardHeader>
 
       <CardContent>
         {variants.length === 0 ? (
-          <div className="flex flex-col items-center justify-center p-6 text-center text-muted-foreground">
-            <BrainCircuit className="mb-2 h-8 w-8" />
-            <h3 className="font-medium">No message variants yet</h3>
-            <p className="text-sm mt-2">
-              Create variants to test different messages for this campaign.
+          <div className="flex flex-col items-center justify-center p-8 text-center text-slate-500 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-100">
+            <div className="bg-white p-3 rounded-full shadow-sm mb-4">
+              <Split className="h-8 w-8 text-purple-600" />
+            </div>
+            <h3 className="font-medium text-slate-700 mb-2">Start A/B Testing</h3>
+            <p className="text-sm text-slate-600 max-w-sm">
+              Create multiple message variants to test which performs better with your audience. A/B testing can improve your conversion rates by up to 30%.
             </p>
+            <div className="mt-4 p-3 bg-white rounded-md border text-xs text-slate-500">
+              💡 <strong>Pro tip:</strong> Test one element at a time (subject line, tone, call-to-action) for clearer insights.
+            </div>
           </div>
         ) : (
           <>
@@ -296,36 +397,85 @@ export function MessageVariants({ campaignId, originalMessage }: MessageVariants
               {variants.map((variant) => (
                 <div 
                   key={variant.id} 
-                  className={`p-4 rounded-lg border ${variant.isControl ? 'border-purple-200 bg-purple-50' : 'border-gray-200'}`}
+                  className={`p-4 rounded-lg border transition-all ${
+                    variant.isControl 
+                      ? 'border-purple-200 bg-purple-50 shadow-purple-100' 
+                      : 'border-slate-200 bg-white hover:shadow-md'
+                  }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-medium flex items-center">
-                        {variant.variantName}
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-medium text-slate-900">{variant.variantName}</h4>
                         {variant.isControl && (
-                          <Badge variant="outline" className="ml-2">
+                          <Badge variant="secondary" className="bg-purple-100 text-purple-700">
+                            <Award className="w-3 h-3 mr-1" />
                             Control
                           </Badge>
                         )}
-                      </h4>
-                      <p className="text-sm mt-1">{variant.message}</p>
+                      </div>
+                      <div className="bg-slate-50 p-3 rounded-md text-sm text-slate-700 border">
+                        {variant.message}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-1 ml-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => addTestDataMutation.mutate(variant.id)}
+                        disabled={addTestDataMutation.isPending}
+                        className="text-xs"
+                      >
+                        <TrendingUp className="w-3 h-3 mr-1" />
+                        Add Test Data
+                      </Button>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-2 mt-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Impressions</p>
-                      <p className="font-medium">{variant.impressions || 0}</p>
+                  <div className="grid grid-cols-3 gap-4 mt-4">
+                    <div className="bg-white p-3 rounded-md border">
+                      <div className="flex items-center gap-2 text-slate-600 mb-1">
+                        <Eye className="w-4 h-4" />
+                        <span className="text-xs font-medium">Impressions</span>
+                      </div>
+                      <p className="text-lg font-semibold text-slate-900">{variant.impressions || 0}</p>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Conversions</p>
-                      <p className="font-medium">{variant.conversions || 0}</p>
+                    <div className="bg-white p-3 rounded-md border">
+                      <div className="flex items-center gap-2 text-slate-600 mb-1">
+                        <MousePointer className="w-4 h-4" />
+                        <span className="text-xs font-medium">Conversions</span>
+                      </div>
+                      <p className="text-lg font-semibold text-slate-900">{variant.conversions || 0}</p>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground">Rate</p>
-                      <p className="font-medium">{variant.conversionRate || 0}%</p>
+                    <div className="bg-white p-3 rounded-md border">
+                      <div className="flex items-center gap-2 text-slate-600 mb-1">
+                        <TrendingUp className="w-4 h-4" />
+                        <span className="text-xs font-medium">Conv. Rate</span>
+                      </div>
+                      <p className={`text-lg font-semibold ${
+                        (variant.conversionRate || 0) > 0 ? 'text-emerald-600' : 'text-slate-900'
+                      }`}>
+                        {variant.conversionRate || 0}%
+                      </p>
                     </div>
                   </div>
+                  
+                  {/* Performance indicator */}
+                  {variant.impressions && variant.impressions > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      <div className="flex items-center justify-between text-xs text-slate-500">
+                        <span>Performance Status:</span>
+                        <span className={`font-medium ${
+                          (variant.conversionRate || 0) > 5 ? 'text-emerald-600' :
+                          (variant.conversionRate || 0) > 2 ? 'text-yellow-600' : 'text-slate-600'
+                        }`}>
+                          {(variant.conversionRate || 0) > 5 ? 'Excellent' :
+                           (variant.conversionRate || 0) > 2 ? 'Good' : 'Needs Improvement'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
