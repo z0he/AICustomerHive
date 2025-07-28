@@ -124,7 +124,7 @@ export default function LeadManagement() {
   // Mutations
   const createLeadMutation = useMutation({
     mutationFn: (leadData: any) => {
-      return apiRequest('POST', '/api/leads', leadData);
+      return apiRequest('/api/leads', 'POST', leadData);
     },
     onSuccess: () => {
       toast({
@@ -149,7 +149,7 @@ export default function LeadManagement() {
   
   const updateLeadScoreMutation = useMutation({
     mutationFn: ({ id, scoringData }: { id: number, scoringData: any }) => {
-      return apiRequest('POST', `/api/leads/${id}/score`, scoringData);
+      return apiRequest(`/api/leads/${id}/score`, 'POST', scoringData);
     },
     onSuccess: () => {
       toast({
@@ -176,7 +176,7 @@ export default function LeadManagement() {
   
   const updateLeadMutation = useMutation({
     mutationFn: ({ id, leadData }: { id: number, leadData: any }) => {
-      return apiRequest('PATCH', `/api/leads/${id}`, leadData);
+      return apiRequest(`/api/leads/${id}`, 'PATCH', leadData);
     },
     onSuccess: () => {
       toast({
