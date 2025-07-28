@@ -16,7 +16,9 @@ import {
   pageViews, type PageView, type InsertPageView,
   trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation,
   chatConversations, type ChatConversation, type InsertChatConversation,
-  chatMessages, type ChatMessage, type InsertChatMessage
+  chatMessages, type ChatMessage, type InsertChatMessage,
+  customerTouchpoints, type CustomerTouchpoint, type InsertCustomerTouchpoint,
+  journeyStages, type JourneyStage, type InsertJourneyStage
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
 
@@ -194,6 +196,20 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage & { createdAt: Date }): Promise<ChatMessage>;
   updateChatMessage(id: number, messageData: Partial<ChatMessage>): Promise<ChatMessage>;
   deleteChatMessage(id: number): Promise<void>;
+  
+  // Customer Journey methods
+  getCustomerTouchpoints(): Promise<CustomerTouchpoint[]>;
+  getCustomerTouchpoint(id: number): Promise<CustomerTouchpoint | undefined>;
+  createCustomerTouchpoint(touchpoint: InsertCustomerTouchpoint): Promise<CustomerTouchpoint>;
+  updateCustomerTouchpoint(id: number, touchpointData: Partial<CustomerTouchpoint>): Promise<CustomerTouchpoint>;
+  deleteCustomerTouchpoint(id: number): Promise<void>;
+  
+  // Journey Stage methods
+  getJourneyStages(): Promise<JourneyStage[]>;
+  getJourneyStage(id: number): Promise<JourneyStage | undefined>;
+  createJourneyStage(stage: InsertJourneyStage): Promise<JourneyStage>;
+  updateJourneyStage(id: number, stageData: Partial<JourneyStage>): Promise<JourneyStage>;
+  deleteJourneyStage(id: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {

@@ -690,3 +690,108 @@ export const insertSystemNotificationSchema = createInsertSchema(systemNotificat
 
 export type InsertSystemNotification = z.infer<typeof insertSystemNotificationSchema>;
 export type SystemNotification = typeof systemNotifications.$inferSelect;
+
+// Customer Journey Touchpoints table for tracking customer interactions
+export const customerTouchpoints = pgTable("customer_touchpoints", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").notNull(),
+  leadId: integer("lead_id"), // Optional - touchpoint could be before lead creation
+  touchpointType: text("touchpoint_type").notNull(), // website_visit, email_open, email_click, form_submit, phone_call, meeting, demo, trial_signup, purchase, support_ticket, etc.
+  touchpointStage: text("touchpoint_stage").notNull(), // awareness, consideration, decision, retention, advocacy
+  channel: text("channel").notNull(), // website, email, phone, social, direct, referral, paid_ads, organic, etc.
+  source: text("source"), // Specific source like google, facebook, email_campaign_id, etc.
+  medium: text("medium"), // organic, cpc, email, social, etc.
+  campaign: text("campaign"), // Campaign name or ID if applicable
+  content: text("content"), // Page URL, email subject, ad content, etc.
+  description: text("description"), // Human readable description of the touchpoint
+  value: integer("value").default(0), // Monetary value if applicable (in cents)
+  duration: integer("duration"), // Duration in seconds if applicable (e.g., website session)
+  outcome: text("outcome"), // positive, negative, neutral
+  score: integer("score").default(0), // Engagement score (0-100)
+  metadata: jsonb("metadata"), // Additional context data
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  referrerUrl: text("referrer_url"),
+  landingPage: text("landing_page"),
+  deviceType: text("device_type"), // desktop, mobile, tablet
+  browser: text("browser"),
+  operatingSystem: text("operating_system"),
+  country: text("country"),
+  region: text("region"),
+  city: text("city"),
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  utmTerm: text("utm_term"),
+  utmContent: text("utm_content"),
+  createdAt: timestamp("created_at").notNull(),
+  userId: integer("user_id").notNull(), // The user who owns this customer
+});
+
+export const insertCustomerTouchpointSchema = createInsertSchema(customerTouchpoints).pick({
+  customerId: true,
+  leadId: true,
+  touchpointType: true,
+  touchpointStage: true,
+  channel: true,
+  source: true,
+  medium: true,
+  campaign: true,
+  content: true,
+  description: true,
+  value: true,
+  duration: true,
+  outcome: true,
+  score: true,
+  metadata: true,
+  ipAddress: true,
+  userAgent: true,
+  referrerUrl: true,
+  landingPage: true,
+  deviceType: true,
+  browser: true,
+  operatingSystem: true,
+  country: true,
+  region: true,
+  city: true,
+  utmSource: true,
+  utmMedium: true,
+  utmCampaign: true,
+  utmTerm: true,
+  utmContent: true,
+  userId: true,
+});
+
+export type InsertCustomerTouchpoint = z.infer<typeof insertCustomerTouchpointSchema>;
+export type CustomerTouchpoint = typeof customerTouchpoints.$inferSelect;
+
+// Customer Journey Stages table for defining journey stages
+export const journeyStages = pgTable("journey_stages", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // e.g., "Awareness", "Consideration", "Decision", "Onboarding", "Retention"
+  description: text("description"),
+  order: integer("order").notNull(), // Order in the journey (1, 2, 3, etc.)
+  color: text("color").default("#6366f1"), // Color for UI visualization
+  icon: text("icon"), // Icon name for UI
+  expectedDuration: integer("expected_duration"), // Expected duration in days
+  isActive: boolean("is_active").default(true),
+  goals: text("goals").array(), // Goals for this stage
+  kpis: jsonb("kpis"), // Key performance indicators for this stage
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertJourneyStageSchema = createInsertSchema(journeyStages).pick({
+  name: true,
+  description: true,
+  order: true,
+  color: true,
+  icon: true,
+  expectedDuration: true,
+  isActive: true,
+  goals: true,
+  kpis: true,
+});
+
+export type InsertJourneyStage = z.infer<typeof insertJourneyStageSchema>;
+export type JourneyStage = typeof journeyStages.$inferSelect;

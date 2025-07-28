@@ -19,6 +19,7 @@ import LeadManagement from "@/pages/LeadManagement";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 import CustomerData from "@/pages/CustomerData";
+import CustomerJourney from "@/pages/CustomerJourney";
 import EmailManagement from "@/pages/EmailManagement";
 import CalendarManagement from "@/pages/CalendarManagement";
 import MarketingForms from "@/pages/MarketingForms";
@@ -69,6 +70,7 @@ function Router() {
       <ProtectedRoute path="/leads" component={LeadManagement} />
       <ProtectedRoute path="/lead-management" component={LeadManagement} />
       <ProtectedRoute path="/customer-data" component={CustomerData} />
+      <ProtectedRoute path="/customer-journey" component={CustomerJourney} />
       <ProtectedRoute path="/email" component={EmailManagement} />
       <ProtectedRoute path="/scheduled-emails" component={ScheduledEmails} />
       <ProtectedRoute path="/email-delivery" component={EmailDeliveryStatus} />

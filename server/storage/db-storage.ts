@@ -19,7 +19,9 @@ import {
   pageViews, type PageView, type InsertPageView,
   trackingInstallations, type TrackingInstallation, type InsertTrackingInstallation,
   chatConversations, type ChatConversation, type InsertChatConversation,
-  chatMessages, type ChatMessage, type InsertChatMessage
+  chatMessages, type ChatMessage, type InsertChatMessage,
+  customerTouchpoints, type CustomerTouchpoint, type InsertCustomerTouchpoint,
+  journeyStages, type JourneyStage, type InsertJourneyStage
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {
@@ -1693,6 +1695,192 @@ export class DbStorage implements IStorage {
     } catch (error) {
       console.error("Failed to create chat message:", error);
       throw new Error("Failed to create chat message");
+    }
+  }
+
+  async updateChatMessage(id: number, messageData: Partial<ChatMessage>): Promise<ChatMessage> {
+    try {
+      const result = await db
+        .update(chatMessages)
+        .set(messageData)
+        .where(eq(chatMessages.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error(`Chat message with ID ${id} not found`);
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Failed to update chat message #${id}:`, error);
+      throw new Error(`Failed to update chat message #${id}`);
+    }
+  }
+
+  async deleteChatMessage(id: number): Promise<void> {
+    try {
+      await db
+        .delete(chatMessages)
+        .where(eq(chatMessages.id, id));
+    } catch (error) {
+      console.error(`Failed to delete chat message #${id}:`, error);
+      throw new Error(`Failed to delete chat message #${id}`);
+    }
+  }
+
+  // ----- Customer Journey methods -----
+
+  async getCustomerTouchpoints(): Promise<CustomerTouchpoint[]> {
+    try {
+      return await db
+        .select()
+        .from(customerTouchpoints)
+        .orderBy(asc(customerTouchpoints.createdAt));
+    } catch (error) {
+      console.error("Failed to get customer touchpoints:", error);
+      return [];
+    }
+  }
+
+  async getCustomerTouchpoint(id: number): Promise<CustomerTouchpoint | undefined> {
+    try {
+      const [touchpoint] = await db
+        .select()
+        .from(customerTouchpoints)
+        .where(eq(customerTouchpoints.id, id))
+        .limit(1);
+      
+      return touchpoint;
+    } catch (error) {
+      console.error(`Failed to get customer touchpoint #${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async createCustomerTouchpoint(touchpoint: InsertCustomerTouchpoint): Promise<CustomerTouchpoint> {
+    try {
+      const touchpointData = {
+        ...touchpoint,
+        createdAt: new Date()
+      };
+      
+      const [newTouchpoint] = await db
+        .insert(customerTouchpoints)
+        .values(touchpointData as any)
+        .returning();
+      
+      return newTouchpoint;
+    } catch (error) {
+      console.error("Failed to create customer touchpoint:", error);
+      throw new Error("Failed to create customer touchpoint");
+    }
+  }
+
+  async updateCustomerTouchpoint(id: number, touchpointData: Partial<CustomerTouchpoint>): Promise<CustomerTouchpoint> {
+    try {
+      const result = await db
+        .update(customerTouchpoints)
+        .set(touchpointData)
+        .where(eq(customerTouchpoints.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error(`Customer touchpoint with ID ${id} not found`);
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Failed to update customer touchpoint #${id}:`, error);
+      throw new Error(`Failed to update customer touchpoint #${id}`);
+    }
+  }
+
+  async deleteCustomerTouchpoint(id: number): Promise<void> {
+    try {
+      await db
+        .delete(customerTouchpoints)
+        .where(eq(customerTouchpoints.id, id));
+    } catch (error) {
+      console.error(`Failed to delete customer touchpoint #${id}:`, error);
+      throw new Error(`Failed to delete customer touchpoint #${id}`);
+    }
+  }
+
+  // ----- Journey Stage methods -----
+
+  async getJourneyStages(): Promise<JourneyStage[]> {
+    try {
+      return await db
+        .select()
+        .from(journeyStages)
+        .orderBy(asc(journeyStages.order));
+    } catch (error) {
+      console.error("Failed to get journey stages:", error);
+      return [];
+    }
+  }
+
+  async getJourneyStage(id: number): Promise<JourneyStage | undefined> {
+    try {
+      const [stage] = await db
+        .select()
+        .from(journeyStages)
+        .where(eq(journeyStages.id, id))
+        .limit(1);
+      
+      return stage;
+    } catch (error) {
+      console.error(`Failed to get journey stage #${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async createJourneyStage(stage: InsertJourneyStage): Promise<JourneyStage> {
+    try {
+      const stageData = {
+        ...stage,
+        createdAt: new Date()
+      };
+      
+      const [newStage] = await db
+        .insert(journeyStages)
+        .values(stageData as any)
+        .returning();
+      
+      return newStage;
+    } catch (error) {
+      console.error("Failed to create journey stage:", error);
+      throw new Error("Failed to create journey stage");
+    }
+  }
+
+  async updateJourneyStage(id: number, stageData: Partial<JourneyStage>): Promise<JourneyStage> {
+    try {
+      const result = await db
+        .update(journeyStages)
+        .set(stageData)
+        .where(eq(journeyStages.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error(`Journey stage with ID ${id} not found`);
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Failed to update journey stage #${id}:`, error);
+      throw new Error(`Failed to update journey stage #${id}`);
+    }
+  }
+
+  async deleteJourneyStage(id: number): Promise<void> {
+    try {
+      await db
+        .delete(journeyStages)
+        .where(eq(journeyStages.id, id));
+    } catch (error) {
+      console.error(`Failed to delete journey stage #${id}:`, error);
+      throw new Error(`Failed to delete journey stage #${id}`);
     }
   }
 }

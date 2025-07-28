@@ -26,7 +26,9 @@ import {
   insertEmailTemplateSchema,
   insertEmailLogSchema,
   insertChatConversationSchema,
-  insertChatMessageSchema
+  insertChatMessageSchema,
+  insertCustomerTouchpointSchema,
+  insertJourneyStageSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
 import marketingRoutes from "./routes/marketing";
@@ -2386,6 +2388,166 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Voice command error:", error);
       return res.status(500).json({ message: "Failed to process voice command" });
+    }
+  });
+
+  // ===== CUSTOMER JOURNEY MAPPING ROUTES =====
+
+  // Get all customer touchpoints
+  app.get("/api/customer-touchpoints", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const touchpoints = await storage.getCustomerTouchpoints();
+      return res.json(touchpoints);
+    } catch (error) {
+      console.error("Get customer touchpoints error:", error);
+      return res.status(500).json({ message: "Failed to fetch customer touchpoints" });
+    }
+  });
+
+  // Create a new customer touchpoint
+  app.post("/api/customer-touchpoints", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const touchpointData = insertCustomerTouchpointSchema.parse(req.body);
+      const touchpoint = await storage.createCustomerTouchpoint(touchpointData);
+      return res.status(201).json(touchpoint);
+    } catch (error) {
+      console.error("Create customer touchpoint error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid touchpoint data", errors: error.errors });
+      }
+      return res.status(500).json({ message: "Failed to create customer touchpoint" });
+    }
+  });
+
+  // Update customer touchpoint
+  app.patch("/api/customer-touchpoints/:id", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid touchpoint ID" });
+      }
+
+      const updateData = req.body;
+      const touchpoint = await storage.updateCustomerTouchpoint(id, updateData);
+      return res.json(touchpoint);
+    } catch (error) {
+      console.error("Update customer touchpoint error:", error);
+      return res.status(500).json({ message: "Failed to update customer touchpoint" });
+    }
+  });
+
+  // Delete customer touchpoint
+  app.delete("/api/customer-touchpoints/:id", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid touchpoint ID" });
+      }
+
+      await storage.deleteCustomerTouchpoint(id);
+      return res.json({ message: "Customer touchpoint deleted successfully" });
+    } catch (error) {
+      console.error("Delete customer touchpoint error:", error);
+      return res.status(500).json({ message: "Failed to delete customer touchpoint" });
+    }
+  });
+
+  // Get all journey stages
+  app.get("/api/journey-stages", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const stages = await storage.getJourneyStages();
+      return res.json(stages);
+    } catch (error) {
+      console.error("Get journey stages error:", error);
+      return res.status(500).json({ message: "Failed to fetch journey stages" });
+    }
+  });
+
+  // Create a new journey stage
+  app.post("/api/journey-stages", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const stageData = insertJourneyStageSchema.parse(req.body);
+      const stage = await storage.createJourneyStage(stageData);
+      return res.status(201).json(stage);
+    } catch (error) {
+      console.error("Create journey stage error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid stage data", errors: error.errors });
+      }
+      return res.status(500).json({ message: "Failed to create journey stage" });
+    }
+  });
+
+  // Update journey stage
+  app.patch("/api/journey-stages/:id", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid stage ID" });
+      }
+
+      const updateData = req.body;
+      const stage = await storage.updateJourneyStage(id, updateData);
+      return res.json(stage);
+    } catch (error) {
+      console.error("Update journey stage error:", error);
+      return res.status(500).json({ message: "Failed to update journey stage" });
+    }
+  });
+
+  // Delete journey stage
+  app.delete("/api/journey-stages/:id", async (req: Request, res: Response) => {
+    try {
+      const userId = (req as any).user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid stage ID" });
+      }
+
+      await storage.deleteJourneyStage(id);
+      return res.json({ message: "Journey stage deleted successfully" });
+    } catch (error) {
+      console.error("Delete journey stage error:", error);
+      return res.status(500).json({ message: "Failed to delete journey stage" });
     }
   });
 
