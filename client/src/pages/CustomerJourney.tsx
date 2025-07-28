@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { format } from "date-fns";
 import JourneyVisualization from "@/components/journey/JourneyVisualization";
 import TouchpointAnalytics from "@/components/journey/TouchpointAnalytics";
 import CustomerJourneyMap from "@/components/journey/CustomerJourneyMap";
@@ -265,13 +267,112 @@ export default function CustomerJourney() {
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
-              <CustomerJourneyMap 
-                customers={filteredCustomers}
-                touchpoints={touchpoints}
-                journeyStages={journeyStages}
-                onCustomerSelect={setSelectedCustomer}
-                selectedCustomer={selectedCustomer}
-              />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Customer Journey Map */}
+                <div className={selectedCustomer ? "lg:col-span-2" : "lg:col-span-3"}>
+                  <CustomerJourneyMap 
+                    customers={filteredCustomers}
+                    touchpoints={touchpoints}
+                    journeyStages={journeyStages}
+                    onCustomerSelect={setSelectedCustomer}
+                    selectedCustomer={selectedCustomer}
+                  />
+                </div>
+                
+                {/* Customer Details Panel */}
+                {selectedCustomer && (
+                  <div className="lg:col-span-1">
+                    <Card className="sticky top-6">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">Customer Details</CardTitle>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setSelectedCustomer(null)}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Customer Info */}
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-12 w-12">
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                              {selectedCustomer.initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-semibold">{selectedCustomer.name}</h3>
+                            <p className="text-sm text-gray-500">{selectedCustomer.email}</p>
+                            {selectedCustomer.company && (
+                              <p className="text-sm text-gray-500">{selectedCustomer.company}</p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Customer Touchpoints Summary */}
+                        <div className="border-t pt-4">
+                          <h4 className="font-medium mb-3">Journey Progress</h4>
+                          {(() => {
+                            const customerTouchpoints = touchpoints.filter(t => t.customerId === selectedCustomer.id);
+                            const stageCount = customerTouchpoints.reduce((acc, t) => {
+                              acc[t.touchpointStage] = (acc[t.touchpointStage] || 0) + 1;
+                              return acc;
+                            }, {} as Record<string, number>);
+                            
+                            return (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span>Total Touchpoints:</span>
+                                  <span className="font-semibold">{customerTouchpoints.length}</span>
+                                </div>
+                                {Object.entries(stageCount).map(([stage, count]) => (
+                                  <div key={stage} className="flex justify-between text-sm">
+                                    <span className="capitalize">{stage}:</span>
+                                    <span>{count}</span>
+                                  </div>
+                                ))}
+                                {customerTouchpoints.length > 0 && (
+                                  <div className="flex justify-between text-sm border-t pt-2 mt-2">
+                                    <span>Last Activity:</span>
+                                    <span className="text-xs">
+                                      {format(new Date(customerTouchpoints[customerTouchpoints.length - 1]?.createdAt || new Date()), "MMM d, yyyy")}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                        
+                        {/* Recent Touchpoints */}
+                        <div className="border-t pt-4">
+                          <h4 className="font-medium mb-3">Recent Activity</h4>
+                          <div className="space-y-2 max-h-64 overflow-y-auto">
+                            {touchpoints
+                              .filter(t => t.customerId === selectedCustomer.id)
+                              .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                              .slice(0, 5)
+                              .map((touchpoint, index) => (
+                                <div key={index} className="flex items-start space-x-2 text-sm">
+                                  <div className="w-2 h-2 bg-primary rounded-full mt-1.5 flex-shrink-0"></div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-gray-900 truncate">{touchpoint.description}</p>
+                                    <p className="text-gray-500 text-xs">
+                                      {format(new Date(touchpoint.createdAt), "MMM d, h:mm a")}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="analytics" className="space-y-6">
