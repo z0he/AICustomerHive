@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { insertLeadSchema } from "@shared/schema";
-import { LEAD_SOURCES, LEAD_STATUSES, CONTACT_TYPES, LIFECYCLE_STAGES, LEGAL_BASES, COUNTRIES, INDUSTRY_SUGGESTIONS } from "@shared/constants";
+import { LEAD_SOURCES, LEAD_STATUSES, INDUSTRY_SUGGESTIONS } from "@shared/constants";
 
 // Extend the insert schema with additional validations that match the actual lead schema
 const leadFormSchema = insertLeadSchema.extend({
@@ -100,12 +100,12 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
           
           <FormField
             control={form.control}
-            name="firstName"
+            name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First Name <span className="text-red-500">*</span></FormLabel>
+                <FormLabel>Full Name <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
-                  <Input placeholder="John" {...field} value={field.value || ""} />
+                  <Input placeholder="John Doe" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -114,12 +114,23 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
           
           <FormField
             control={form.control}
-            name="lastName"
+            name="industry"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Last Name <span className="text-red-500">*</span></FormLabel>
+                <FormLabel>Industry <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
-                  <Input placeholder="Doe" {...field} value={field.value || ""} />
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select industry" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {INDUSTRY_SUGGESTIONS.map((industry) => (
+                        <SelectItem key={industry} value={industry}>
+                          {industry}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -131,7 +142,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email <span className="text-red-500">*</span></FormLabel>
+                <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input type="email" placeholder="john@example.com" {...field} value={field.value || ""} />
                 </FormControl>
@@ -184,20 +195,6 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
           
           <FormField
             control={form.control}
-            name="linkedinUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>LinkedIn URL</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://linkedin.com/in/johndoe" {...field} value={field.value || ""} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
             name="location"
             render={({ field }) => (
               <FormItem>
@@ -210,126 +207,9 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
             )}
           />
           
-          {/* Classification */}
+          {/* Lead Details */}
           <div className="col-span-2 mt-3">
-            <h3 className="text-md font-medium mb-3">Classification</h3>
-          </div>
-          
-          <FormField
-            control={form.control}
-            name="lifecycleStage"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Lifecycle Stage</FormLabel>
-                <FormControl>
-                  <Select 
-                    value={field.value || "lead"} 
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select lifecycle stage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LIFECYCLE_STAGES.map((stage) => (
-                        <SelectItem key={stage.id} value={stage.id}>
-                          {stage.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="contactType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contact Type</FormLabel>
-                <FormControl>
-                  <Select 
-                    value={field.value || ""} 
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select contact type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CONTACT_TYPES.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="contactIndustry"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Industry <span className="text-red-500">*</span></FormLabel>
-                <FormControl>
-                  <Select 
-                    value={field.value || ""} 
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select industry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {INDUSTRY_SUGGESTIONS.map((industry) => (
-                        <SelectItem key={industry} value={industry}>
-                          {industry}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="country"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
-                <FormControl>
-                  <Select 
-                    value={field.value || ""} 
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select country" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {COUNTRIES.map((country) => (
-                        <SelectItem key={country.id} value={country.id}>
-                          {country.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Lead Information */}
-          <div className="col-span-2 mt-3">
-            <h3 className="text-md font-medium mb-3">Lead Information</h3>
+            <h3 className="text-md font-medium mb-3">Lead Details</h3>
           </div>
           
           <FormField
@@ -344,7 +224,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
                     onValueChange={field.onChange}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select source" />
+                      <SelectValue placeholder="Select lead source" />
                     </SelectTrigger>
                     <SelectContent>
                       {LEAD_SOURCES.map((source) => (
@@ -372,7 +252,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
                     onValueChange={field.onChange}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder="Select lead status" />
                     </SelectTrigger>
                     <SelectContent>
                       {LEAD_STATUSES.map((status) => (
@@ -390,51 +270,53 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
           
           <FormField
             control={form.control}
-            name="legalBasis"
+            name="leadOwner"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Legal Basis</FormLabel>
+                <FormLabel>Lead Owner</FormLabel>
                 <FormControl>
-                  <Select 
-                    value={field.value || ""} 
-                    onValueChange={field.onChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select legal basis" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LEGAL_BASES.map((basis) => (
-                        <SelectItem key={basis.id} value={basis.id}>
-                          {basis.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input placeholder="John Doe" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
-        
-        {/* Engagement Level Slider */}
-        <div className="space-y-2 mt-3">
-          <FormLabel>Engagement Level: {engagementLevel}</FormLabel>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={engagementLevel}
-            onChange={(e) => setEngagementLevel(parseInt(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>Low</span>
-            <span>Medium</span>
-            <span>High</span>
+          
+          {/* Engagement Metrics */}
+          <div className="col-span-2 mt-3">
+            <h3 className="text-md font-medium mb-3">Scoring</h3>
+          </div>
+          
+          <div className="col-span-2">
+            <FormField
+              control={form.control}
+              name="engagementLevel"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Engagement Level: {engagementLevel}%</FormLabel>
+                  <FormControl>
+                    <div className="px-3">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={engagementLevel}
+                        onChange={(e) => setEngagementLevel(parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                  <p className="text-sm text-gray-500 mt-1">
+                    How engaged is this lead with your brand? (0 = No engagement, 100 = Highly engaged)
+                  </p>
+                </FormItem>
+              )}
+            />
           </div>
         </div>
         
+        {/* Notes */}
         <FormField
           control={form.control}
           name="notes"
