@@ -2,6 +2,7 @@ import { Request, Response, Router } from 'express';
 import { storage } from '../storage';
 import { checkAuth } from '../middleware/auth';
 import { z } from 'zod';
+import { journeyIntegration } from '../services/journey-integration-simple.js';
 import { 
   insertMarketingFormSchema, 
   insertFormSubmissionSchema,
@@ -325,6 +326,28 @@ router.post('/track/pageview', async (req: Request, res: Response) => {
       entryPage: req.body.isEntryPage,
       exitPage: false, // Will be updated on next pageview or session end
     });
+    
+    // Try to find tracking installation to create journey touchpoint
+    try {
+      const trackingInstallationId = req.body.trackingInstallationId;
+      if (trackingInstallationId) {
+        // Create journey touchpoint for website visit
+        await journeyIntegration.createWebsiteVisitTouchpoint(
+          trackingInstallationId,
+          {
+            visitorId,
+            pageUrl,
+            referrer,
+            userAgent: req.headers['user-agent'] as string,
+            ipAddress: req.ip
+          },
+          1 // Default user ID for system-created touchpoints
+        );
+      }
+    } catch (journeyError) {
+      console.error('Failed to create journey touchpoint for page view:', journeyError);
+      // Don't fail the page view tracking if journey integration fails
+    }
     
     return res.status(201).json({ success: true });
   } catch (error) {

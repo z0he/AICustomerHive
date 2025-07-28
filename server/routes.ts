@@ -36,6 +36,7 @@ import notificationRoutes from "./routes/notifications";
 import feedbackRoutes from "./routes/feedback";
 import directFeedbackRoutes from "./routes/direct-feedback";
 import * as leadManagement from "./routes/lead-management.js";
+import { journeyIntegration } from "./services/journey-integration-simple.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -551,8 +552,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/leads", async (req: Request, res: Response) => {
     try {
+      const userId = (req as any).user?.id || 1;
       const validatedData = insertLeadSchema.parse(req.body);
       const lead = await storage.createLead(validatedData);
+      
+      // Create journey touchpoint for lead creation
+      await journeyIntegration.createLeadCreationTouchpoint(lead, userId);
+      
       return res.status(201).json(lead);
     } catch (error) {
       console.error("Create lead error:", error);
@@ -586,7 +592,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid lead ID" });
       }
       
+      const userId = (req as any).user?.id || 1;
+      
+      // Get the current lead to track status changes
+      const currentLead = await storage.getLead(id);
+      const oldStatus = currentLead?.leadStatus || 'new';
+      
       const lead = await storage.updateLead(id, req.body);
+      
+      // Create journey touchpoint if status changed
+      if (req.body.leadStatus && req.body.leadStatus !== oldStatus) {
+        await journeyIntegration.createLeadStatusChangeTouchpoint(
+          id, 
+          oldStatus, 
+          req.body.leadStatus, 
+          userId
+        );
+      }
+      
       return res.json(lead);
     } catch (error) {
       console.error("Update lead error:", error);
@@ -1758,6 +1781,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Track email usage for the user
           await usageService.incrementEmailUsage(userId);
+          
+          // Create journey touchpoint for campaign email sent
+          await journeyIntegration.createCampaignEmailSentTouchpoint(
+            campaignId,
+            lead.email || '',
+            userId
+          );
           
           emailResults.push({
             leadId: lead.id,

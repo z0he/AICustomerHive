@@ -191,6 +191,9 @@ export const leads = pgTable("leads", {
   tags: text("tags").array(),
   notes: text("notes"),
   customFields: json("custom_fields"), // For storing additional import fields
+  // Journey mapping integration
+  currentJourneyStageId: integer("current_journey_stage_id"), // Current stage in customer journey
+  journeyEntryDate: timestamp("journey_entry_date"), // When lead entered the journey
   createdAt: timestamp("created_at").notNull(),
 });
 
@@ -213,6 +216,8 @@ export const insertLeadSchema = createInsertSchema(leads).pick({
   tags: true,
   notes: true,
   customFields: true,
+  currentJourneyStageId: true,
+  journeyEntryDate: true,
 });
 
 export type InsertLead = z.infer<typeof insertLeadSchema>;
@@ -703,6 +708,10 @@ export const customerTouchpoints = pgTable("customer_touchpoints", {
   medium: text("medium"), // organic, cpc, email, social, etc.
   campaign: text("campaign"), // Campaign name or ID if applicable
   content: text("content"), // Page URL, email subject, ad content, etc.
+  // Integration connections
+  relatedLeadId: integer("related_lead_id"), // Link to lead if touchpoint is lead-related
+  relatedCampaignId: integer("related_campaign_id"), // Link to campaign if touchpoint is campaign-related
+  relatedTrackingId: integer("related_tracking_id"), // Link to tracking installation if touchpoint is web-related
   description: text("description"), // Human readable description of the touchpoint
   value: integer("value").default(0), // Monetary value if applicable (in cents)
   duration: integer("duration"), // Duration in seconds if applicable (e.g., website session)
@@ -760,6 +769,9 @@ export const insertCustomerTouchpointSchema = createInsertSchema(customerTouchpo
   utmTerm: true,
   utmContent: true,
   userId: true,
+  relatedLeadId: true,
+  relatedCampaignId: true,
+  relatedTrackingId: true,
 });
 
 export type InsertCustomerTouchpoint = z.infer<typeof insertCustomerTouchpointSchema>;
