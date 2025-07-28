@@ -32,6 +32,7 @@ AICRM is a comprehensive CRM platform that combines traditional customer relatio
 ### Core CRM Features
 - **Customer Management**: Complete customer profiles with activity tracking, segmentation, and lifecycle management
 - **Lead Management**: Lead scoring, source tracking, status management, and conversion pipelines
+- **Customer Journey Mapping**: Visual journey tracking with touchpoint analytics, stage management, and conversion flow visualization
 - **Campaign Management**: Multi-channel campaign creation with A/B testing capabilities
 - **Task Management**: Automated task creation and assignment with priority levels
 - **Calendar Integration**: Event scheduling and management with reminder systems
@@ -128,6 +129,13 @@ AICRM is a comprehensive CRM platform that combines traditional customer relatio
 
 ```
 Changelog:
+- January 28, 2025. Completed Customer Journey Mapping feature as core CRM capability
+  - Built comprehensive frontend journey visualization with interactive charts and touchpoint tracking
+  - Created journey stage management system with customizable workflows and performance metrics
+  - Implemented full database schema with customer_touchpoints and journey_stages tables
+  - Added complete CRUD API endpoints for customer journey data management
+  - Integrated Customer Journey navigation in main sidebar for easy access
+  - Sample journey data includes 5 default stages and customer touchpoint examples
 - January 23, 2025. Completed comprehensive A/B Testing for Campaigns system
   - Enhanced MessageVariants component with professional UI and interactive charts
   - Added working "Add Test Data" functionality with proper JWT authentication
