@@ -19,24 +19,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { insertLeadSchema } from "@shared/schema";
 import { LEAD_SOURCES, LEAD_STATUSES, CONTACT_TYPES, LIFECYCLE_STAGES, LEGAL_BASES, COUNTRIES, INDUSTRY_SUGGESTIONS } from "@shared/constants";
 
-// Extend the insert schema with additional validations
+// Extend the insert schema with additional validations that match the actual lead schema
 const leadFormSchema = insertLeadSchema.extend({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  firstName: z.string().optional().nullable(),
-  lastName: z.string().optional().nullable(),
+  industry: z.string().min(1, "Industry is required"),
+  location: z.string().optional().nullable(),
   email: z.string().email("Please enter a valid email").optional().nullable(),
   phone: z.string().optional().nullable(),
   company: z.string().optional().nullable(),
   jobTitle: z.string().optional().nullable(),
   leadSource: z.string().optional().nullable(),
   leadStatus: z.string().default("new").optional().nullable(),
-  contactIndustry: z.string().optional().nullable(),
-  country: z.string().optional().nullable(),
-  contactSource: z.string().optional().nullable(),
-  contactType: z.string().optional().nullable(),
-  linkedinUrl: z.string().optional().nullable(),
-  legalBasis: z.string().optional().nullable(),
-  lifecycleStage: z.string().default("lead").optional().nullable(),
+  leadOwner: z.string().optional().nullable(),
+  engagementLevel: z.number().min(0).max(100).default(0).optional().nullable(),
+  conversionProbability: z.number().min(0).max(100).default(0).optional().nullable(),
+  score: z.number().min(0).max(100).default(0).optional().nullable(),
+  tags: z.array(z.string()).optional().nullable(),
   notes: z.string().optional().nullable(),
 });
 
@@ -55,8 +53,6 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
     resolver: zodResolver(leadFormSchema),
     defaultValues: {
       name: defaultValues?.name || "",
-      firstName: defaultValues?.firstName || "",
-      lastName: defaultValues?.lastName || "",
       industry: defaultValues?.industry || "",
       location: defaultValues?.location || "",
       email: defaultValues?.email || "",
@@ -65,22 +61,29 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
       jobTitle: defaultValues?.jobTitle || "",
       leadSource: defaultValues?.leadSource || "website",
       leadStatus: defaultValues?.leadStatus || "new",
-      contactIndustry: defaultValues?.industry || "", // Map industry to contactIndustry
-      country: defaultValues?.location || "", // Map location to country for now
-      contactSource: defaultValues?.leadSource || "",
-      contactType: defaultValues?.contactType || "",
-      linkedinUrl: defaultValues?.linkedinUrl || "",
-      legalBasis: defaultValues?.legalBasis || "",
-      lifecycleStage: defaultValues?.lifecycleStage || "lead",
+      leadOwner: defaultValues?.leadOwner || "",
+      engagementLevel: defaultValues?.engagementLevel || 0,
+      conversionProbability: defaultValues?.conversionProbability || 0,
+      score: defaultValues?.score || 0,
+      tags: defaultValues?.tags || [],
       notes: defaultValues?.notes || "",
     },
   });
 
   const handleSubmit = (data: LeadFormData) => {
-    // Add engagement level from slider
+    // Generate initials from name
+    const nameParts = data.name.trim().split(' ');
+    const initials = nameParts.map(part => part.charAt(0)).join('').toUpperCase();
+    
+    // Create the complete lead data
     const completeData = {
       ...data,
-      engagementLevel
+      initials,
+      engagementLevel: engagementLevel || 0,
+      score: data.score || 0,
+      conversionProbability: data.conversionProbability || 0,
+      createdAt: new Date(),
+      tags: data.tags || []
     };
     
     onSubmit(completeData);
