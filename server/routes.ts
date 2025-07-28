@@ -730,13 +730,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Conversion funnel data endpoint
+  // Conversion funnel data endpoint - now uses actual Customer Journey data
   app.get("/api/customers/funnel", async (req: Request, res: Response) => {
     try {
       const customers = await storage.getCustomers();
       const leads = await storage.getLeads();
+      const touchpoints = await storage.getCustomerTouchpoints();
+      const journeyStages = await storage.getJourneyStages();
       
-      // Create data for a typical sales funnel based on customer/lead status
+      // Get actual journey stage progression from touchpoints
+      const stageProgression = {
+        awareness: 0,
+        consideration: 0,
+        decision: 0,
+        retention: 0,
+        advocacy: 0
+      };
+      
+      // Count customers in each stage based on their latest touchpoint
+      const customerStages = new Map<number, string>();
+      
+      // Group touchpoints by customer and find their current stage
+      const customerTouchpoints = touchpoints.reduce((acc, touchpoint) => {
+        if (!acc[touchpoint.customerId]) {
+          acc[touchpoint.customerId] = [];
+        }
+        acc[touchpoint.customerId].push(touchpoint);
+        return acc;
+      }, {} as Record<number, typeof touchpoints>);
+      
+      // Determine current stage for each customer based on latest touchpoint
+      Object.entries(customerTouchpoints).forEach(([customerIdStr, customerTPs]) => {
+        const customerId = parseInt(customerIdStr);
+        const sortedTouchpoints = customerTPs.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        const latestStage = sortedTouchpoints[0]?.touchpointStage || 'awareness';
+        customerStages.set(customerId, latestStage);
+        
+        // Count customers in each stage
+        if (stageProgression.hasOwnProperty(latestStage)) {
+          stageProgression[latestStage as keyof typeof stageProgression]++;
+        }
+      });
+      
+      // Create funnel data based on actual customer journey progression
       const funnelData = [
         {
           name: 'Leads',
@@ -744,15 +782,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         {
           name: 'Qualified',
-          value: Math.floor(leads.length * 0.75) // 75% of leads get qualified
+          value: stageProgression.consideration + stageProgression.decision + stageProgression.retention + stageProgression.advocacy
         },
         {
-          name: 'Opportunities',
-          value: Math.floor(leads.length * 0.5) // 50% of leads become opportunities
+          name: 'Opportunities', 
+          value: stageProgression.decision + stageProgression.retention + stageProgression.advocacy
         },
         {
           name: 'Proposals',
-          value: Math.floor(leads.length * 0.3) // 30% of leads receive proposals
+          value: stageProgression.retention + stageProgression.advocacy
         },
         {
           name: 'Customers',
