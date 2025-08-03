@@ -37,6 +37,7 @@ import feedbackRoutes from "./routes/feedback";
 import directFeedbackRoutes from "./routes/direct-feedback";
 import * as leadManagement from "./routes/lead-management.js";
 import { journeyIntegration } from "./services/journey-integration-simple.js";
+import unifiedJourneyRoutes from "./routes/unified-journey.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -53,6 +54,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount direct feedback routes
   app.use(directFeedbackRoutes);
+  
+  // Mount unified journey routes
+  app.use("/api", unifiedJourneyRoutes);
   
   // Legacy compatibility redirect for user current route
   app.get("/api/user/current", (req, res) => {
