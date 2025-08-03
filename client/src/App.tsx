@@ -20,6 +20,7 @@ import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 import CustomerData from "@/pages/CustomerData";
 import CustomerJourney from "@/pages/CustomerJourney";
+import DataConsistency from "@/pages/DataConsistency";
 import EmailManagement from "@/pages/EmailManagement";
 import CalendarManagement from "@/pages/CalendarManagement";
 import MarketingForms from "@/pages/MarketingForms";
@@ -73,6 +74,7 @@ function Router() {
       <ProtectedRoute path="/unified-segments" component={UnifiedSegments} />
       <ProtectedRoute path="/customer-data" component={CustomerData} />
       <ProtectedRoute path="/customer-journey" component={CustomerJourney} />
+      <ProtectedRoute path="/data-consistency" component={DataConsistency} />
       <ProtectedRoute path="/email" component={EmailManagement} />
       <ProtectedRoute path="/scheduled-emails" component={ScheduledEmails} />
       <ProtectedRoute path="/email-delivery" component={EmailDeliveryStatus} />

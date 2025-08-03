@@ -42,13 +42,13 @@ export default function UnifiedJourneyView({ contact, onActionClick }: UnifiedJo
 
   // Fetch journey analytics for this contact
   const { data: journeyAnalytics, isLoading: isLoadingAnalytics } = useQuery<JourneyAnalytics>({
-    queryKey: [`/api/contacts/${contact.id}/journey-analytics`, { contactType: contact.contactType }],
+    queryKey: [`/api/contacts/${contact.id}/journey-analytics?contactType=${contact.contactType}`],
     retry: 1
   });
 
   // Fetch all touchpoints for this contact
   const { data: touchpoints = [], isLoading: isLoadingTouchpoints } = useQuery<CustomerTouchpoint[]>({
-    queryKey: [`/api/contacts/${contact.id}/touchpoints`, { contactType: contact.contactType }],
+    queryKey: [`/api/contacts/${contact.id}/touchpoints?contactType=${contact.contactType}`],
     retry: 1
   });
 
