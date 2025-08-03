@@ -34,6 +34,20 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserPersonalKeys(userId: number, keys: { openaiKey?: string; mailgunKey?: string; mailgunDomain?: string }): Promise<User>;
   
+  // Customer methods
+  getCustomers(): Promise<Customer[]>;
+  getCustomer(id: number): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: number, data: Partial<InsertCustomer>): Promise<Customer>;
+  deleteCustomer(id: number): Promise<boolean>;
+
+  // Lead methods
+  getLeads(): Promise<Lead[]>;
+  getLead(id: number): Promise<Lead | undefined>;
+  createLead(lead: InsertLead): Promise<Lead>;
+  updateLead(id: number, data: Partial<InsertLead>): Promise<Lead>;
+  deleteLead(id: number): Promise<boolean>;
+
   // Campaign methods
   getCampaigns(period?: string): Promise<Campaign[]>;
   
@@ -82,24 +96,17 @@ export interface IStorage {
   createMessageVariant(variant: InsertMessageVariant): Promise<MessageVariant>;
   updateMessageVariantStats(variantId: number, impressions?: number, conversions?: number): Promise<MessageVariant>;
   
-  // Customer methods
-  getCustomers(): Promise<Customer[]>;
-  getCustomer(id: number): Promise<Customer | undefined>;
-  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  // Customer methods  
   getCustomerActivities(): Promise<CustomerActivity[]>;
   exportCustomers(): Promise<any>; // Exports customer data in standard format
   importCustomers(customerData: any[]): Promise<{ imported: number; errors: any[] }>;
   
   // Lead methods
-  getLeads(): Promise<Lead[]>;
   getLeadsBySource(source: string): Promise<Lead[]>;
   getLeadsByStatus(status: string): Promise<Lead[]>;
   getLeadsByScoreRange(minScore: number, maxScore: number): Promise<Lead[]>;
   getLeadsRequiringFollowUp(): Promise<Lead[]>;
-  getLead(id: number): Promise<Lead | undefined>;
-  createLead(lead: InsertLead): Promise<Lead>;
   insertLead(lead: any): Promise<Lead>; // For import API
-  updateLead(id: number, leadData: Partial<Lead>): Promise<Lead>;
   updateLeadScore(id: number, scoringData: any): Promise<Lead>;
   getTopLeads(limit?: number): Promise<Lead[]>;
   assignLeadOwner(id: number, ownerName: string): Promise<Lead>;

@@ -548,6 +548,29 @@ export class DbStorage implements IStorage {
     }
   }
   
+  async updateCustomer(id: number, data: Partial<InsertCustomer>): Promise<Customer> {
+    const result = await db.update(customers)
+      .set(data)
+      .where(eq(customers.id, id))
+      .returning();
+      
+    if (result.length === 0) {
+      throw new Error(`Customer with ID ${id} not found`);
+    }
+    
+    return result[0];
+  }
+
+  async deleteCustomer(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(customers).where(eq(customers.id, id));
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete customer ${id}:`, error);
+      return false;
+    }
+  }
+
   async importCustomers(customerData: any[]): Promise<{ imported: number; errors: any[] }> {
     const errors: any[] = [];
     let imported = 0;
@@ -719,7 +742,7 @@ export class DbStorage implements IStorage {
     return result[0];
   }
   
-  async updateLead(id: number, leadData: Partial<Lead>): Promise<Lead> {
+  async updateLead(id: number, leadData: Partial<InsertLead>): Promise<Lead> {
     const result = await db
       .update(leads)
       .set(leadData)
@@ -731,6 +754,16 @@ export class DbStorage implements IStorage {
     }
     
     return result[0];
+  }
+
+  async deleteLead(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(leads).where(eq(leads.id, id));
+      return true;
+    } catch (error) {
+      console.error(`Failed to delete lead ${id}:`, error);
+      return false;
+    }
   }
   
   async updateLeadScore(id: number, scoringData: any): Promise<Lead> {

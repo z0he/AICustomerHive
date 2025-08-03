@@ -1,4 +1,4 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -19,13 +19,16 @@ import {
   Code,
   LineChart,
   Route,
-  Shield
+  Shield,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 
 interface SidebarItem {
   icon: React.ReactNode;
   label: string;
   path: string;
+  subItems?: SidebarItem[];
 }
 
 interface RecentCampaign {
@@ -41,6 +44,7 @@ interface SidebarProps {
 
 const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
   const [location] = useLocation();
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   
   // Get current user to check admin status
   const { data: userResponse, isLoading: userLoading } = useQuery({
@@ -56,13 +60,25 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
     { icon: <Users size={20} />, label: "Customers", path: "/customers" },
     { icon: <UserPlus size={20} />, label: "Leads", path: "/leads" },
     { icon: <Route size={20} />, label: "Journey", path: "/customer-journey" },
-    { icon: <Shield size={20} />, label: "Data Quality", path: "/data-consistency" },
     { icon: <Megaphone size={20} />, label: "Campaigns", path: "/campaigns" },
-    { icon: <Send size={20} />, label: "Email", path: "/email" },
-    { icon: <Mail size={20} />, label: "Email Status", path: "/email-delivery" },
+    { 
+      icon: <Send size={20} />, 
+      label: "Email", 
+      path: "/email",
+      subItems: [
+        { icon: <Mail size={16} />, label: "Email Status", path: "/email-delivery" }
+      ]
+    },
     { icon: <FormInput size={20} />, label: "Forms", path: "/marketing-forms" },
     { icon: <CalendarDays size={20} />, label: "Calendar", path: "/calendar" },
-    { icon: <FileDown size={20} />, label: "Data Mgmt", path: "/customer-data" },
+    { 
+      icon: <FileDown size={20} />, 
+      label: "Data MGMT", 
+      path: "/customer-data",
+      subItems: [
+        { icon: <Shield size={16} />, label: "Data Quality", path: "/data-consistency" }
+      ]
+    },
     { icon: <BarChart2 size={20} />, label: "Analytics", path: "/analytics" },
   ];
 
@@ -70,20 +86,70 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
     <aside className="w-16 md:w-64 bg-white border-r border-brand-blue/10 flex flex-col shadow-md">
       <div className="p-4 overflow-y-auto flex-1">
         <div className="space-y-1">
-          {mainNavItems.map((item) => (
-            <div key={item.path}>
-              <Link href={item.path}>
-                <div className={`flex items-center space-x-3 px-3 py-2 rounded-lg cursor-pointer ${
-                  location === item.path 
-                    ? 'bg-brand-gradient text-white font-medium' 
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-brand-blue'
-                }`}>
-                  {item.icon}
-                  <span className="font-medium text-sm hidden md:inline-block uppercase tracking-wide">{item.label}</span>
+          {mainNavItems.map((item) => {
+            const hasSubItems = item.subItems && item.subItems.length > 0;
+            const isExpanded = expandedItems.has(item.path);
+            const isParentActive = item.subItems?.some(subItem => location === subItem.path);
+            const isActive = location === item.path || isParentActive;
+
+            const toggleExpanded = () => {
+              const newExpanded = new Set(expandedItems);
+              if (isExpanded) {
+                newExpanded.delete(item.path);
+              } else {
+                newExpanded.add(item.path);
+              }
+              setExpandedItems(newExpanded);
+            };
+
+            return (
+              <div key={item.path}>
+                <div 
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg cursor-pointer ${
+                    isActive
+                      ? 'bg-brand-gradient text-white font-medium' 
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-brand-blue'
+                  }`}
+                  onClick={hasSubItems ? toggleExpanded : undefined}
+                >
+                  {hasSubItems ? (
+                    <>
+                      <Link href={item.path} className="flex items-center space-x-3 flex-1">
+                        {item.icon}
+                        <span className="font-medium text-sm hidden md:inline-block uppercase tracking-wide">{item.label}</span>
+                      </Link>
+                      <div className="hidden md:block">
+                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                      </div>
+                    </>
+                  ) : (
+                    <Link href={item.path} className="flex items-center space-x-3 w-full">
+                      {item.icon}
+                      <span className="font-medium text-sm hidden md:inline-block uppercase tracking-wide">{item.label}</span>
+                    </Link>
+                  )}
                 </div>
-              </Link>
-            </div>
-          ))}
+
+                {/* Submenu items */}
+                {hasSubItems && isExpanded && (
+                  <div className="ml-6 mt-1 space-y-1 hidden md:block">
+                    {item.subItems!.map((subItem) => (
+                      <Link key={subItem.path} href={subItem.path}>
+                        <div className={`flex items-center space-x-3 px-3 py-2 rounded-lg cursor-pointer ${
+                          location === subItem.path
+                            ? 'bg-brand-blue/10 text-brand-blue font-medium border-l-2 border-brand-blue'
+                            : 'text-slate-500 hover:bg-slate-50 hover:text-brand-blue'
+                        }`}>
+                          {subItem.icon}
+                          <span className="text-sm">{subItem.label}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
         
         <div className="mt-8">
