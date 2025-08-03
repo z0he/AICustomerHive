@@ -2152,6 +2152,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Customer segmentation
   app.get("/api/segments", leadManagement.getCustomerSegments);
+  
+  // Unified Contact Segmentation Routes
+  app.get("/api/contact-segments", leadManagement.getUnifiedContactSegments);
+  app.post("/api/contact-segments", leadManagement.createUnifiedContactSegment);
+  app.get("/api/contact-segments/:id", leadManagement.getUnifiedContactSegment);
+  app.put("/api/contact-segments/:id", leadManagement.updateUnifiedContactSegment);
+  app.delete("/api/contact-segments/:id", leadManagement.deleteUnifiedContactSegment);
+  app.get("/api/contact-segments/:id/contacts", leadManagement.getContactsForSegment);
+  app.get("/api/unified-contacts", leadManagement.getUnifiedContacts);
   app.post("/api/segments", leadManagement.createCustomerSegment);
   app.get("/api/segments/:id/export", leadManagement.exportSegmentData);
   

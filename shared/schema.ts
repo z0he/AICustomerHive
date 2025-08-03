@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, json, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, json, jsonb, real } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 // Import Json type
@@ -333,6 +333,14 @@ export interface Contact {
   // Journey mapping fields
   currentJourneyStageId?: number | null;
   journeyEntryDate?: Date | null;
+}
+
+// Unified Contact Segment Filter Interface
+export interface ContactSegmentFilter {
+  field: string; // Field to filter on (industry, leadStatus, score, etc.)
+  operator: 'equals' | 'notEquals' | 'contains' | 'startsWith' | 'endsWith' | 'greaterThan' | 'lessThan' | 'greaterThanOrEqual' | 'lessThanOrEqual' | 'isEmpty' | 'isNotEmpty' | 'in';
+  value: string | number | string[]; // Value to compare against
+  contactTypes?: ('lead' | 'customer')[]; // Specific contact types this filter applies to
 }
 
 // Email templates table
@@ -842,3 +850,34 @@ export const insertJourneyStageSchema = createInsertSchema(journeyStages).pick({
 
 export type InsertJourneyStage = z.infer<typeof insertJourneyStageSchema>;
 export type JourneyStage = typeof journeyStages.$inferSelect;
+
+// Unified Contact Segments table - for segmenting both leads and customers
+export const contactSegments = pgTable("contact_segments", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  contactTypes: text("contact_types").array().notNull().default(["lead", "customer"]), // Which contact types to include
+  filterCriteria: jsonb("filter_criteria").notNull(), // Segment definition rules
+  createdBy: integer("created_by").notNull(), // User who created the segment
+  isActive: boolean("is_active").default(true),
+  leadCount: integer("lead_count").default(0), // Cached count of matching leads
+  customerCount: integer("customer_count").default(0), // Cached count of matching customers
+  totalCount: integer("total_count").default(0), // Total matching contacts
+  conversionRate: real("conversion_rate"), // Lead to customer conversion rate
+  avgScore: integer("avg_score"), // Average lead score for this segment
+  lastUpdated: timestamp("last_updated"), // When counts were last recalculated
+  createdAt: timestamp("created_at").notNull(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertContactSegmentSchema = createInsertSchema(contactSegments).pick({
+  name: true,
+  description: true,
+  contactTypes: true,
+  filterCriteria: true,
+  createdBy: true,
+  isActive: true,
+});
+
+export type InsertContactSegment = z.infer<typeof insertContactSegmentSchema>;
+export type ContactSegment = typeof contactSegments.$inferSelect;

@@ -35,6 +35,7 @@ import Features from "@/pages/Features";
 import Pricing from "@/pages/Pricing";
 import Contact from "@/pages/Contact";
 import Demo from "@/pages/Demo";
+import UnifiedSegments from "@/pages/UnifiedSegments";
 
 // Custom placeholder page for routes under development
 const UnderDevelopment = ({ title }: { title: string }) => {
@@ -69,6 +70,7 @@ function Router() {
       <ProtectedRoute path="/analytics" component={Analytics} />
       <ProtectedRoute path="/leads" component={LeadManagement} />
       <ProtectedRoute path="/lead-management" component={LeadManagement} />
+      <ProtectedRoute path="/unified-segments" component={UnifiedSegments} />
       <ProtectedRoute path="/customer-data" component={CustomerData} />
       <ProtectedRoute path="/customer-journey" component={CustomerJourney} />
       <ProtectedRoute path="/email" component={EmailManagement} />

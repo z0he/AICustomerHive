@@ -21,7 +21,9 @@ import {
   chatConversations, type ChatConversation, type InsertChatConversation,
   chatMessages, type ChatMessage, type InsertChatMessage,
   customerTouchpoints, type CustomerTouchpoint, type InsertCustomerTouchpoint,
-  journeyStages, type JourneyStage, type InsertJourneyStage
+  journeyStages, type JourneyStage, type InsertJourneyStage,
+  contactSegments, type ContactSegment, type InsertContactSegment,
+  type Contact, type ContactSegmentFilter
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {
@@ -1881,6 +1883,266 @@ export class DbStorage implements IStorage {
     } catch (error) {
       console.error(`Failed to delete journey stage #${id}:`, error);
       throw new Error(`Failed to delete journey stage #${id}`);
+    }
+  }
+
+  // ----- Unified Contact Segment methods -----
+
+  async getContactSegments(userId?: number): Promise<ContactSegment[]> {
+    try {
+      let query = db.select().from(contactSegments).orderBy(desc(contactSegments.createdAt));
+      
+      if (userId) {
+        query = query.where(eq(contactSegments.createdBy, userId));
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error("Failed to get contact segments:", error);
+      return [];
+    }
+  }
+
+  async getContactSegment(id: number): Promise<ContactSegment | undefined> {
+    try {
+      const [segment] = await db
+        .select()
+        .from(contactSegments)
+        .where(eq(contactSegments.id, id))
+        .limit(1);
+      
+      return segment;
+    } catch (error) {
+      console.error(`Failed to get contact segment #${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async createContactSegment(segment: InsertContactSegment): Promise<ContactSegment> {
+    try {
+      const segmentData = {
+        ...segment,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const [newSegment] = await db
+        .insert(contactSegments)
+        .values(segmentData as any)
+        .returning();
+      
+      // Refresh counts after creation
+      await this.refreshSegmentCounts(newSegment.id);
+      
+      return newSegment;
+    } catch (error) {
+      console.error("Failed to create contact segment:", error);
+      throw new Error("Failed to create contact segment");
+    }
+  }
+
+  async updateContactSegment(id: number, segmentData: Partial<ContactSegment>): Promise<ContactSegment> {
+    try {
+      const updateData = {
+        ...segmentData,
+        updatedAt: new Date()
+      };
+      
+      const result = await db
+        .update(contactSegments)
+        .set(updateData)
+        .where(eq(contactSegments.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error(`Contact segment with ID ${id} not found`);
+      }
+      
+      // Refresh counts after update
+      await this.refreshSegmentCounts(id);
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Failed to update contact segment #${id}:`, error);
+      throw new Error(`Failed to update contact segment #${id}`);
+    }
+  }
+
+  async deleteContactSegment(id: number): Promise<void> {
+    try {
+      await db
+        .delete(contactSegments)
+        .where(eq(contactSegments.id, id));
+    } catch (error) {
+      console.error(`Failed to delete contact segment #${id}:`, error);
+      throw new Error(`Failed to delete contact segment #${id}`);
+    }
+  }
+
+  // ----- Unified Contact methods -----
+
+  async getUnifiedContacts(userId?: number): Promise<Contact[]> {
+    try {
+      // Get all leads and customers, convert them to unified Contact format
+      const [leadResults, customerResults] = await Promise.all([
+        db.select().from(leads).orderBy(desc(leads.createdAt)),
+        db.select().from(customers).orderBy(desc(customers.createdAt))
+      ]);
+      
+      const unifiedContacts: Contact[] = [];
+      
+      // Convert leads to unified Contact format
+      leadResults.forEach(lead => {
+        unifiedContacts.push({
+          id: lead.id,
+          name: lead.name,
+          email: lead.email,
+          phone: lead.phone,
+          company: lead.company,
+          jobTitle: lead.jobTitle,
+          industry: lead.industry,
+          contactType: 'lead',
+          leadSource: lead.leadSource,
+          leadStatus: lead.leadStatus,
+          leadOwner: lead.leadOwner,
+          score: lead.score,
+          engagementLevel: lead.engagementLevel,
+          conversionProbability: lead.conversionProbability,
+          tags: lead.tags,
+          notes: lead.notes,
+          location: lead.location,
+          initials: lead.initials,
+          createdAt: lead.createdAt,
+          currentJourneyStageId: lead.currentJourneyStageId,
+          journeyEntryDate: lead.journeyEntryDate
+        });
+      });
+      
+      // Convert customers to unified Contact format
+      customerResults.forEach(customer => {
+        unifiedContacts.push({
+          id: customer.id,
+          name: `${customer.firstName} ${customer.lastName}`.trim(),
+          email: customer.email,
+          phone: customer.phone,
+          company: customer.company,
+          jobTitle: customer.jobTitle,
+          industry: customer.industry,
+          contactType: 'customer',
+          lifecycleStage: customer.lifecycleStage,
+          contactOwner: customer.contactOwner,
+          contactSource: customer.contactSource,
+          country: customer.country,
+          linkedinUrl: customer.linkedinUrl,
+          legalBasis: customer.legalBasis,
+          location: customer.location,
+          initials: customer.initials,
+          createdAt: customer.createdAt,
+          currentJourneyStageId: customer.currentJourneyStageId,
+          journeyEntryDate: customer.journeyEntryDate
+        });
+      });
+      
+      return unifiedContacts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (error) {
+      console.error("Failed to get unified contacts:", error);
+      return [];
+    }
+  }
+
+  async getContactsBySegment(segmentId: number): Promise<Contact[]> {
+    try {
+      const segment = await this.getContactSegment(segmentId);
+      if (!segment) {
+        return [];
+      }
+      
+      const allContacts = await this.getUnifiedContacts();
+      const filters = segment.filterCriteria as ContactSegmentFilter[];
+      
+      return this.applyContactFilters(allContacts, filters);
+    } catch (error) {
+      console.error(`Failed to get contacts for segment #${segmentId}:`, error);
+      return [];
+    }
+  }
+
+  applyContactFilters(contacts: Contact[], filters: ContactSegmentFilter[]): Contact[] {
+    return contacts.filter(contact => {
+      return filters.every(filter => {
+        // Skip if filter doesn't apply to this contact type
+        if (filter.contactTypes && !filter.contactTypes.includes(contact.contactType)) {
+          return true;
+        }
+        
+        const fieldValue = contact[filter.field as keyof Contact];
+        
+        switch (filter.operator) {
+          case 'equals':
+            return fieldValue === filter.value;
+          case 'notEquals':
+            return fieldValue !== filter.value;
+          case 'contains':
+            return typeof fieldValue === 'string' && fieldValue.toLowerCase().includes(String(filter.value).toLowerCase());
+          case 'startsWith':
+            return typeof fieldValue === 'string' && fieldValue.toLowerCase().startsWith(String(filter.value).toLowerCase());
+          case 'endsWith':
+            return typeof fieldValue === 'string' && fieldValue.toLowerCase().endsWith(String(filter.value).toLowerCase());
+          case 'greaterThan':
+            return typeof fieldValue === 'number' && fieldValue > Number(filter.value);
+          case 'lessThan':
+            return typeof fieldValue === 'number' && fieldValue < Number(filter.value);
+          case 'greaterThanOrEqual':
+            return typeof fieldValue === 'number' && fieldValue >= Number(filter.value);
+          case 'lessThanOrEqual':
+            return typeof fieldValue === 'number' && fieldValue <= Number(filter.value);
+          case 'isEmpty':
+            return fieldValue === null || fieldValue === undefined || fieldValue === '';
+          case 'isNotEmpty':
+            return fieldValue !== null && fieldValue !== undefined && fieldValue !== '';
+          case 'in':
+            return Array.isArray(filter.value) && filter.value.includes(fieldValue);
+          default:
+            return true;
+        }
+      });
+    });
+  }
+
+  async refreshSegmentCounts(segmentId: number): Promise<ContactSegment> {
+    try {
+      const segment = await this.getContactSegment(segmentId);
+      if (!segment) {
+        throw new Error(`Segment ${segmentId} not found`);
+      }
+      
+      const contacts = await this.getContactsBySegment(segmentId);
+      const leadCount = contacts.filter(c => c.contactType === 'lead').length;
+      const customerCount = contacts.filter(c => c.contactType === 'customer').length;
+      const totalCount = contacts.length;
+      
+      // Calculate conversion rate and average score
+      const conversionRate = leadCount > 0 ? customerCount / leadCount : 0;
+      const scores = contacts.filter(c => c.score !== null && c.score !== undefined).map(c => c.score!);
+      const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+      
+      const [updatedSegment] = await db
+        .update(contactSegments)
+        .set({
+          leadCount,
+          customerCount,
+          totalCount,
+          conversionRate,
+          avgScore,
+          lastUpdated: new Date()
+        })
+        .where(eq(contactSegments.id, segmentId))
+        .returning();
+      
+      return updatedSegment;
+    } catch (error) {
+      console.error(`Failed to refresh segment counts for #${segmentId}:`, error);
+      throw new Error(`Failed to refresh segment counts for #${segmentId}`);
     }
   }
 }

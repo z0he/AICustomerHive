@@ -130,6 +130,114 @@ export const getCustomerSegments = async (req: Request, res: Response) => {
   }
 };
 
+// GET /api/contact-segments - Get unified contact segments
+export const getUnifiedContactSegments = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const segments = await storage.getContactSegments(userId);
+    return res.json(segments);
+  } catch (error) {
+    console.error("Get unified contact segments error:", error);
+    return res.status(500).json({ message: "Failed to fetch unified contact segments" });
+  }
+};
+
+// POST /api/contact-segments - Create new unified contact segment
+export const createUnifiedContactSegment = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const segmentData = {
+      ...req.body,
+      createdBy: userId
+    };
+
+    const newSegment = await storage.createContactSegment(segmentData);
+    return res.status(201).json(newSegment);
+  } catch (error) {
+    console.error("Create unified contact segment error:", error);
+    return res.status(500).json({ message: "Failed to create unified contact segment" });
+  }
+};
+
+// GET /api/contact-segments/:id - Get specific unified contact segment
+export const getUnifiedContactSegment = async (req: Request, res: Response) => {
+  try {
+    const segmentId = parseInt(req.params.id);
+    const segment = await storage.getContactSegment(segmentId);
+    
+    if (!segment) {
+      return res.status(404).json({ message: "Contact segment not found" });
+    }
+    
+    return res.json(segment);
+  } catch (error) {
+    console.error("Get unified contact segment error:", error);
+    return res.status(500).json({ message: "Failed to fetch unified contact segment" });
+  }
+};
+
+// PUT /api/contact-segments/:id - Update unified contact segment
+export const updateUnifiedContactSegment = async (req: Request, res: Response) => {
+  try {
+    const segmentId = parseInt(req.params.id);
+    const updatedSegment = await storage.updateContactSegment(segmentId, req.body);
+    
+    return res.json(updatedSegment);
+  } catch (error) {
+    console.error("Update unified contact segment error:", error);
+    return res.status(500).json({ message: "Failed to update unified contact segment" });
+  }
+};
+
+// DELETE /api/contact-segments/:id - Delete unified contact segment
+export const deleteUnifiedContactSegment = async (req: Request, res: Response) => {
+  try {
+    const segmentId = parseInt(req.params.id);
+    await storage.deleteContactSegment(segmentId);
+    
+    return res.status(204).send();
+  } catch (error) {
+    console.error("Delete unified contact segment error:", error);
+    return res.status(500).json({ message: "Failed to delete unified contact segment" });
+  }
+};
+
+// GET /api/contact-segments/:id/contacts - Get contacts for a specific segment
+export const getContactsForSegment = async (req: Request, res: Response) => {
+  try {
+    const segmentId = parseInt(req.params.id);
+    const contacts = await storage.getContactsBySegment(segmentId);
+    
+    return res.json(contacts);
+  } catch (error) {
+    console.error("Get contacts for segment error:", error);
+    return res.status(500).json({ message: "Failed to fetch contacts for segment" });
+  }
+};
+
+// GET /api/unified-contacts - Get all contacts in unified format
+export const getUnifiedContacts = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const contacts = await storage.getUnifiedContacts(userId);
+    
+    return res.json(contacts);
+  } catch (error) {
+    console.error("Get unified contacts error:", error);
+    return res.status(500).json({ message: "Failed to fetch unified contacts" });
+  }
+};
+
 export const createCustomerSegment = async (req: Request, res: Response) => {
   try {
     const { name, description, criteria } = req.body;

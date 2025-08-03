@@ -18,7 +18,9 @@ import {
   chatConversations, type ChatConversation, type InsertChatConversation,
   chatMessages, type ChatMessage, type InsertChatMessage,
   customerTouchpoints, type CustomerTouchpoint, type InsertCustomerTouchpoint,
-  journeyStages, type JourneyStage, type InsertJourneyStage
+  journeyStages, type JourneyStage, type InsertJourneyStage,
+  contactSegments, type ContactSegment, type InsertContactSegment,
+  type Contact, type ContactSegmentFilter
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
 
@@ -210,6 +212,19 @@ export interface IStorage {
   createJourneyStage(stage: InsertJourneyStage): Promise<JourneyStage>;
   updateJourneyStage(id: number, stageData: Partial<JourneyStage>): Promise<JourneyStage>;
   deleteJourneyStage(id: number): Promise<void>;
+
+  // Unified Contact Segment methods
+  getContactSegments(userId?: number): Promise<ContactSegment[]>;
+  getContactSegment(id: number): Promise<ContactSegment | undefined>;
+  createContactSegment(segment: InsertContactSegment): Promise<ContactSegment>;
+  updateContactSegment(id: number, segmentData: Partial<ContactSegment>): Promise<ContactSegment>;
+  deleteContactSegment(id: number): Promise<void>;
+  
+  // Unified Contact retrieval and filtering
+  getUnifiedContacts(userId?: number): Promise<Contact[]>;
+  getContactsBySegment(segmentId: number): Promise<Contact[]>;
+  applyContactFilters(contacts: Contact[], filters: ContactSegmentFilter[]): Contact[];
+  refreshSegmentCounts(segmentId: number): Promise<ContactSegment>;
 }
 
 export class MemStorage implements IStorage {
@@ -2142,6 +2157,95 @@ export class MemStorage implements IStorage {
     }
     
     this.chatMessages.delete(id);
+  }
+
+  // ----- Unified Contact Segment methods (placeholder for MemStorage) -----
+  
+  async getContactSegments(userId?: number): Promise<ContactSegment[]> {
+    // In a real implementation, this would be stored in memory
+    return [];
+  }
+
+  async getContactSegment(id: number): Promise<ContactSegment | undefined> {
+    // In a real implementation, this would retrieve from memory
+    return undefined;
+  }
+
+  async createContactSegment(segment: InsertContactSegment): Promise<ContactSegment> {
+    // In a real implementation, this would store in memory
+    throw new Error("Unified contact segments not implemented in MemStorage - use DbStorage");
+  }
+
+  async updateContactSegment(id: number, segmentData: Partial<ContactSegment>): Promise<ContactSegment> {
+    // In a real implementation, this would update in memory
+    throw new Error("Unified contact segments not implemented in MemStorage - use DbStorage");
+  }
+
+  async deleteContactSegment(id: number): Promise<void> {
+    // In a real implementation, this would delete from memory
+    throw new Error("Unified contact segments not implemented in MemStorage - use DbStorage");
+  }
+
+  async getUnifiedContacts(userId?: number): Promise<Contact[]> {
+    // In a real implementation, this would combine leads and customers from memory
+    return [];
+  }
+
+  async getContactsBySegment(segmentId: number): Promise<Contact[]> {
+    // In a real implementation, this would filter unified contacts
+    return [];
+  }
+
+  applyContactFilters(contacts: Contact[], filters: ContactSegmentFilter[]): Contact[] {
+    // In a real implementation, this would apply filters to contacts
+    return contacts;
+  }
+
+  async refreshSegmentCounts(segmentId: number): Promise<ContactSegment> {
+    // In a real implementation, this would recalculate counts
+    throw new Error("Unified contact segments not implemented in MemStorage - use DbStorage");
+  }
+
+  // ----- Customer Journey methods (placeholder implementations) -----
+  
+  async getCustomerTouchpoints(): Promise<CustomerTouchpoint[]> {
+    return [];
+  }
+
+  async getCustomerTouchpoint(id: number): Promise<CustomerTouchpoint | undefined> {
+    return undefined;
+  }
+
+  async createCustomerTouchpoint(touchpoint: InsertCustomerTouchpoint): Promise<CustomerTouchpoint> {
+    throw new Error("Customer Journey not implemented in MemStorage - use DbStorage");
+  }
+
+  async updateCustomerTouchpoint(id: number, touchpointData: Partial<CustomerTouchpoint>): Promise<CustomerTouchpoint> {
+    throw new Error("Customer Journey not implemented in MemStorage - use DbStorage");
+  }
+
+  async deleteCustomerTouchpoint(id: number): Promise<void> {
+    throw new Error("Customer Journey not implemented in MemStorage - use DbStorage");
+  }
+
+  async getJourneyStages(): Promise<JourneyStage[]> {
+    return [];
+  }
+
+  async getJourneyStage(id: number): Promise<JourneyStage | undefined> {
+    return undefined;
+  }
+
+  async createJourneyStage(stage: InsertJourneyStage): Promise<JourneyStage> {
+    throw new Error("Journey Stages not implemented in MemStorage - use DbStorage");
+  }
+
+  async updateJourneyStage(id: number, stageData: Partial<JourneyStage>): Promise<JourneyStage> {
+    throw new Error("Journey Stages not implemented in MemStorage - use DbStorage");
+  }
+
+  async deleteJourneyStage(id: number): Promise<void> {
+    throw new Error("Journey Stages not implemented in MemStorage - use DbStorage");
   }
 }
 
