@@ -54,7 +54,6 @@ const Sidebar: FC<SidebarProps> = ({ recentCampaigns = [] }) => {
     { icon: <LayoutDashboard size={20} />, label: "Dashboard", path: "/dashboard" },
     { icon: <Users size={20} />, label: "Customers", path: "/customers" },
     { icon: <UserPlus size={20} />, label: "Leads", path: "/leads" },
-    { icon: <Tag size={20} />, label: "Segments", path: "/unified-segments" },
     { icon: <Route size={20} />, label: "Journey", path: "/customer-journey" },
     { icon: <Megaphone size={20} />, label: "Campaigns", path: "/campaigns" },
     { icon: <Send size={20} />, label: "Email", path: "/email" },

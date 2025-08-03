@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 
 // UI Components
@@ -507,8 +508,11 @@ const CustomerSegments = ({
     setFilterRules([0]);
   };
   
+  // Navigation
+  const [, setLocation] = useLocation();
+  
   // Dialog handlers
-  const openCreateSegmentDialog = () => setIsCreateSegmentOpen(true);
+  const openCreateSegmentDialog = () => setLocation('/unified-segments');
   const closeCreateSegmentDialog = () => setIsCreateSegmentOpen(false);
   
   return (

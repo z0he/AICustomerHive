@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 import { 
   Users, 
   Filter, 
@@ -57,6 +58,7 @@ export default function CustomerSegmentation() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("segments");
   const [selectedSegment, setSelectedSegment] = useState<CustomerSegment | null>(null);
+  const [, setLocation] = useLocation();
 
   // States for creating new segments
   const [segmentName, setSegmentName] = useState("");
@@ -298,7 +300,7 @@ export default function CustomerSegmentation() {
           <TabsTrigger value="segments">Segments</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="suggestions">AI Suggestions</TabsTrigger>
-          <TabsTrigger value="create">Create Segment</TabsTrigger>
+          <TabsTrigger value="create" onClick={() => setLocation('/unified-segments')}>Create Segment</TabsTrigger>
         </TabsList>
 
         {/* Existing Segments */}
@@ -517,7 +519,7 @@ export default function CustomerSegmentation() {
           </div>
         </TabsContent>
 
-        {/* Create New Segment */}
+        {/* Create New Segment - Redirects to Unified Segments */}
         <TabsContent value="create" className="space-y-6">
           <Card>
             <CardHeader>
