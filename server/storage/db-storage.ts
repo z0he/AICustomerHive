@@ -533,7 +533,7 @@ export class DbStorage implements IStorage {
           fields: [
             'id', 'email', 'firstName', 'lastName', 'name', 'phone', 'company', 
             'jobTitle', 'linkedinUrl', 'lifecycleStage', 'leadStatus',
-            'contactIndustry', 'contactOwner', 'contactSource', 'contactType',
+            'industry', 'contactOwner', 'contactSource', 'contactType',
             'country', 'legalBasis', 'customFields', 'createdAt', 'status'
           ]
         }
@@ -586,7 +586,7 @@ export class DbStorage implements IStorage {
           linkedinUrl: data.linkedinUrl || null,
           lifecycleStage: data.lifecycleStage || 'lead',
           leadStatus: data.leadStatus || null,
-          contactIndustry: data.contactIndustry || null,
+          industry: data.industry || data.contactIndustry || null,
           contactOwner: data.contactOwner || null,
           contactSource: data.contactSource || null,
           contactType: data.contactType || null,
@@ -694,7 +694,7 @@ export class DbStorage implements IStorage {
       phone: lead.phone || null,
       company: lead.company || null,
       jobTitle: lead.jobTitle || null,
-      industry: lead.contactIndustry || lead.industry || null,
+      industry: lead.industry || lead.contactIndustry || null,
       location: lead.location || lead.country || null,
       leadSource: lead.leadSource || 'import',
       leadStatus: lead.leadStatus || 'new',

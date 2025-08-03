@@ -123,7 +123,7 @@ export const customers = pgTable("customers", {
   linkedinUrl: text("linkedin_url"),
   lifecycleStage: text("lifecycle_stage").default("lead"),
   leadStatus: text("lead_status"),
-  contactIndustry: text("contact_industry"),
+  industry: text("industry"),
   contactOwner: text("contact_owner"),
   contactSource: text("contact_source"),
   contactType: text("contact_type"),
@@ -145,7 +145,7 @@ export const insertCustomerSchema = createInsertSchema(customers).pick({
   linkedinUrl: true,
   lifecycleStage: true,
   leadStatus: true,
-  contactIndustry: true,
+  industry: true,
   contactOwner: true,
   country: true,
   contactSource: true,
@@ -299,6 +299,41 @@ export const insertCalendarEventSchema = createInsertSchema(calendarEvents).pick
 
 export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
+
+// Unified Contact Interface - represents both leads and customers
+export interface Contact {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string | null;
+  company?: string | null;
+  jobTitle?: string | null;
+  industry?: string | null;
+  contactType: 'lead' | 'customer';
+  // Lead-specific fields
+  leadSource?: string | null;
+  leadStatus?: string | null;
+  leadOwner?: string | null;
+  score?: number | null;
+  engagementLevel?: number | null;
+  conversionProbability?: number | null;
+  tags?: string[] | null;
+  notes?: string | null;
+  // Customer-specific fields
+  lifecycleStage?: string | null;
+  contactOwner?: string | null;
+  contactSource?: string | null;
+  country?: string | null;
+  linkedinUrl?: string | null;
+  legalBasis?: string | null;
+  // Common fields
+  location?: string | null;
+  initials: string;
+  createdAt: Date;
+  // Journey mapping fields
+  currentJourneyStageId?: number | null;
+  journeyEntryDate?: Date | null;
+}
 
 // Email templates table
 export const emailTemplates = pgTable("email_templates", {

@@ -142,7 +142,7 @@ export class PersonalizationEngine {
             company: customer.company || '',
             phone: customer.phone || '',
             jobTitle: customer.jobTitle || '',
-            industry: customer.contactIndustry || '',
+            industry: customer.industry || '',
             createdAt: customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : ''
           };
         }

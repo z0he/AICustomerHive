@@ -124,7 +124,7 @@ export default function CustomerDetails({
               <CardTitle className="profile-name text-xl">{customer.name}</CardTitle>
               <CardDescription>
                 {customer.company ? `${customer.company} • ` : ""}
-                {customer.contactIndustry}
+                {customer.industry}
                 {customer.country ? ` • ${customer.country}` : ""}
               </CardDescription>
             </div>
@@ -150,7 +150,7 @@ export default function CustomerDetails({
                     company: customer.company || "",
                     jobTitle: customer.jobTitle || "",
                     location: "",  // This might be derived from address info
-                    industry: customer.contactIndustry || "",
+                    industry: customer.industry || "",
                     country: customer.country || "",
                     contactSource: customer.contactSource || "website",
                     lifecycleStage: customer.status || "lead",

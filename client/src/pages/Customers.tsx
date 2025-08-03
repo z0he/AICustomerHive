@@ -85,7 +85,7 @@ const customerFormSchema = z.object({
   phone: z.string().optional(),
   lifecycleStage: z.string().default("lead"),
   leadStatus: z.string().optional(),
-  contactIndustry: z.string().optional(),
+  industry: z.string().optional(),
   company: z.string().optional(),
   country: z.string().optional(),
   contactSource: z.string().optional(),
@@ -215,7 +215,7 @@ const availableColumns: ColumnOption[] = [
   { id: "jobTitle", label: "Job Title", width: 2 },
   { id: "lifecycleStage", label: "Lifecycle Stage", width: 2 },
   { id: "leadStatus", label: "Lead Status", width: 2 },
-  { id: "contactIndustry", label: "Industry", width: 2 },
+  { id: "industry", label: "Industry", width: 2 },
   { id: "contactOwner", label: "Contact Owner", width: 2 },
   { id: "country", label: "Country", width: 2 },
   { id: "contactSource", label: "Source", width: 2 },
@@ -309,7 +309,7 @@ const Customers = () => {
       phone: "",
       lifecycleStage: "lead",
       leadStatus: "",
-      contactIndustry: "",
+      industry: "",
       company: "",
       country: "",
       contactSource: "",
@@ -740,11 +740,11 @@ const Customers = () => {
                                       </Badge>
                                     </div>
                                   );
-                                case 'contactIndustry':
+                                case 'industry':
                                   return (
                                     <div key={columnId} className={`col-span-${width} flex items-center`}>
                                       <Settings className="h-4 w-4 text-slate-400 mr-2" />
-                                      <span className="text-slate-600 text-sm capitalize">{customer.contactIndustry || '—'}</span>
+                                      <span className="text-slate-600 text-sm capitalize">{customer.industry || '—'}</span>
                                     </div>
                                   );
                                 case 'contactOwner':
@@ -1057,7 +1057,7 @@ const Customers = () => {
               
               <FormField
                 control={form.control}
-                name="contactIndustry"
+                name="industry"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact Industry</FormLabel>
