@@ -119,7 +119,7 @@ export default function LeadForm({ onSubmit, isSubmitting = false, defaultValues
               <FormItem>
                 <FormLabel>Industry <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value || undefined}>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select industry" />
                     </SelectTrigger>

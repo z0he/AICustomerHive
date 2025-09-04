@@ -707,7 +707,7 @@ export default function LeadManagement() {
                       <div className="space-y-4">
                         {leads
                           .filter(lead => lead.nextFollowUpDate)
-                          .sort((a, b) => new Date(a.nextFollowUpDate || 0).getTime() - new Date(b.nextFollowUpDate || 0).getTime())
+                          .sort((a, b) => new Date(a.nextFollowUpDate).getTime() - new Date(b.nextFollowUpDate).getTime())
                           .slice(0, 5)
                           .map(lead => (
                             <div 
@@ -722,7 +722,7 @@ export default function LeadManagement() {
                                 <div>
                                   <div className="font-medium">{lead.name}</div>
                                   <div className="text-sm text-slate-500">
-                                    {formatDate(lead.nextFollowUpDate || '')}
+                                    {formatDate(lead.nextFollowUpDate)}
                                   </div>
                                 </div>
                               </div>

@@ -35,7 +35,7 @@ import UnifiedSegments from "@/pages/UnifiedSegments";
 
 // Lazy-loaded pages for new IA (using existing components or fallbacks)
 const ContactsPage = lazy(() => 
-  import("@/pages/contacts/ContactsPage").then(module => ({
+  import("@/pages/Customers").then(module => ({
     default: module.default
   })).catch(() => ({
     default: () => <UnderDevelopment title="Contacts" />

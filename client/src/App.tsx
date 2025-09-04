@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import ChatAssistant from "@/components/ai/ChatAssistant";
 import FeedbackButton from "@/components/feedback/FeedbackButton";
-import AppShell from "@/app/AppShell";
 import { useEffect } from "react";
 import { initGA } from "@/lib/analytics";
 import { useAnalytics } from "@/hooks/use-analytics";
@@ -17,11 +16,7 @@ function Router() {
   // Track page views when routes change
   useAnalytics();
 
-  return (
-    <AppShell>
-      <AppRoutes user={user} />
-    </AppShell>
-  );
+  return <AppRoutes user={user} />;
 }
 
 function App() {
