@@ -1,0 +1,155 @@
+You are working in a React 18 + Vite + TypeScript app that uses Wouter for routing and a feature-flag system (Prompt 9).
+
+Goal
+
+Make sure /contacts, /contacts?stage=lead, /contacts?stage=customer, and legacy paths (/leads, /customers, /journey) always resolve to a page (no 404).
+
+Keep legacy redirects always active (never flag-gated).
+
+Gate page rendering via flags, not route registration.
+
+Ensure the router is mounted once and the SPA fallback is configured for production.
+
+Tasks
+
+Routes file (e.g., src/app/routes.tsx)
+
+Ensure route registration is unconditional (no flag around <Route/>).
+
+Keep legacy redirect routes always present:
+
+<Route path="/leads">
+  <LegacyRedirect to="/contacts" transform={(p)=>({ ...p, stage: p.stage ?? "lead" })} />
+</Route>
+<Route path="/customers">
+  <LegacyRedirect to="/contacts" transform={(p)=>({ ...p, stage: p.stage ?? "customer" })} />
+</Route>
+<Route path="/journey">
+  <LegacyRedirect to="/journeys" />
+</Route>
+
+
+Gate page components (not the route) using the feature flag hook:
+
+import { useFlag } from "../hooks/useFlag";
+
+function Guard({ flag, children, offText }: { flag: string; children: React.ReactNode; offText: string }) {
+  const on = useFlag(flag);
+  return on ? <>{children}</> : <div className="p-4 text-sm text-gray-600">{offText}</div>;
+}
+
+<Route path="/contacts">
+  <Guard flag="ff.contacts_unified" offText="Contacts are disabled.">
+    <ContactsPage />
+  </Guard>
+</Route>
+
+<Route path="/contacts/segments">
+  <Guard flag="ff.unified_segments" offText="Segments are disabled.">
+    <SegmentsPage />
+  </Guard>
+</Route>
+
+<Route path="/journeys">
+  <Guard flag="ff.journey_unified" offText="Journeys are disabled.">
+    <JourneysExplorer />
+  </Guard>
+</Route>
+
+
+Keep your LegacyRedirect helper and make sure it preserves query strings and appends stage where needed.
+
+Router mount (e.g., src/main.tsx or your app entry)
+
+Confirm a single <Router> wraps your app and that AppRoutes is rendered inside it:
+
+import { Router } from "wouter";
+import AppRoutes from "./app/routes";
+// ...
+<Router>
+  <AppRoutes />
+</Router>
+
+
+Remove any duplicate routers or nested conflicting routers.
+
+Feature flags API (Prompt 9)
+
+Ensure GET /api/flags returns the map.
+
+For staging / local, set these true in DB:
+
+ff.contacts_unified
+
+ff.unified_segments
+
+ff.journey_unified
+
+Keep others as-is.
+
+SPA fallback (production only)
+
+If the production server can 404 on deep links, add a single-page app fallback to serve index.html for unknown paths (but keep API routes intact). Do not change dev setup.
+
+Example (Express, only if not present):
+
+// after API routes, before app.listen
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api")) return next();
+  res.sendFile(path.join(__dirname, "../../dist/index.html"));
+});
+
+
+Adjust paths to your build output.
+
+Guardrails
+
+Do not remove or rename existing components/pages.
+
+Do not gate the legacy redirect routes behind flags — they must always exist.
+
+Do not change auth or unrelated middleware.
+
+Keep route registration unconditional; only component rendering is flag-guarded.
+
+Acceptance Criteria
+
+Navigating to:
+
+/contacts renders a page (or the “Contacts are disabled.” message if flag is false).
+
+/contacts?stage=lead renders the same route (no 404).
+
+/leads redirects to /contacts?stage=lead with any existing query params preserved.
+
+/customers → /contacts?stage=customer.
+
+/journey → /journeys.
+
+GET /api/flags shows ff.contacts_unified, ff.unified_segments, ff.journey_unified as true in staging/local.
+
+No console errors; no duplicate routers.
+
+Quick Self-Test (run after changes)
+
+Flags
+
+curl -s http://localhost:3000/api/flags → keys above should be true (staging/local).
+
+Routes
+
+Open /contacts → page shows.
+
+Open /contacts?stage=lead → page shows (same route).
+
+Open /leads?owner=me → becomes /contacts?owner=me&stage=lead.
+
+Open /customers → /contacts?stage=customer.
+
+Open /journey → /journeys.
+
+Prod-only (if you build and serve)
+
+Deep-link refresh on /contacts?stage=lead still loads the SPA (no server 404).
+
+If anything is ambiguous, ask before changing unrelated files.

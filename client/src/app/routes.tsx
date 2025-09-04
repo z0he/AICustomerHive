@@ -108,12 +108,14 @@ const PageLoader = () => (
   </div>
 );
 
+// Guard component for flag-based rendering
+function Guard({ flag, children, offText }: { flag: string; children: React.ReactNode; offText: string }) {
+  const on = useFlag(flag);
+  return on ? <>{children}</> : <div className="p-4 text-sm text-gray-600">{offText}</div>;
+}
+
 export function AppRoutes({ user }: { user: any }) {
-  // Feature flags
-  const contactsUnified = useFlag('ff.contacts_unified');
-  const unifiedSegments = useFlag('ff.unified_segments');
-  const journeyUnified = useFlag('ff.journey_unified');
-  const automationUnified = useFlag('ff.automation_unified');
+  // Feature flags are now handled by Guard component
   const websiteTrackingV2 = useFlag('ff.website_tracking_v2');
 
   return (
@@ -123,50 +125,50 @@ export function AppRoutes({ user }: { user: any }) {
         {user ? <Dashboard /> : <Landing />}
       </Route>
 
-      {/* === NEW IA ROUTES (FEATURE FLAG GUARDED) === */}
-      {contactsUnified && (
-        <ProtectedRoute 
-          path="/contacts" 
-          component={() => (
+      {/* === NEW IA ROUTES (ALWAYS REGISTERED, COMPONENT GUARDED) === */}
+      <ProtectedRoute 
+        path="/contacts" 
+        component={() => (
+          <Guard flag="ff.contacts_unified" offText="Contacts are disabled.">
             <Suspense fallback={<PageLoader />}>
               <ContactsPage />
             </Suspense>
-          )} 
-        />
-      )}
+          </Guard>
+        )} 
+      />
 
-      {unifiedSegments && (
-        <ProtectedRoute 
-          path="/contacts/segments" 
-          component={() => (
+      <ProtectedRoute 
+        path="/contacts/segments" 
+        component={() => (
+          <Guard flag="ff.unified_segments" offText="Segments are disabled.">
             <Suspense fallback={<PageLoader />}>
               <ContactsSegmentsPage />
             </Suspense>
-          )} 
-        />
-      )}
+          </Guard>
+        )} 
+      />
 
-      {journeyUnified && (
-        <ProtectedRoute 
-          path="/journeys" 
-          component={() => (
+      <ProtectedRoute 
+        path="/journeys" 
+        component={() => (
+          <Guard flag="ff.journey_unified" offText="Journeys are disabled.">
             <Suspense fallback={<PageLoader />}>
               <JourneysPage />
             </Suspense>
-          )} 
-        />
-      )}
+          </Guard>
+        )} 
+      />
 
-      {automationUnified && (
-        <ProtectedRoute 
-          path="/automation/workflows" 
-          component={() => (
+      <ProtectedRoute 
+        path="/automation/workflows" 
+        component={() => (
+          <Guard flag="ff.automation_unified" offText="Automation workflows are disabled.">
             <Suspense fallback={<PageLoader />}>
               <AutomationWorkflowsPage />
             </Suspense>
-          )} 
-        />
-      )}
+          </Guard>
+        )} 
+      />
 
       <ProtectedRoute 
         path="/data/quality" 
