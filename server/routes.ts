@@ -66,6 +66,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Mount tracking routes
   app.use("/api", trackRoutes);
   
+  // Feature flags endpoint
+  app.get("/api/flags", async (req: Request, res: Response) => {
+    try {
+      const { getFeatureFlags } = await import('./services/feature-flags.js');
+      
+      // Get user ID from request (if authenticated)
+      const userId = (req as any).user?.id;
+      
+      const flags = await getFeatureFlags(userId);
+      return res.json(flags);
+    } catch (error) {
+      console.error("Error fetching feature flags:", error);
+      // Safe default: return empty object (all flags will be false)
+      return res.json({});
+    }
+  });
+  
   // Legacy compatibility redirect for user current route
   app.get("/api/user/current", (req, res) => {
     return res.redirect("/api/auth/user");

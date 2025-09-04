@@ -1075,3 +1075,23 @@ export const insertActionSchema = createInsertSchema(actions).pick({
 
 export type InsertAction = z.infer<typeof insertActionSchema>;
 export type SelectAction = typeof actions.$inferSelect;
+
+// Feature Flags Table - Runtime Feature Management
+export const featureFlags = pgTable("feature_flags", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  key: varchar("key", { length: 80 }).notNull().unique(), // flag key like "ff.contacts_unified"
+  isEnabled: boolean("is_enabled").default(false).notNull(),
+  userId: uuid("user_id"), // optional - null means global flag
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// TypeScript types for feature flags
+export const insertFeatureFlagSchema = createInsertSchema(featureFlags).pick({
+  key: true,
+  isEnabled: true,
+  userId: true,
+});
+
+export type InsertFeatureFlag = z.infer<typeof insertFeatureFlagSchema>;
+export type SelectFeatureFlag = typeof featureFlags.$inferSelect;

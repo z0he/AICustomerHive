@@ -2,6 +2,7 @@ import { Switch, Route } from "wouter";
 import { lazy, Suspense } from "react";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { LegacyRedirect } from "@/components/LegacyRedirect";
+import { useFlag } from "@/hooks/use-feature-flags";
 
 // Existing pages
 import Dashboard from "@/pages/Dashboard";
@@ -108,6 +109,13 @@ const PageLoader = () => (
 );
 
 export function AppRoutes({ user }: { user: any }) {
+  // Feature flags
+  const contactsUnified = useFlag('ff.contacts_unified');
+  const unifiedSegments = useFlag('ff.unified_segments');
+  const journeyUnified = useFlag('ff.journey_unified');
+  const automationUnified = useFlag('ff.automation_unified');
+  const websiteTrackingV2 = useFlag('ff.website_tracking_v2');
+
   return (
     <Switch>
       {/* Home route - shows Landing to non-authenticated users */}
@@ -115,42 +123,50 @@ export function AppRoutes({ user }: { user: any }) {
         {user ? <Dashboard /> : <Landing />}
       </Route>
 
-      {/* === NEW IA ROUTES === */}
-      <ProtectedRoute 
-        path="/contacts" 
-        component={() => (
-          <Suspense fallback={<PageLoader />}>
-            <ContactsPage />
-          </Suspense>
-        )} 
-      />
+      {/* === NEW IA ROUTES (FEATURE FLAG GUARDED) === */}
+      {contactsUnified && (
+        <ProtectedRoute 
+          path="/contacts" 
+          component={() => (
+            <Suspense fallback={<PageLoader />}>
+              <ContactsPage />
+            </Suspense>
+          )} 
+        />
+      )}
 
-      <ProtectedRoute 
-        path="/contacts/segments" 
-        component={() => (
-          <Suspense fallback={<PageLoader />}>
-            <ContactsSegmentsPage />
-          </Suspense>
-        )} 
-      />
+      {unifiedSegments && (
+        <ProtectedRoute 
+          path="/contacts/segments" 
+          component={() => (
+            <Suspense fallback={<PageLoader />}>
+              <ContactsSegmentsPage />
+            </Suspense>
+          )} 
+        />
+      )}
 
-      <ProtectedRoute 
-        path="/journeys" 
-        component={() => (
-          <Suspense fallback={<PageLoader />}>
-            <JourneysPage />
-          </Suspense>
-        )} 
-      />
+      {journeyUnified && (
+        <ProtectedRoute 
+          path="/journeys" 
+          component={() => (
+            <Suspense fallback={<PageLoader />}>
+              <JourneysPage />
+            </Suspense>
+          )} 
+        />
+      )}
 
-      <ProtectedRoute 
-        path="/automation/workflows" 
-        component={() => (
-          <Suspense fallback={<PageLoader />}>
-            <AutomationWorkflowsPage />
-          </Suspense>
-        )} 
-      />
+      {automationUnified && (
+        <ProtectedRoute 
+          path="/automation/workflows" 
+          component={() => (
+            <Suspense fallback={<PageLoader />}>
+              <AutomationWorkflowsPage />
+            </Suspense>
+          )} 
+        />
+      )}
 
       <ProtectedRoute 
         path="/data/quality" 
@@ -161,14 +177,16 @@ export function AppRoutes({ user }: { user: any }) {
         )} 
       />
 
-      <ProtectedRoute 
-        path="/settings/integrations/tracking" 
-        component={() => (
-          <Suspense fallback={<PageLoader />}>
-            <SettingsIntegrationsTrackingPage />
-          </Suspense>
-        )} 
-      />
+      {websiteTrackingV2 && (
+        <ProtectedRoute 
+          path="/settings/integrations/tracking" 
+          component={() => (
+            <Suspense fallback={<PageLoader />}>
+              <SettingsIntegrationsTrackingPage />
+            </Suspense>
+          )} 
+        />
+      )}
 
       <ProtectedRoute 
         path="/data" 
