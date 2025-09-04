@@ -1,0 +1,44 @@
+You are working in a TypeScript + Drizzle ORM + Postgres project.
+
+Task:
+- Implement a deterministic Segment Evaluator function:
+  File: `src/server/segments/evaluator.ts`
+  Export: `evaluateSegment(definition: DefinitionJSON, contactId: string): Promise<boolean>`
+
+Definition JSON supports:
+- Property filters:
+  { "prop": "lifecycleStage", "op": "in", "value": ["lead","customer"] }
+  { "prop": "company", "op": "contains", "value": "Ltd" }
+  { "prop": "status", "op": "eq", "value": "active" }
+  { "prop": "tags", "op": "contains", "value": "high-intent" }
+  { "prop": "properties.industry", "op": "eq", "value": "Technology" }
+  Allowed ops: eq | neq | in | contains | gt | lt | exists
+
+- Touchpoint filters:
+  { "touchpoint": { "type": "web", "where": { "url": {"contains": "/pricing"}, "daysWithin": 7 }, "countOp": "gte", "count": 3 } }
+  Allowed fields: type, subtype, url (in meta), daysWithin (int)
+  Allowed countOp: gte | lte | eq
+
+- Logical composition:
+  { "all": [ ... ] }  // AND
+  { "any": [ ... ] }  // OR
+  { "not": { ... } }  // NOT
+
+Implementation notes:
+- Use Drizzle to query `contacts` + `touchpoints` tables (already created).
+- Property filters: read from `contacts` columns or JSON `properties` path.
+- `tags` is jsonb string[]; `contains` means array includes value (case-insensitive).
+- Touchpoint filters: filter by type, optional subtype, optional url contains (from meta->>'url'), and occurredAt within daysWithin.
+- For count filters, compute the count and compare using countOp.
+- The function returns a single boolean for a given `contactId`.
+- Keep the function pure (no writes). No UI changes.
+
+Tests:
+- Create `src/server/segments/evaluator.test.ts` with Vitest.
+- Cover at least: eq, in, contains on tags, exists on properties, touchpoint url contains + daysWithin + gte count, nested all/any/not.
+- Use a small seeded dataset (insert a contact + a few touchpoints) inside the test with transactions, then roll back or clean up.
+
+Guardrails:
+- Do not alter unrelated schemas.
+- Do not add new tables.
+- Keep TypeScript strict.
