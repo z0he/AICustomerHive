@@ -1,0 +1,106 @@
+You’re working in the AICRM monorepo (React 18 + TS, Vite, Wouter, TanStack Query, Tailwind + shadcn). Backend already migrated to unified contacts with lifecycleStage and status. Routing works for /contacts?stage=lead etc., but the left navigation and contacts UI must be updated to the new structure (remove duplication; HubSpot-style list with stage switching).
+
+Goals
+
+Sidebar: replace current menu with the consolidated IA we agreed:
+
+Contacts
+
+Journeys
+
+Segments
+
+Campaigns
+
+Automation
+
+Email
+
+Forms
+
+Calendar
+
+Data (Export, Quality)
+
+Analytics
+
+Settings
+
+(Legacy aliases /leads, /customers, /journey still redirect but are no longer rendered in the nav.)
+
+Contacts page (/contacts): HubSpot-style unified table driven by ?stage=:
+
+Tabs/pills for All, Leads, Opportunities, Customers, Evangelists, Churned.
+
+Active pill reflects ?stage= (default: all).
+
+Query param drives the API call via TanStack Query; changing pill updates URL and refetches.
+
+Search + owner filter + “Advanced filters” (drawer) placeholders.
+
+Columns: Name, Email, Job Title, Industry, Country/Region, Lifecycle Stage, Source, Last Activity Date, Owner.
+
+Empty states per stage; skeleton while loading; error state.
+
+Row click opens contact drawer (placeholder) or navigates to /contacts/:id if that page exists later.
+
+Remove duplication in UI:
+
+Hide/remove old “Leads” and “Customers” pages from nav.
+
+Keep legacy routes (already present) but they should redirect to /contacts?stage=….
+
+Feature flags:
+
+Use existing useFlag hook; nav items always render but hide children that aren’t ready behind a small “coming soon” badge if flag is false (do not remove routes).
+
+Styling:
+
+Tailwind + shadcn/radix components; match current app look (soft green).
+
+Icons from lucide-react.
+
+Files to Add / Update
+
+If path differs, search the repo for similarly named files.
+
+Sidebar config
+File: src/app/nav/sidebar.tsx (create if missing)
+
+Build a typed array of nav groups + items with lucide icons.
+
+Render with Radix Navigation + Tailwind.
+
+Active route highlighting based on wouter’s useLocation.
+
+App shell
+File: src/app/AppShell.tsx (or existing layout component)
+
+Import the new <Sidebar /> and wrap page content.
+
+Contacts page
+File: src/pages/contacts/ContactsPage.tsx (create)
+
+Read ?stage= (default all) using a small useQueryParams hook (or URLSearchParams).
+
+Render stage pills; on click update URL and invalidate query.
+
+Use TanStack Query to call /api/contacts?stage=<stage>&q=<search>&owner=<owner> (already exists or easy to implement server-side).
+
+Use shadcn Table or your existing table component.
+
+Persist table state (page/sort) in URL or component state.
+
+Routes
+File: src/app/routes.tsx
+
+Ensure /contacts renders ContactsPage.
+
+Legacy routes /leads, /customers redirect (already done) — leave as is.
+
+Remove old leads/customers pages from nav (not from router).
+
+Small hooks/utilities
+File: src/lib/useQueryParam.ts (create)
+
+Tiny helpers to read/set querystring.
