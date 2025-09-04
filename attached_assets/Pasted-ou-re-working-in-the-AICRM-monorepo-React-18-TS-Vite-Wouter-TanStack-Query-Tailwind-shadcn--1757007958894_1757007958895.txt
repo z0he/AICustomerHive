@@ -1,0 +1,412 @@
+ou’re working in the AICRM monorepo (React 18 + TS, Vite, Wouter, TanStack Query, Tailwind + shadcn). Backend already migrated to unified contacts with lifecycleStage and status. Routing works for /contacts?stage=lead etc., but the left navigation and contacts UI must be updated to the new structure (remove duplication; HubSpot-style list with stage switching).
+
+Goals
+
+Sidebar: replace current menu with the consolidated IA we agreed:
+
+Contacts
+
+Journeys
+
+Segments
+
+Campaigns
+
+Automation
+
+Email
+
+Forms
+
+Calendar
+
+Data (Export, Quality)
+
+Analytics
+
+Settings
+
+(Legacy aliases /leads, /customers, /journey still redirect but are no longer rendered in the nav.)
+
+Contacts page (/contacts): HubSpot-style unified table driven by ?stage=:
+
+Tabs/pills for All, Leads, Opportunities, Customers, Evangelists, Churned.
+
+Active pill reflects ?stage= (default: all).
+
+Query param drives the API call via TanStack Query; changing pill updates URL and refetches.
+
+Search + owner filter + “Advanced filters” (drawer) placeholders.
+
+Columns: Name, Email, Job Title, Industry, Country/Region, Lifecycle Stage, Source, Last Activity Date, Owner.
+
+Empty states per stage; skeleton while loading; error state.
+
+Row click opens contact drawer (placeholder) or navigates to /contacts/:id if that page exists later.
+
+Remove duplication in UI:
+
+Hide/remove old “Leads” and “Customers” pages from nav.
+
+Keep legacy routes (already present) but they should redirect to /contacts?stage=….
+
+Feature flags:
+
+Use existing useFlag hook; nav items always render but hide children that aren’t ready behind a small “coming soon” badge if flag is false (do not remove routes).
+
+Styling:
+
+Tailwind + shadcn/radix components; match current app look (soft green).
+
+Icons from lucide-react.
+
+Files to Add / Update
+
+If path differs, search the repo for similarly named files.
+
+Sidebar config
+File: src/app/nav/sidebar.tsx (create if missing)
+
+Build a typed array of nav groups + items with lucide icons.
+
+Render with Radix Navigation + Tailwind.
+
+Active route highlighting based on wouter’s useLocation.
+
+App shell
+File: src/app/AppShell.tsx (or existing layout component)
+
+Import the new <Sidebar /> and wrap page content.
+
+Contacts page
+File: src/pages/contacts/ContactsPage.tsx (create)
+
+Read ?stage= (default all) using a small useQueryParams hook (or URLSearchParams).
+
+Render stage pills; on click update URL and invalidate query.
+
+Use TanStack Query to call /api/contacts?stage=<stage>&q=<search>&owner=<owner> (already exists or easy to implement server-side).
+
+Use shadcn Table or your existing table component.
+
+Persist table state (page/sort) in URL or component state.
+
+Routes
+File: src/app/routes.tsx
+
+Ensure /contacts renders ContactsPage.
+
+Legacy routes /leads, /customers redirect (already done) — leave as is.
+
+Remove old leads/customers pages from nav (not from router).
+
+Small hooks/utilities
+File: src/lib/useQueryParam.ts (create)
+
+Tiny helpers to read/set querystring.
+
+Fallback Code (safe to paste; adapt imports to your setup)
+
+A) Sidebar (src/app/nav/sidebar.tsx)
+
+import { Link, useLocation } from "wouter";
+import { useFlag } from "@/hooks/useFlag";
+import {
+  Users, Route as RouteIcon, Filter, Megaphone, Workflow, Mail, FormInput,
+  Calendar, Database, BarChart3, Settings
+} from "lucide-react";
+import clsx from "clsx";
+import React from "react";
+
+type NavItem = { label: string; href: string; icon: React.ReactNode; flag?: string };
+const items: NavItem[] = [
+  { label: "Contacts",   href: "/contacts",   icon: <Users className="w-4 h-4" /> },
+  { label: "Journeys",   href: "/journeys",   icon: <RouteIcon className="w-4 h-4" />, flag: "ff.journey_unified" },
+  { label: "Segments",   href: "/contacts/segments", icon: <Filter className="w-4 h-4" />, flag: "ff.unified_segments" },
+  { label: "Campaigns",  href: "/campaigns",  icon: <Megaphone className="w-4 h-4" /> },
+  { label: "Automation", href: "/automation", icon: <Workflow className="w-4 h-4" />, flag: "ff.automation_v2" },
+  { label: "Email",      href: "/email",      icon: <Mail className="w-4 h-4" /> },
+  { label: "Forms",      href: "/forms",      icon: <FormInput className="w-4 h-4" /> },
+  { label: "Calendar",   href: "/calendar",   icon: <Calendar className="w-4 h-4" /> },
+  { label: "Data",       href: "/data",       icon: <Database className="w-4 h-4" /> },
+  { label: "Analytics",  href: "/analytics",  icon: <BarChart3 className="w-4 h-4" /> },
+  { label: "Settings",   href: "/settings",   icon: <Settings className="w-4 h-4" /> },
+];
+
+export default function Sidebar() {
+  const [location] = useLocation();
+  return (
+    <aside className="w-60 border-r bg-white/80 backdrop-blur">
+      <div className="p-3 text-xs font-semibold text-gray-500">AICRM</div>
+      <nav className="px-2 pb-4 space-y-1">
+        {items.map((it) => (
+          <NavLink key={it.href} href={it.href} active={location.startsWith(it.href)} flag={it.flag}>
+            {it.icon}
+            <span>{it.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+function NavLink(
+  { href, children, active, flag }: { href: string; children: React.ReactNode; active: boolean; flag?: string }
+) {
+  const on = flag ? useFlag(flag) : true;
+  return (
+    <Link href={href} className={clsx(
+      "flex items-center gap-2 rounded-md px-2 py-2 text-sm",
+      active ? "bg-green-100 text-green-800" : "text-gray-700 hover:bg-gray-100"
+    )}>
+      {children}
+      {!on && <span className="ml-auto text-[10px] rounded-full bg-gray-100 px-2 py-0.5 text-gray-500">soon</span>}
+    </Link>
+  );
+}
+
+
+B) App shell (src/app/AppShell.tsx)
+
+import Sidebar from "./nav/sidebar";
+import React from "react";
+
+export default function AppShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <main className="flex-1">{children}</main>
+    </div>
+  );
+}
+
+
+Ensure your main.tsx (or App.tsx) wraps routes with <AppShell>.
+
+C) Query param helpers (src/lib/useQueryParam.ts)
+
+import { useLocation } from "wouter";
+
+export function useQueryParams(): [URLSearchParams, (next: Record<string, string | undefined>) => void] {
+  const [loc, setLoc] = useLocation();
+  const url = new URL(loc, "http://dummy");
+  const params = new URLSearchParams(url.search);
+  const setParams = (next: Record<string, string | undefined>) => {
+    Object.entries(next).forEach(([k, v]) => {
+      if (v === undefined || v === null || v === "") params.delete(k);
+      else params.set(k, String(v));
+    });
+    setLoc(url.pathname + "?" + params.toString());
+  };
+  return [params, setParams];
+}
+
+
+D) Contacts page (src/pages/contacts/ContactsPage.tsx)
+
+import { useQuery } from "@tanstack/react-query";
+import { useQueryParams } from "@/lib/useQueryParam";
+import { Link } from "wouter";
+import clsx from "clsx";
+import React from "react";
+
+const STAGES = [
+  { key: "all",         label: "All" },
+  { key: "lead",        label: "Leads" },
+  { key: "mql",         label: "MQL" },
+  { key: "opportunity", label: "Opportunities" },
+  { key: "customer",    label: "Customers" },
+  { key: "evangelist",  label: "Evangelists" },
+  { key: "churned",     label: "Churned" },
+] as const;
+
+type StageKey = typeof STAGES[number]["key"];
+
+export default function ContactsPage() {
+  const [params, setParams] = useQueryParams();
+  const stage = (params.get("stage") as StageKey) || "all";
+  const q = params.get("q") || "";
+  const owner = params.get("owner") || "";
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["contacts", { stage, q, owner }],
+    queryFn: async () => {
+      const usp = new URLSearchParams({ stage, q, owner });
+      const res = await fetch(`/api/contacts?` + usp.toString());
+      if (!res.ok) throw new Error("Failed to load contacts");
+      return res.json() as Promise<{ rows: ContactRow[] }>;
+    },
+    staleTime: 30_000,
+  });
+
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-semibold mb-4">Contacts</h1>
+
+      <StagePills active={stage} onChange={(s)=>setParams({ stage: s })} />
+
+      <div className="mt-4 flex gap-2">
+        <input
+          className="input input-bordered w-80"
+          placeholder="Search name, email…"
+          defaultValue={q}
+          onKeyDown={(e)=>{ if(e.key==="Enter") setParams({ q: (e.target as HTMLInputElement).value })}}
+        />
+        {/* Owner filter placeholder */}
+        <select className="select select-bordered" defaultValue={owner}
+          onChange={(e)=>setParams({ owner: e.target.value || undefined })}>
+          <option value="">All owners</option>
+          <option value="me">My contacts</option>
+        </select>
+        <button className="btn btn-ghost">Advanced filters</button>
+        <div className="ml-auto flex gap-2">
+          <button className="btn">Import</button>
+          <button className="btn btn-primary">Create contact</button>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        {isLoading && <TableSkeleton />}
+        {isError && <div className="text-red-600">Failed to load contacts.</div>}
+        {!isLoading && !isError && <ContactsTable rows={data?.rows || []} />}
+      </div>
+    </div>
+  );
+}
+
+function StagePills({ active, onChange }:{ active: StageKey; onChange:(s:StageKey)=>void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {STAGES.map(s => (
+        <button key={s.key}
+          onClick={()=>onChange(s.key)}
+          className={clsx(
+            "px-3 py-1 rounded-full border text-sm",
+            active===s.key ? "bg-green-600 text-white border-green-600" : "bg-white hover:bg-gray-50"
+          )}>
+          {s.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+type ContactRow = {
+  id: string;
+  firstName?: string; lastName?: string; email: string;
+  jobTitle?: string; industry?: string; country?: string;
+  lifecycleStage?: string; source?: string; lastActivityAt?: string;
+  ownerName?: string;
+};
+
+function ContactsTable({ rows }: { rows: ContactRow[] }) {
+  if (rows.length === 0) return <EmptyState />;
+  return (
+    <div className="overflow-auto rounded border">
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50 text-gray-600">
+          <tr>
+            <Th>Name</Th><Th>Email</Th><Th>Job Title</Th><Th>Industry</Th>
+            <Th>Country/Region</Th><Th>Lifecycle Stage</Th><Th>Source</Th>
+            <Th>Last activity date</Th><Th>Owner</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => (
+            <tr key={r.id} className="hover:bg-gray-50">
+              <Td>
+                <Link href={`/contacts/${r.id}`} className="text-green-700 hover:underline">
+                  {(r.firstName || r.lastName) ? `${r.firstName ?? ""} ${r.lastName ?? ""}`.trim() : "—"}
+                </Link>
+              </Td>
+              <Td>{r.email}</Td>
+              <Td>{r.jobTitle ?? "—"}</Td>
+              <Td>{r.industry ?? "—"}</Td>
+              <Td>{r.country ?? "—"}</Td>
+              <Td>{r.lifecycleStage ?? "—"}</Td>
+              <Td>{r.source ?? "—"}</Td>
+              <Td>{r.lastActivityAt ? new Date(r.lastActivityAt).toLocaleDateString() : "—"}</Td>
+              <Td>{r.ownerName ?? "—"}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Th({ children }:{children:React.ReactNode}) {
+  return <th className="text-left font-medium px-3 py-2 whitespace-nowrap">{children}</th>;
+}
+function Td({ children }:{children:React.ReactNode}) {
+  return <td className="px-3 py-2 border-t">{children}</td>;
+}
+function TableSkeleton() {
+  return <div className="animate-pulse h-40 rounded border bg-gray-50" />;
+}
+function EmptyState() {
+  return (
+    <div className="p-10 text-center text-gray-600 border rounded">
+      No contacts match this view.
+    </div>
+  );
+}
+
+
+E) Routes mount (snippet) — ensure this exists and uses AppShell
+
+// src/app/routes.tsx
+import { Route, Switch } from "wouter";
+import AppShell from "./AppShell";
+import ContactsPage from "@/pages/contacts/ContactsPage";
+import JourneysExplorer from "@/pages/journeys/Explorer"; // placeholder if exists
+
+import LegacyRedirect from "./LegacyRedirect"; // your existing helper
+
+export default function AppRoutes() {
+  return (
+    <AppShell>
+      <Switch>
+        <Route path="/contacts" component={ContactsPage} />
+        <Route path="/journeys" component={JourneysExplorer} />
+
+        {/* Legacy always-on redirects */}
+        <Route path="/leads">
+          <LegacyRedirect to="/contacts" transform={(p)=>({ ...p, stage: p.stage ?? "lead" })} />
+        </Route>
+        <Route path="/customers">
+          <LegacyRedirect to="/contacts" transform={(p)=>({ ...p, stage: p.stage ?? "customer" })} />
+        </Route>
+        <Route path="/journey">
+          <LegacyRedirect to="/journeys" />
+        </Route>
+
+        <Route>404 Not Found</Route>
+      </Switch>
+    </AppShell>
+  );
+}
+
+Acceptance Criteria
+
+Left sidebar shows Contacts, Journeys, Segments, Campaigns, Automation, Email, Forms, Calendar, Data, Analytics, Settings (no separate “Leads” or “Customers” items).
+
+/contacts renders the new unified list with pills; switching pills updates ?stage= and refetches.
+
+/contacts?stage=lead and /contacts?stage=customer change the same page state, not the route.
+
+Legacy routes still redirect as before, but are not shown in the sidebar.
+
+Loading, empty, and error states are visible and styled.
+
+No console errors.
+
+Notes / Guardrails
+
+Do not remove the legacy redirect routes; just remove their nav items.
+
+If /api/contacts needs a tiny update to support stage=all|lead|opportunity|customer|… plus q and owner, make it:
+
+GET /api/contacts?stage=<stage>&q=<q>&owner=<owner> → { rows: ContactRow[] }
+
+Keep feature flags for Journeys/Segments to show “soon” in nav if disabled, but do not hide Contacts behind flags.
