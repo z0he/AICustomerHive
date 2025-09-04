@@ -1,11 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { useFlag } from "@/hooks/use-feature-flags";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import {
   Users,
   Map,
-  Target,
+  Filter,
   Megaphone,
   Zap,
   Mail,
@@ -13,192 +13,190 @@ import {
   Calendar,
   Database,
   BarChart3,
-  Settings,
-  Home
+  Settings
 } from "lucide-react";
 
 interface NavItem {
-  title: string;
+  label: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  flagKey?: string;
-  badge?: string;
+  icon?: React.ComponentType<any>;
+  children?: NavItem[];
 }
 
 interface NavGroup {
-  title?: string;
+  label: string;
   items: NavItem[];
 }
 
-// Navigation configuration
-const navigationConfig: NavGroup[] = [
+const NAV_CONFIG: NavGroup[] = [
   {
+    label: 'CRM',
     items: [
-      {
-        title: "Dashboard",
-        href: "/dashboard",
-        icon: Home,
-      }
-    ]
+      { icon: Users, label: 'Contacts', href: '/contacts' },
+      { icon: Map, label: 'Journeys', href: '/journeys' },
+      { icon: Filter, label: 'Segments', href: '/segments' },
+    ],
   },
   {
-    title: "CRM",
+    label: 'Marketing',
     items: [
+      { icon: Megaphone, label: 'Campaigns', href: '/campaigns' },
       {
-        title: "Contacts",
-        href: "/contacts",
-        icon: Users,
-        flagKey: "ff.contacts_unified"
-      },
-      {
-        title: "Journeys",
-        href: "/journeys",
-        icon: Map,
-        flagKey: "ff.journey_unified"
-      },
-      {
-        title: "Segments",
-        href: "/contacts/segments",
-        icon: Target,
-        flagKey: "ff.unified_segments"
-      }
-    ]
-  },
-  {
-    title: "Marketing",
-    items: [
-      {
-        title: "Campaigns",
-        href: "/campaigns",
-        icon: Megaphone,
-      },
-      {
-        title: "Automation",
-        href: "/automation/workflows",
         icon: Zap,
-        flagKey: "ff.automation_unified"
+        label: 'Automation',
+        href: '/automation/workflows',
+        children: [
+          { label: 'Workflows', href: '/automation/workflows' },
+          { label: 'Templates', href: '/automation/templates' },
+          { label: 'Execution Logs', href: '/automation/logs' },
+          { label: 'Analytics', href: '/automation/analytics' },
+        ],
       },
       {
-        title: "Email",
-        href: "/email",
         icon: Mail,
+        label: 'Email',
+        href: '/email/templates',
+        children: [
+          { label: 'Templates', href: '/email/templates' },
+          { label: 'Campaigns', href: '/email/campaigns' },
+          { label: 'Sequences', href: '/email/sequences' },
+          { label: 'Deliverability', href: '/email-delivery' },
+        ],
       },
-      {
-        title: "Forms",
-        href: "/marketing-forms",
-        icon: FileText,
-      }
-    ]
+      { icon: FileText, label: 'Forms', href: '/forms' },
+    ],
   },
   {
-    title: "Operations",
+    label: 'Operations',
     items: [
+      { icon: Calendar, label: 'Calendar', href: '/calendar' },
       {
-        title: "Calendar",
-        href: "/calendar",
-        icon: Calendar,
-      },
-      {
-        title: "Data",
-        href: "/data",
         icon: Database,
+        label: 'Data',
+        href: '/data/export',
+        children: [
+          { label: 'Export', href: '/data/export' },
+          { label: 'Import', href: '/data/import' },
+          { label: 'Data Quality', href: '/data/quality' },
+        ],
       },
-      {
-        title: "Analytics",
-        href: "/analytics",
-        icon: BarChart3,
-      }
-    ]
+      { icon: BarChart3, label: 'Analytics', href: '/analytics' },
+      { icon: Settings, label: 'Settings', href: '/settings' },
+    ],
   },
-  {
-    items: [
-      {
-        title: "Settings",
-        href: "/settings",
-        icon: Settings,
-      }
-    ]
-  }
 ];
 
-function NavItem({ item, isActive }: { item: NavItem; isActive: boolean }) {
-  const flagEnabled = useFlag(item.flagKey || '');
-  const showSoonBadge = item.flagKey && !flagEnabled;
-  
-  const Icon = item.icon;
-
+function Group({ label }: { label: string }) {
   return (
-    <Link
-      href={item.href}
-      className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-        "hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2",
-        isActive 
-          ? "bg-green-50 text-green-700 border-green-200" 
-          : "text-gray-700 hover:text-gray-900"
-      )}
-      role="menuitem"
-    >
-      <Icon className={cn("h-4 w-4 shrink-0", isActive ? "text-green-600" : "text-gray-500")} />
-      <span className="truncate">{item.title}</span>
-      {showSoonBadge && (
-        <Badge variant="secondary" className="ml-auto text-xs">
-          Soon
-        </Badge>
-      )}
-    </Link>
+    <div className="px-4 pt-6 pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+      {label}
+    </div>
   );
 }
 
-function NavGroup({ group }: { group: NavGroup }) {
+function NavItem({ item }: { item: NavItem }) {
   const [location] = useLocation();
+  const [isExpanded, setIsExpanded] = useState(() => {
+    // Auto-expand if current route matches any child
+    if (item.children) {
+      return item.children.some(child => location.startsWith(child.href)) || location.startsWith(item.href);
+    }
+    return false;
+  });
+
+  const isActive = location === item.href || (item.href !== '/' && location.startsWith(item.href));
+  const hasChildren = item.children && item.children.length > 0;
+
+  const handleToggle = (e: React.MouseEvent) => {
+    if (hasChildren) {
+      e.preventDefault();
+      setIsExpanded(!isExpanded);
+    }
+  };
+
+  const BaseLink = (
+    <Link href={item.href}>
+      <div
+        className={cn(
+          "flex items-center gap-2 px-4 py-2 text-sm transition-colors cursor-pointer",
+          "hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
+          isActive
+            ? "text-emerald-700 font-medium border-l-2 border-emerald-600 bg-emerald-50"
+            : "text-slate-700"
+        )}
+        onClick={handleToggle}
+      >
+        {item.icon && <item.icon size={16} className="shrink-0" />}
+        <span className="flex-1">{item.label}</span>
+        {hasChildren && (
+          <span className="ml-auto">
+            {isExpanded ? (
+              <ChevronDown size={14} className="text-slate-400" />
+            ) : (
+              <ChevronRight size={14} className="text-slate-400" />
+            )}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
 
   return (
-    <div className="space-y-1">
-      {group.title && (
-        <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          {group.title}
-        </h3>
+    <li>
+      {BaseLink}
+      {hasChildren && isExpanded && item.children && (
+        <ul className="ml-2 mt-1 border-l border-slate-200">
+          {item.children.map((child) => {
+            const childIsActive = location === child.href || location.startsWith(child.href);
+            return (
+              <li key={child.href}>
+                <Link href={child.href}>
+                  <div
+                    className={cn(
+                      "block py-1.5 pl-6 pr-3 text-[13px] transition-colors cursor-pointer",
+                      "hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
+                      childIsActive
+                        ? "text-emerald-700 font-medium"
+                        : "text-slate-600"
+                    )}
+                  >
+                    {child.label}
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       )}
-      <nav role="menu" className="space-y-1">
-        {group.items.map((item) => {
-          // Check if current route matches this nav item
-          const isActive = location === item.href || 
-                          (item.href !== '/' && location.startsWith(item.href));
-          
-          return (
-            <NavItem key={item.href} item={item} isActive={isActive} />
-          );
-        })}
-      </nav>
-    </div>
+    </li>
   );
 }
 
 export function Sidebar() {
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-full">
+    <aside className="w-64 border-r border-slate-200 bg-white h-full flex flex-col">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">
-          AI CRM
-        </h1>
+      <div className="h-14 flex items-center px-4 border-b border-slate-200">
+        <div className="font-semibold text-slate-900">AICRM</div>
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-6">
-        <div className="px-3 space-y-6">
-          {navigationConfig.map((group, index) => (
-            <NavGroup key={index} group={group} />
-          ))}
-        </div>
-      </div>
+      <nav className="flex-1 overflow-y-auto py-2">
+        {NAV_CONFIG.map((group) => (
+          <div key={group.label}>
+            <Group label={group.label} />
+            <ul className="space-y-0.5">
+              {group.items.map((item) => (
+                <NavItem key={item.href} item={item} />
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500">
-          © 2025 AI CRM
-        </div>
+      <div className="p-4 border-t border-slate-200">
+        <div className="text-xs text-slate-500">© 2025 AI CRM</div>
       </div>
     </aside>
   );

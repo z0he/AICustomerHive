@@ -6,7 +6,6 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
-import Sidebar from "@/components/layout/Sidebar";
 import CreateCampaignModal from "@/components/modals/CreateCampaignModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

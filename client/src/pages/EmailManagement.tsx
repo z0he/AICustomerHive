@@ -30,7 +30,6 @@ import EmailCampaignIntegration from '@/components/email/EmailCampaignIntegratio
 import EmailAnalytics from '@/components/email/EmailAnalytics';
 import EmailSequenceManager from '@/components/email/EmailSequenceManager';
 import AuthHeader from '@/components/auth/AuthHeader';
-import Sidebar from '@/components/layout/Sidebar';
 import {
   Select,
   SelectContent,

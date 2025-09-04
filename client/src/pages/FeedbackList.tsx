@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import AuthHeader from "@/components/auth/AuthHeader";
-import Sidebar from "@/components/layout/Sidebar";
 
 // Simple type for feedback items
 interface FeedbackItem {

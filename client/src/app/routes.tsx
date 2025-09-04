@@ -32,6 +32,7 @@ import Pricing from "@/pages/Pricing";
 import Contact from "@/pages/Contact";
 import Demo from "@/pages/Demo";
 import UnifiedSegments from "@/pages/UnifiedSegments";
+import { UnderDevelopment } from "@/components/UnderDevelopment";
 
 // Lazy-loaded pages for new IA (using existing components or fallbacks)
 const ContactsPage = lazy(() => 
@@ -88,18 +89,6 @@ const DataPage = lazy(() =>
   }))
 );
 
-// Fallback component for pages under development
-const UnderDevelopment = ({ title }: { title: string }) => {
-  return (
-    <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
-      <h1 className="text-3xl font-bold text-slate-800 mb-4">{title}</h1>
-      <p className="text-slate-600 mb-8">This page is under development.</p>
-      <a href="/dashboard" className="px-4 py-2 bg-[#0082AE] text-white rounded-md hover:bg-[#00556E] transition">
-        Back to Dashboard
-      </a>
-    </div>
-  );
-};
 
 // Loading fallback
 const PageLoader = () => (
@@ -198,6 +187,99 @@ export function AppRoutes({ user }: { user: any }) {
           </Suspense>
         )} 
       />
+      
+      {/* New unified navigation routes */}
+      <ProtectedRoute 
+        path="/automation/workflows" 
+        component={() => (
+          <Guard flag="ff.automation_unified" offText="Automation is disabled.">
+            <Suspense fallback={<PageLoader />}>
+              <AutomationWorkflowsPage />
+            </Suspense>
+          </Guard>
+        )} 
+      />
+      
+      <ProtectedRoute 
+        path="/automation/templates" 
+        component={() => (
+          <Guard flag="ff.automation_unified" offText="Automation is disabled.">
+            <UnderDevelopment title="Automation Templates" />
+          </Guard>
+        )} 
+      />
+      
+      <ProtectedRoute 
+        path="/automation/logs" 
+        component={() => (
+          <Guard flag="ff.automation_unified" offText="Automation is disabled.">
+            <UnderDevelopment title="Automation Execution Logs" />
+          </Guard>
+        )} 
+      />
+      
+      <ProtectedRoute 
+        path="/automation/analytics" 
+        component={() => (
+          <Guard flag="ff.automation_unified" offText="Automation is disabled.">
+            <UnderDevelopment title="Automation Analytics" />
+          </Guard>
+        )} 
+      />
+      
+      <ProtectedRoute 
+        path="/email/templates" 
+        component={() => (
+          <Suspense fallback={<PageLoader />}>
+            <EmailManagement />
+          </Suspense>
+        )} 
+      />
+      
+      <ProtectedRoute 
+        path="/email/campaigns" 
+        component={() => (
+          <Suspense fallback={<PageLoader />}>
+            <EmailManagement />
+          </Suspense>
+        )} 
+      />
+      
+      <ProtectedRoute 
+        path="/email/sequences" 
+        component={() => (
+          <Suspense fallback={<PageLoader />}>
+            <EmailManagement />
+          </Suspense>
+        )} 
+      />
+      
+      <ProtectedRoute 
+        path="/data/export" 
+        component={() => (
+          <Suspense fallback={<PageLoader />}>
+            <CustomerData />
+          </Suspense>
+        )} 
+      />
+      
+      <ProtectedRoute 
+        path="/data/import" 
+        component={() => (
+          <Suspense fallback={<PageLoader />}>
+            <CustomerData />
+          </Suspense>
+        )} 
+      />
+      
+      <ProtectedRoute 
+        path="/forms" 
+        component={() => (
+          <Suspense fallback={<PageLoader />}>
+            <MarketingForms />
+          </Suspense>
+        )} 
+      />
 
       {/* === LEGACY REDIRECTS === */}
       <Route path="/leads">
@@ -230,6 +312,10 @@ export function AppRoutes({ user }: { user: any }) {
 
       <Route path="/data-consistency">
         <LegacyRedirect to="/data/quality" />
+      </Route>
+      
+      <Route path="/email/deliverability">
+        <LegacyRedirect to="/email-delivery" />
       </Route>
 
       {/* === EXISTING ROUTES === */}

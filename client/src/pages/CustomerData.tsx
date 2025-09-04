@@ -12,7 +12,6 @@ import { Loader2, Download, Upload, AlertCircle, CheckCircle, FilePlus, FileText
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import AuthHeader from '@/components/auth/AuthHeader';
-import Sidebar from '@/components/layout/Sidebar';
 import FieldMapping from '@/components/data/FieldMapping';
 
 const CustomerData = () => {

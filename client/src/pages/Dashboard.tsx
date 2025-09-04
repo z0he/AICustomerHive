@@ -6,7 +6,6 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
-import Sidebar from "@/components/layout/Sidebar";
 import VoiceCommandInterface from "@/components/voice/VoiceCommandInterface";
 import UsageWarning from "@/components/usage/UsageWarning";
 import VoiceCommandModal from "@/components/modals/VoiceCommandModal";

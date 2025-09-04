@@ -5,7 +5,6 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
-import Sidebar from "@/components/layout/Sidebar";
 import CustomerSegments from "@/components/customers/CustomerSegments";
 import CustomerDetails from "@/components/customers/CustomerDetails";
 import { Button } from "@/components/ui/button";

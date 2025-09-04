@@ -6,7 +6,6 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
-import Sidebar from "@/components/layout/Sidebar";
 import LeadForm from "@/components/leads/LeadForm";
 import LeadDetails from "@/components/leads/LeadDetails";
 import LeadScoringCard from "@/components/leads/LeadScoringCard";

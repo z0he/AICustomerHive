@@ -29,7 +29,6 @@ import { CreateFormDialog } from '@/components/marketing/CreateFormDialog';
 import { FormPreviewDialog } from '@/components/marketing/FormPreviewDialog';
 import { MarketingFormStats } from '@/components/marketing/MarketingFormStats';
 import AuthHeader from '@/components/auth/AuthHeader';
-import Sidebar from '@/components/layout/Sidebar';
 
 const MarketingForms = () => {
   const [activeTab, setActiveTab] = useState('all');

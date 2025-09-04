@@ -1,5 +1,4 @@
 import AuthHeader from "@/components/auth/AuthHeader";
-import Sidebar from "@/components/layout/Sidebar";
 import UnifiedContactSegments from "@/components/contacts/UnifiedContactSegments";
 
 export default function UnifiedSegments() {
