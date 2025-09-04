@@ -263,7 +263,7 @@ export default function CustomerForm({
                 <FormLabel>Contact Type</FormLabel>
                 <FormControl>
                   <Select 
-                    value={field.value || ""} 
+                    value={field.value || undefined} 
                     onValueChange={field.onChange}
                   >
                     <SelectTrigger>
@@ -291,7 +291,7 @@ export default function CustomerForm({
                 <FormLabel>Industry <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
                   <Select 
-                    value={field.value || ""} 
+                    value={field.value || undefined} 
                     onValueChange={field.onChange}
                   >
                     <SelectTrigger>
@@ -319,7 +319,7 @@ export default function CustomerForm({
                 <FormLabel>Country</FormLabel>
                 <FormControl>
                   <Select 
-                    value={field.value || ""} 
+                    value={field.value || undefined} 
                     onValueChange={field.onChange}
                   >
                     <SelectTrigger>
@@ -408,7 +408,7 @@ export default function CustomerForm({
                 <FormLabel>Legal Basis</FormLabel>
                 <FormControl>
                   <Select 
-                    value={field.value || ""} 
+                    value={field.value || undefined} 
                     onValueChange={field.onChange}
                   >
                     <SelectTrigger>
