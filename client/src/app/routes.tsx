@@ -65,7 +65,7 @@ const AutomationWorkflowsPage = lazy(() =>
 );
 
 const DataQualityPage = lazy(() => 
-  import("@/pages/DataConsistency").then(module => ({
+  import("@/pages/data/DataQualityPage").then(module => ({
     default: module.default
   })).catch(() => ({
     default: () => <UnderDevelopment title="Data Quality" />
