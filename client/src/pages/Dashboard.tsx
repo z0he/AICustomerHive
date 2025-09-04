@@ -529,12 +529,7 @@ const Dashboard = () => {
         onLogout={handleLogout} 
       />
       
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar recentCampaigns={recentCampaigns || []} />
-        
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
+      <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
           {/* Voice Command Interface */}
           <VoiceCommandInterface 
             isListening={isListening}
@@ -665,8 +660,7 @@ const Dashboard = () => {
               />
             </div>
           </div>
-        </main>
-      </div>
+      </main>
       
       {/* Voice Command Modal */}
       <VoiceCommandModal

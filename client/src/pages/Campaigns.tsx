@@ -251,12 +251,7 @@ const Campaigns = () => {
         onLogout={handleLogout} 
       />
       
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar recentCampaigns={recentCampaigns || []} />
-        
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
+      <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
           <div className="max-w-6xl mx-auto">
             {/* Page Header */}
             <div className="flex justify-between items-center mb-6">
@@ -361,8 +356,7 @@ const Campaigns = () => {
               </div>
             )}
           </div>
-        </main>
-      </div>
+      </main>
       
       {/* Create Campaign Modal */}
       <CreateCampaignModal

@@ -481,11 +481,10 @@ const CalendarManagement: React.FC = () => {
         onLogout={handleLogout} 
       />
       
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar recentCampaigns={recentCampaigns} />
+      
         
-        {/* Main Content */}
+        
+        
         <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
           <div className="container mx-auto py-4">
             <h1 className="text-3xl font-bold mb-6">Calendar Management</h1>
@@ -1889,7 +1888,6 @@ const CalendarManagement: React.FC = () => {
       </Dialog>
           </div>
         </main>
-      </div>
     </div>
   );
 };

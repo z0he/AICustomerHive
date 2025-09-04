@@ -13,7 +13,8 @@ import {
   Calendar,
   Database,
   BarChart3,
-  Settings
+  Settings,
+  LayoutDashboard
 } from "lucide-react";
 
 interface NavItem {
@@ -32,9 +33,10 @@ const NAV_CONFIG: NavGroup[] = [
   {
     label: 'CRM',
     items: [
+      { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
       { icon: Users, label: 'Contacts', href: '/contacts' },
-      { icon: Map, label: 'Journeys', href: '/journeys' },
-      { icon: Filter, label: 'Segments', href: '/segments' },
+      { icon: Map, label: 'Journeys', href: '/customer-journey' },
+      { icon: Filter, label: 'Segments', href: '/unified-segments' },
     ],
   },
   {
@@ -55,15 +57,15 @@ const NAV_CONFIG: NavGroup[] = [
       {
         icon: Mail,
         label: 'Email',
-        href: '/email/templates',
+        href: '/email-management',
         children: [
-          { label: 'Templates', href: '/email/templates' },
-          { label: 'Campaigns', href: '/email/campaigns' },
-          { label: 'Sequences', href: '/email/sequences' },
+          { label: 'Templates', href: '/email-management' },
+          { label: 'Campaigns', href: '/email-management' },
+          { label: 'Sequences', href: '/email-management' },
           { label: 'Deliverability', href: '/email-delivery' },
         ],
       },
-      { icon: FileText, label: 'Forms', href: '/forms' },
+      { icon: FileText, label: 'Forms', href: '/marketing-forms' },
     ],
   },
   {
@@ -73,10 +75,10 @@ const NAV_CONFIG: NavGroup[] = [
       {
         icon: Database,
         label: 'Data',
-        href: '/data/export',
+        href: '/customer-data',
         children: [
-          { label: 'Export', href: '/data/export' },
-          { label: 'Import', href: '/data/import' },
+          { label: 'Export', href: '/customer-data' },
+          { label: 'Import', href: '/customer-data' },
           { label: 'Data Quality', href: '/data/quality' },
         ],
       },
