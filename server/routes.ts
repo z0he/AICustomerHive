@@ -41,6 +41,7 @@ import unifiedJourneyRoutes from "./routes/unified-journey.js";
 import dataConsistencyRoutes from "./routes/data-consistency.js";
 import trackRoutes from "./routes/track.js";
 import dataQualityRoutes from "./routes/data-quality.js";
+import contactsRoutes from "./routes/contacts.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -69,6 +70,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount data quality routes
   app.use("/api", dataQualityRoutes);
+  
+  // Mount contacts routes
+  app.use("/api", contactsRoutes);
   
   // Feature flags endpoint
   app.get("/api/flags", async (req: Request, res: Response) => {
