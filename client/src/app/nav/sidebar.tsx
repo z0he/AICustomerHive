@@ -57,11 +57,11 @@ const NAV_CONFIG: NavGroup[] = [
       {
         icon: Mail,
         label: 'Email',
-        href: '/email-management',
+        href: '/email',
         children: [
-          { label: 'Templates', href: '/email-management' },
-          { label: 'Campaigns', href: '/email-management' },
-          { label: 'Sequences', href: '/email-management' },
+          { label: 'Templates', href: '/email' },
+          { label: 'Campaigns', href: '/email' },
+          { label: 'Sequences', href: '/email' },
           { label: 'Deliverability', href: '/email-delivery' },
         ],
       },
@@ -77,8 +77,8 @@ const NAV_CONFIG: NavGroup[] = [
         label: 'Data',
         href: '/customer-data',
         children: [
-          { label: 'Export', href: '/customer-data' },
-          { label: 'Import', href: '/customer-data' },
+          { label: 'Export', href: '/customer-data?tab=export' },
+          { label: 'Import', href: '/customer-data?tab=import' },
           { label: 'Data Quality', href: '/data/quality' },
         ],
       },

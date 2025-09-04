@@ -2,10 +2,15 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import AuthHeader from "@/components/auth/AuthHeader";
-import { FilePlus } from "lucide-react";
+import { FilePlus, FileEdit, Eye, Copy, Trash2 } from "lucide-react";
 
 export default function MarketingForms() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const { data: forms = [] } = useQuery({
+    queryKey: ["/api/marketing/forms"],
+    retry: 1
+  });
 
   return (
     <div>
@@ -21,8 +26,41 @@ export default function MarketingForms() {
             Create Form
           </Button>
         </div>
-        <div className="text-center py-8">
-          <p className="text-slate-500">Marketing forms functionality coming soon...</p>
+        <div className="space-y-4">
+          {forms.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-slate-500">No forms created yet. Create your first form to get started.</p>
+            </div>
+          ) : (
+            forms.map((form: any) => (
+              <div key={form.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium">{form.name}</h3>
+                    <p className="text-sm text-slate-500">{form.title}</p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      Preview
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy Code
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <FileEdit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </main>
     </div>
