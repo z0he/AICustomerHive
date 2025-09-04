@@ -39,6 +39,7 @@ import * as leadManagement from "./routes/lead-management.js";
 import { journeyIntegration } from "./services/journey-integration-simple.js";
 import unifiedJourneyRoutes from "./routes/unified-journey.js";
 import dataConsistencyRoutes from "./routes/data-consistency.js";
+import trackRoutes from "./routes/track.js";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
@@ -61,6 +62,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount data consistency routes
   app.use("/api", dataConsistencyRoutes);
+  
+  // Mount tracking routes
+  app.use("/api", trackRoutes);
   
   // Legacy compatibility redirect for user current route
   app.get("/api/user/current", (req, res) => {

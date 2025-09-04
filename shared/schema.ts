@@ -935,7 +935,7 @@ export const touchpointTypeEnum = pgEnum("touchpoint_type", [
 // Touchpoints table
 export const touchpoints = pgTable("touchpoints", {
   id: uuid("id").defaultRandom().primaryKey(),
-  contactId: uuid("contact_id").notNull(),
+  contactId: uuid("contact_id"), // nullable to support anonymous tracking
   type: touchpointTypeEnum("type").notNull(),
   subtype: varchar("subtype", { length: 100 }), // optional - e.g. 'page_view', 'click', 'submit'
   occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
@@ -957,6 +957,8 @@ export const insertTouchpointSchema = createInsertSchema(touchpoints).pick({
   subtype: true,
   occurredAt: true,
   meta: true,
+}).extend({
+  contactId: z.string().uuid().nullable().optional(), // Make contactId optional for anonymous tracking
 });
 
 export type InsertTouchpoint = z.infer<typeof insertTouchpointSchema>;
