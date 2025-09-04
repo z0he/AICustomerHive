@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
+import Sidebar from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -444,10 +445,11 @@ const Analytics = () => {
         onLogout={handleLogout} 
       />
       
-      
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar recentCampaigns={recentCampaigns || []} />
         
-        
-        
+        {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
           <div className="max-w-6xl mx-auto">
             {/* Page Header */}
@@ -812,6 +814,7 @@ const Analytics = () => {
           </Tabs>
           </div>
         </main>
+      </div>
     </div>
   );
 };

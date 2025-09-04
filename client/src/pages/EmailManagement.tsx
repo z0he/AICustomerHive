@@ -30,6 +30,7 @@ import EmailCampaignIntegration from '@/components/email/EmailCampaignIntegratio
 import EmailAnalytics from '@/components/email/EmailAnalytics';
 import EmailSequenceManager from '@/components/email/EmailSequenceManager';
 import AuthHeader from '@/components/auth/AuthHeader';
+import Sidebar from '@/components/layout/Sidebar';
 import {
   Select,
   SelectContent,
@@ -336,10 +337,11 @@ const EmailManagement: React.FC = () => {
         onLogout={handleLogout} 
       />
       
-      
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar recentCampaigns={recentCampaigns} />
         
-        
-        
+        {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
           <div className="container mx-auto py-4">
             <h1 className="text-3xl font-bold mb-6">Email Management</h1>
@@ -871,6 +873,7 @@ const EmailManagement: React.FC = () => {
             </Tabs>
           </div>
         </main>
+      </div>
     </div>
   );
 };

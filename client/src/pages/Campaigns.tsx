@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
+import Sidebar from "@/components/layout/Sidebar";
 import CreateCampaignModal from "@/components/modals/CreateCampaignModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -251,7 +252,12 @@ const Campaigns = () => {
         onLogout={handleLogout} 
       />
       
-      <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar recentCampaigns={recentCampaigns || []} />
+        
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
           <div className="max-w-6xl mx-auto">
             {/* Page Header */}
             <div className="flex justify-between items-center mb-6">
@@ -356,7 +362,8 @@ const Campaigns = () => {
               </div>
             )}
           </div>
-      </main>
+        </main>
+      </div>
       
       {/* Create Campaign Modal */}
       <CreateCampaignModal

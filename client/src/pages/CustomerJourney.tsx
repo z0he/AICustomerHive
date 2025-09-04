@@ -5,6 +5,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
+import Sidebar from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -151,7 +152,9 @@ export default function CustomerJourney() {
   return (
     <div className="min-h-screen bg-slate-50">
       <AuthHeader />
-      <main className="flex-1 p-6">
+      <div className="flex">
+        <Sidebar />
+        <main className="flex-1 p-6">
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center justify-between">
@@ -508,7 +511,8 @@ export default function CustomerJourney() {
               />
             </TabsContent>
           </Tabs>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { Loader2, Download, Upload, AlertCircle, CheckCircle, FilePlus, FileText
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import AuthHeader from '@/components/auth/AuthHeader';
+import Sidebar from '@/components/layout/Sidebar';
 import FieldMapping from '@/components/data/FieldMapping';
 
 const CustomerData = () => {
@@ -613,10 +614,11 @@ const CustomerData = () => {
         onLogout={handleLogout} 
       />
       
-      
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar recentCampaigns={recentCampaigns} />
         
-        
-        
+        {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
           <div className="container mx-auto py-4">
             <h1 className="text-3xl font-bold mb-6">Customer Data Management</h1>
@@ -905,6 +907,7 @@ const CustomerData = () => {
       </Tabs>
           </div>
         </main>
+      </div>
     </div>
   );
 };

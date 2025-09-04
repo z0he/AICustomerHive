@@ -9,7 +9,6 @@ import { useEffect } from "react";
 import { initGA } from "@/lib/analytics";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { AppRoutes } from "@/app/routes";
-import { AppShell } from "@/app/AppShell";
 
 function Router() {
   const { user } = useAuth();
@@ -48,12 +47,12 @@ function AppContent() {
   }, []);
   
   return (
-    <AppShell>
+    <>
       <Router />
       {user && <ChatAssistant />}
       <FeedbackButton />
       <Toaster />
-    </AppShell>
+    </>
   );
 }
 

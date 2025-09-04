@@ -8,6 +8,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 
 // UI Components
 import AuthHeader from '@/components/auth/AuthHeader';
+import Sidebar from '@/components/layout/Sidebar';
 import UsageWarning from '@/components/usage/UsageWarning';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
