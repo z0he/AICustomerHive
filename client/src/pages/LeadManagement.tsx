@@ -6,7 +6,6 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
-import Sidebar from "@/components/layout/Sidebar";
 import LeadForm from "@/components/leads/LeadForm";
 import LeadDetails from "@/components/leads/LeadDetails";
 import LeadScoringCard from "@/components/leads/LeadScoringCard";
@@ -375,8 +374,6 @@ export default function LeadManagement() {
       />
       
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar recentCampaigns={recentCampaigns || []} />
         
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">

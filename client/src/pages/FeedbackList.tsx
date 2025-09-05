@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import AuthHeader from "@/components/auth/AuthHeader";
-import Sidebar from "@/components/layout/Sidebar";
 
 // Simple type for feedback items
 interface FeedbackItem {
@@ -95,8 +94,6 @@ export default function FeedbackList() {
       />
       
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <Sidebar recentCampaigns={[]} />
         
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
