@@ -1,0 +1,278 @@
+Context
+
+FE: React 18 + TS, Vite, Wouter, TanStack Query, Tailwind + shadcn.
+
+You previously saw two sidebars and some links missing. We’re standardizing to one AppShell + one Sidebar and wiring the actual routes you listed.
+
+Do not create new feature pages. Use the existing ones, at these URLs:
+
+/dashboard                      (Dashboard)
+/contacts                       (Unified contacts list, uses ?stage=)
+/journeys                       (Journeys)
+/segments                       (Segments)
+/campaigns                      (Campaigns)
+/automation                     (Automation home if it exists; otherwise show Soon badge)
+/email                          (Email main page)
+/email-delivery                 (Email deliverability page)
+/marketing-forms                (Forms page)
+/calendar                       (Calendar)
+/customer-data                  (Data Export/Import page with tabs)
+/data/quality                   (Data Quality page)
+/analytics                      (Analytics)
+/settings                       (Settings)
+
+
+Legacy redirects (keep working):
+
+/customers   -> /contacts?stage=customer
+/leads       -> /contacts?stage=lead
+/journey     -> /journeys
+/            -> redirect to /dashboard
+
+1) Enforce one AppShell + Sidebar
+
+Create/keep src/app/AppShell.tsx and src/app/nav/sidebar.tsx.
+
+Remove/replace any page-level sidebars/layouts so that only AppShell renders the sidebar.
+
+Search and remove imports of legacy sidebars/layout wrappers from pages under:
+journeys, segments, campaigns, email, forms, calendar, data, analytics, settings, leads, customers.
+
+// src/app/AppShell.tsx
+import { ReactNode } from 'react';
+import { Sidebar } from './nav/sidebar';
+
+export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <main className="flex-1 bg-white">{children}</main>
+    </div>
+  );
+}
+
+2) Sidebar wired to the actual URLs
+// src/app/nav/sidebar.tsx
+import { Link, useLocation } from 'wouter';
+import {
+  LayoutDashboard, Users, Map, Filter, Megaphone, Zap, Mail, FileText,
+  Calendar as CalIcon, Database, BarChart3, Settings
+} from 'lucide-react';
+
+type NavItem = { label: string; href: string; icon?: any; children?: NavItem[] };
+
+const NAV: { label: string; items: NavItem[] }[] = [
+  {
+    label: 'General',
+    items: [{ icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' }],
+  },
+  {
+    label: 'CRM',
+    items: [
+      { icon: Users,  label: 'Contacts',  href: '/contacts' },
+      { icon: Map,    label: 'Journeys',  href: '/journeys' },
+      { icon: Filter, label: 'Segments',  href: '/segments' },
+    ],
+  },
+  {
+    label: 'Marketing',
+    items: [
+      { icon: Megaphone, label: 'Campaigns', href: '/campaigns' },
+      {
+        icon: Zap, label: 'Automation', href: '/automation',
+        // If there is no /automation landing page, still keep this link; show "Soon" badge via feature flag in UI if needed
+      },
+      {
+        icon: Mail, label: 'Email', href: '/email',
+        children: [
+          { label: 'Deliverability', href: '/email-delivery' }, // existing page
+        ],
+      },
+      { icon: FileText, label: 'Forms', href: '/marketing-forms' },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { icon: CalIcon, label: 'Calendar', href: '/calendar' },
+      {
+        icon: Database, label: 'Data', href: '/customer-data',
+        children: [
+          { label: 'Export / Import', href: '/customer-data' },
+          { label: 'Data Quality',    href: '/data/quality' },
+        ],
+      },
+      { icon: BarChart3, label: 'Analytics', href: '/analytics' },
+      { icon: Settings,  label: 'Settings',  href: '/settings' },
+    ],
+  },
+];
+
+function isActive(current: string, href: string) {
+  if (href === '/dashboard') return current === '/dashboard';
+  return current === href || current.startsWith(href + '/');
+}
+
+export function Sidebar() {
+  const [loc] = useLocation();
+  return (
+    <aside className="w-64 border-r border-slate-200 bg-white">
+      <div className="h-14 flex items-center px-4 font-semibold">AICRM</div>
+      <nav className="py-2">
+        {NAV.map((sec) => (
+          <div key={sec.label}>
+            <div className="px-4 pt-6 pb-2 text-xs font-semibold text-slate-500">{sec.label}</div>
+            <ul className="space-y-0.5">
+              {sec.items.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href}>
+                    <a
+                      className={[
+                        'flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-50',
+                        isActive(loc, item.href)
+                          ? 'text-emerald-700 font-medium border-l-2 border-emerald-600 bg-emerald-50'
+                          : 'text-slate-700',
+                      ].join(' ')}
+                    >
+                      {item.icon ? <item.icon size={16} /> : null}
+                      <span>{item.label}</span>
+                    </a>
+                  </Link>
+                  {item.children?.length ? (
+                    <ul className="ml-2 mt-1 border-l border-slate-200">
+                      {item.children.map((c) => (
+                        <li key={c.href}>
+                          <Link href={c.href}>
+                            <a
+                              className={[
+                                'block py-1.5 pl-6 pr-3 text-[13px] hover:bg-slate-50',
+                                isActive(loc, c.href)
+                                  ? 'text-emerald-700 font-medium'
+                                  : 'text-slate-600',
+                              ].join(' ')}
+                            >
+                              {c.label}
+                            </a>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </nav>
+    </aside>
+  );
+}
+
+3) Central routing (use your existing components)
+
+Centralize routes in src/App.tsx (or your root where <Switch> lives).
+
+Find the existing components that serve each path (search the repo for “marketing-forms”, “email-delivery”, “customer-data”, “data/quality”, etc.) and import those—do not create new pages.
+
+If the exact file names differ, update imports accordingly. The paths below are placeholders; Replit must replace them with the correct found files.
+
+// src/App.tsx
+import { Route, Switch, Redirect } from 'wouter';
+import { AppShell } from './app/AppShell';
+
+// IMPORTANT: Replace these imports with the actual files you find in the repo.
+import DashboardPage       from './pages/dashboard/DashboardPage';
+import ContactsPage        from './pages/contacts/ContactsPage';      // unified list (reads ?stage=)
+import JourneysPage        from './pages/journeys/JourneysPage';
+import SegmentsPage        from './pages/segments/SegmentsPage';
+import CampaignsPage       from './pages/campaigns/CampaignsPage';
+import AutomationPage      from './pages/automation/AutomationPage';  // if exists
+import EmailPage           from './pages/email/EmailPage';
+import EmailDeliveryPage   from './pages/email/DeliverabilityPage';   // serves /email-delivery
+import FormsPage           from './pages/forms/MarketingFormsPage';    // serves /marketing-forms
+import CalendarPage        from './pages/calendar/CalendarPage';
+import CustomerDataPage    from './pages/data/CustomerDataPage';       // serves /customer-data (export/import tabs)
+import DataQualityPage     from './pages/data/QualityPage';            // serves /data/quality
+import AnalyticsPage       from './pages/analytics/AnalyticsPage';
+import SettingsPage        from './pages/settings/SettingsPage';
+import NotFound            from './pages/NotFound';
+
+export default function App() {
+  return (
+    <AppShell>
+      <Switch>
+        {/* Default → Dashboard */}
+        <Route path="/">
+          <Redirect to="/dashboard" />
+        </Route>
+
+        {/* Top-level pages (existing real paths) */}
+        <Route path="/dashboard" component={DashboardPage} />
+
+        <Route path="/contacts" component={ContactsPage} />
+        <Route path="/journeys" component={JourneysPage} />
+        <Route path="/segments" component={SegmentsPage} />
+        <Route path="/campaigns" component={CampaignsPage} />
+
+        <Route path="/automation" component={AutomationPage} /> {/* if present; otherwise keep link but page can show "Soon" */}
+        <Route path="/email" component={EmailPage} />
+        <Route path="/email-delivery" component={EmailDeliveryPage} />
+        <Route path="/marketing-forms" component={FormsPage} />
+
+        <Route path="/calendar" component={CalendarPage} />
+
+        <Route path="/customer-data" component={CustomerDataPage} />
+        <Route path="/data/quality" component={DataQualityPage} />
+
+        <Route path="/analytics" component={AnalyticsPage} />
+        <Route path="/settings" component={SettingsPage} />
+
+        {/* Legacy redirects */}
+        <Route path="/customers">
+          <Redirect to="/contacts?stage=customer" />
+        </Route>
+        <Route path="/leads">
+          <Redirect to="/contacts?stage=lead" />
+        </Route>
+        <Route path="/journey">
+          <Redirect to="/journeys" />
+        </Route>
+
+        <Route component={NotFound} />
+      </Switch>
+    </AppShell>
+  );
+}
+
+
+If any of those imports don’t exist, search the codebase for the current component files that render those paths and swap the imports. Do not create new pages.
+
+4) Contacts still URL-driven
+
+Ensure /contacts reads ?stage= (default all) and uses TanStack Query to fetch.
+
+Keep your previous working implementation; no functional changes required here.
+
+5) QA checklist (must pass)
+
+Only one sidebar everywhere.
+
+Dashboard shows at /dashboard and / redirects to it.
+
+All old pages open via the new sidebar:
+
+Forms → /marketing-forms
+
+Email → /email
+
+Deliverability → /email-delivery
+
+Data → /customer-data, Data Quality → /data/quality
+
+Journeys /journeys, Calendar /calendar, Analytics /analytics, Settings /settings
+
+Legacy redirects work: /customers, /leads, /journey.
+
+/contacts?stage=lead (and others) filter correctly.
+
+Do not rename routes. Use the existing paths exactly as listed above.
