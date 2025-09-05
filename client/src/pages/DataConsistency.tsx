@@ -5,7 +5,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
-import Sidebar from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -142,7 +141,6 @@ export default function DataConsistency() {
       <div className="min-h-screen bg-slate-50">
         <AuthHeader />
         <div className="flex">
-          <Sidebar />
           <main className="flex-1 p-6">
             <div className="animate-pulse space-y-6">
               <div className="h-8 bg-slate-200 rounded w-1/3"></div>
@@ -162,7 +160,6 @@ export default function DataConsistency() {
     <div className="min-h-screen bg-slate-50">
       <AuthHeader />
       <div className="flex">
-        <Sidebar />
         <main className="flex-1 p-6">
           {/* Header */}
           <div className="mb-6">

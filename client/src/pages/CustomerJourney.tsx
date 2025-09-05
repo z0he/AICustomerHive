@@ -126,7 +126,6 @@ export default function CustomerJourney() {
       <div className="min-h-screen bg-slate-50">
         <AuthHeader />
         <div className="flex">
-          <Sidebar />
           <main className="flex-1 p-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
@@ -153,7 +152,6 @@ export default function CustomerJourney() {
     <div className="min-h-screen bg-slate-50">
       <AuthHeader />
       <div className="flex">
-        <Sidebar />
         <main className="flex-1 p-6">
           {/* Header */}
           <div className="mb-6">

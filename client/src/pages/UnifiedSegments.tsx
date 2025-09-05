@@ -1,11 +1,9 @@
 import AuthHeader from "@/components/auth/AuthHeader";
-import Sidebar from "@/components/layout/Sidebar";
 import UnifiedContactSegments from "@/components/contacts/UnifiedContactSegments";
 
 export default function UnifiedSegments() {
   return (
     <div className="flex h-screen bg-slate-50">
-      <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <AuthHeader />
         <main className="flex-1 overflow-y-auto p-6">

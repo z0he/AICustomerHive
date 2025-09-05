@@ -1,271 +1,104 @@
-import { Switch, Route } from "wouter";
-import { lazy, Suspense } from "react";
+import { Switch, Route, Redirect } from "wouter";
 import { ProtectedRoute } from "@/lib/protected-route";
-import { LegacyRedirect } from "@/components/LegacyRedirect";
-import { useFlag } from "@/hooks/use-feature-flags";
+import { AppShell } from "@/app/AppShell";
 
-// Existing pages
+// Main application pages mapped to their exact routes
 import Dashboard from "@/pages/Dashboard";
+import Customers from "@/pages/Customers";  // serves /contacts
+import CustomerJourney from "@/pages/CustomerJourney";  // serves /journeys
+import UnifiedSegments from "@/pages/UnifiedSegments";  // serves /segments
 import Campaigns from "@/pages/Campaigns";
 import CampaignDetail from "@/pages/CampaignDetail";
-import Customers from "@/pages/Customers";
+import EmailManagement from "@/pages/EmailManagement";  // serves /email
+import EmailDeliveryStatus from "@/pages/EmailDeliveryStatus";  // serves /email-delivery
+import MarketingForms from "@/pages/MarketingForms";  // serves /marketing-forms
+import CalendarManagement from "@/pages/CalendarManagement";  // serves /calendar
+import CustomerData from "@/pages/CustomerData";  // serves /customer-data
+import DataQualityPage from "@/pages/data/DataQualityPage";  // serves /data/quality
 import Analytics from "@/pages/Analytics";
-import LeadManagement from "@/pages/LeadManagement";
+import SettingsPage from "@/pages/Settings";
+
+// Public/auth pages
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
-import CustomerData from "@/pages/CustomerData";
-import CustomerJourney from "@/pages/CustomerJourney";
-import DataConsistency from "@/pages/DataConsistency";
-import EmailManagement from "@/pages/EmailManagement";
-import CalendarManagement from "@/pages/CalendarManagement";
-import MarketingForms from "@/pages/MarketingForms";
-import TrackingSettings from "@/pages/TrackingSettings";
-import SettingsPage from "@/pages/Settings";
-import SystemNotifications from "@/pages/SystemNotifications";
-import FeedbackList from "@/pages/FeedbackList";
-import SimpleFeedback from "@/pages/SimpleFeedback";
-import ScheduledEmails from "@/pages/ScheduledEmails";
-import EmailDeliveryStatus from "@/pages/EmailDeliveryStatus";
 import Landing from "@/pages/Landing";
 import Features from "@/pages/Features";
 import Pricing from "@/pages/Pricing";
 import Contact from "@/pages/Contact";
 import Demo from "@/pages/Demo";
-import UnifiedSegments from "@/pages/UnifiedSegments";
 
-// Lazy-loaded pages for new IA (using existing components or fallbacks)
-const ContactsPage = lazy(() => 
-  import("@/pages/Customers").then(module => ({
-    default: module.default
-  })).catch(() => ({
-    default: () => <UnderDevelopment title="Contacts" />
-  }))
-);
+// Admin/utility pages
+import SystemNotifications from "@/pages/SystemNotifications";
+import FeedbackList from "@/pages/FeedbackList";
+import SimpleFeedback from "@/pages/SimpleFeedback";
+import ScheduledEmails from "@/pages/ScheduledEmails";
 
-const ContactsSegmentsPage = lazy(() => 
-  import("@/pages/UnifiedSegments").then(module => ({
-    default: module.default
-  })).catch(() => ({
-    default: () => <UnderDevelopment title="Contact Segments" />
-  }))
-);
-
-const JourneysPage = lazy(() => 
-  import("@/pages/CustomerJourney").then(module => ({
-    default: module.default
-  })).catch(() => ({
-    default: () => <UnderDevelopment title="Customer Journeys" />
-  }))
-);
-
-const AutomationWorkflowsPage = lazy(() => 
-  Promise.resolve({
-    default: () => <UnderDevelopment title="Automation Workflows" />
-  })
-);
-
-const DataQualityPage = lazy(() => 
-  import("@/pages/data/DataQualityPage").then(module => ({
-    default: module.default
-  })).catch(() => ({
-    default: () => <UnderDevelopment title="Data Quality" />
-  }))
-);
-
-const SettingsIntegrationsTrackingPage = lazy(() => 
-  import("@/pages/TrackingSettings").then(module => ({
-    default: module.default
-  })).catch(() => ({
-    default: () => <UnderDevelopment title="Tracking Integrations" />
-  }))
-);
-
-const DataPage = lazy(() => 
-  import("@/pages/CustomerData").then(module => ({
-    default: module.default
-  })).catch(() => ({
-    default: () => <UnderDevelopment title="Data Management" />
-  }))
-);
-
-// Fallback component for pages under development
-const UnderDevelopment = ({ title }: { title: string }) => {
-  return (
-    <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
-      <h1 className="text-3xl font-bold text-slate-800 mb-4">{title}</h1>
-      <p className="text-slate-600 mb-8">This page is under development.</p>
-      <a href="/dashboard" className="px-4 py-2 bg-[#0082AE] text-white rounded-md hover:bg-[#00556E] transition">
-        Back to Dashboard
-      </a>
-    </div>
-  );
-};
-
-// Loading fallback
-const PageLoader = () => (
-  <div className="flex items-center justify-center h-screen">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0082AE]"></div>
+// Placeholder for automation (since component doesn't exist)
+const AutomationPlaceholder = () => (
+  <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
+    <h1 className="text-3xl font-bold text-slate-800 mb-4">Automation Workflows</h1>
+    <p className="text-slate-600 mb-8">This page is under development.</p>
+    <a href="/dashboard" className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition">
+      Back to Dashboard
+    </a>
   </div>
 );
 
-// Guard component for flag-based rendering
-function Guard({ flag, children, offText }: { flag: string; children: React.ReactNode; offText: string }) {
-  const on = useFlag(flag);
-  return on ? <>{children}</> : <div className="p-4 text-sm text-gray-600">{offText}</div>;
-}
-
 export function AppRoutes({ user }: { user: any }) {
-  // Feature flags are now handled by Guard component
-  const websiteTrackingV2 = useFlag('ff.website_tracking_v2');
-
   return (
-    <Switch>
-      {/* Home route - shows Landing to non-authenticated users */}
-      <Route path="/">
-        {user ? <Dashboard /> : <Landing />}
-      </Route>
+    <AppShell>
+      <Switch>
+        {/* Home route - shows Landing to non-authenticated users */}
+        <Route path="/">
+          {user ? <Redirect to="/dashboard" /> : <Landing />}
+        </Route>
 
-      {/* === NEW IA ROUTES (ALWAYS REGISTERED, COMPONENT GUARDED) === */}
-      <ProtectedRoute 
-        path="/contacts" 
-        component={() => (
-          <Guard flag="ff.contacts_unified" offText="Contacts are disabled.">
-            <Suspense fallback={<PageLoader />}>
-              <ContactsPage />
-            </Suspense>
-          </Guard>
-        )} 
-      />
+        {/* Main application routes */}
+        <ProtectedRoute path="/dashboard" component={Dashboard} />
+        <ProtectedRoute path="/contacts" component={Customers} />
+        <ProtectedRoute path="/journeys" component={CustomerJourney} />
+        <ProtectedRoute path="/segments" component={UnifiedSegments} />
+        <ProtectedRoute path="/campaigns" component={Campaigns} />
+        <ProtectedRoute path="/automation" component={AutomationPlaceholder} />
+        <ProtectedRoute path="/email" component={EmailManagement} />
+        <ProtectedRoute path="/email-delivery" component={EmailDeliveryStatus} />
+        <ProtectedRoute path="/marketing-forms" component={MarketingForms} />
+        <ProtectedRoute path="/calendar" component={CalendarManagement} />
+        <ProtectedRoute path="/customer-data" component={CustomerData} />
+        <ProtectedRoute path="/data/quality" component={DataQualityPage} />
+        <ProtectedRoute path="/analytics" component={Analytics} />
+        <ProtectedRoute path="/settings" component={SettingsPage} />
 
-      <ProtectedRoute 
-        path="/contacts/segments" 
-        component={() => (
-          <Guard flag="ff.unified_segments" offText="Segments are disabled.">
-            <Suspense fallback={<PageLoader />}>
-              <ContactsSegmentsPage />
-            </Suspense>
-          </Guard>
-        )} 
-      />
+        {/* Campaign detail route */}
+        <ProtectedRoute path="/campaigns/:id" component={CampaignDetail} />
 
-      <ProtectedRoute 
-        path="/journeys" 
-        component={() => (
-          <Guard flag="ff.journey_unified" offText="Journeys are disabled.">
-            <Suspense fallback={<PageLoader />}>
-              <JourneysPage />
-            </Suspense>
-          </Guard>
-        )} 
-      />
+        {/* Legacy redirects */}
+        <Route path="/customers">
+          <Redirect to="/contacts?stage=customer" />
+        </Route>
+        <Route path="/leads">
+          <Redirect to="/contacts?stage=lead" />
+        </Route>
+        <Route path="/journey">
+          <Redirect to="/journeys" />
+        </Route>
 
-      <ProtectedRoute 
-        path="/automation/workflows" 
-        component={() => (
-          <Guard flag="ff.automation_unified" offText="Automation workflows are disabled.">
-            <Suspense fallback={<PageLoader />}>
-              <AutomationWorkflowsPage />
-            </Suspense>
-          </Guard>
-        )} 
-      />
+        {/* Admin routes */}
+        <ProtectedRoute path="/admin/notifications" component={SystemNotifications} />
+        <ProtectedRoute path="/admin/feedback" component={FeedbackList} />
+        <ProtectedRoute path="/admin/simple-feedback" component={SimpleFeedback} />
+        <ProtectedRoute path="/scheduled-emails" component={ScheduledEmails} />
 
-      <ProtectedRoute 
-        path="/data/quality" 
-        component={() => (
-          <Suspense fallback={<PageLoader />}>
-            <DataQualityPage />
-          </Suspense>
-        )} 
-      />
+        {/* Public routes */}
+        <Route path="/auth" component={AuthPage} />
+        <Route path="/features" component={Features} />
+        <Route path="/pricing" component={Pricing} />
+        <Route path="/contact" component={Contact} />
+        <Route path="/demo" component={Demo} />
 
-      {websiteTrackingV2 && (
-        <ProtectedRoute 
-          path="/settings/integrations/tracking" 
-          component={() => (
-            <Suspense fallback={<PageLoader />}>
-              <SettingsIntegrationsTrackingPage />
-            </Suspense>
-          )} 
-        />
-      )}
-
-      <ProtectedRoute 
-        path="/data" 
-        component={() => (
-          <Suspense fallback={<PageLoader />}>
-            <DataPage />
-          </Suspense>
-        )} 
-      />
-
-      {/* === LEGACY REDIRECTS === */}
-      <Route path="/leads">
-        <LegacyRedirect to="/contacts" transform={{ stage: "lead" }} />
-      </Route>
-
-      <Route path="/customers">
-        <LegacyRedirect to="/contacts" transform={{ stage: "customer" }} />
-      </Route>
-
-      <Route path="/unified-segments">
-        <LegacyRedirect to="/contacts/segments" />
-      </Route>
-
-      <Route path="/journey">
-        <LegacyRedirect to="/journeys" />
-      </Route>
-
-      <Route path="/customer-journey">
-        <LegacyRedirect to="/journeys" />
-      </Route>
-
-      <Route path="/email/campaigns">
-        <LegacyRedirect to="/campaigns" />
-      </Route>
-
-      <Route path="/data-mgmt">
-        <LegacyRedirect to="/data" />
-      </Route>
-
-      <Route path="/data-consistency">
-        <LegacyRedirect to="/data/quality" />
-      </Route>
-
-      {/* === EXISTING ROUTES === */}
-      <ProtectedRoute path="/dashboard" component={Dashboard} />
-      <ProtectedRoute path="/campaigns" component={Campaigns} />
-      <ProtectedRoute path="/analytics" component={Analytics} />
-      <ProtectedRoute path="/lead-management" component={LeadManagement} />
-      <ProtectedRoute path="/customer-data" component={CustomerData} />
-      <ProtectedRoute path="/email" component={EmailManagement} />
-      <ProtectedRoute path="/scheduled-emails" component={ScheduledEmails} />
-      <ProtectedRoute path="/email-delivery" component={EmailDeliveryStatus} />
-      <ProtectedRoute path="/calendar" component={CalendarManagement} />
-      <ProtectedRoute path="/marketing-forms" component={MarketingForms} />
-      
-      {/* Tracking settings integrated into Settings page */}
-      <Route path="/tracking-settings" component={TrackingSettings} />
-      
-      {/* Campaign detail route */}
-      <ProtectedRoute path="/campaigns/:id" component={CampaignDetail} />
-      
-      {/* Settings page */}
-      <ProtectedRoute path="/settings" component={SettingsPage} />
-      
-      {/* Admin pages */}
-      <ProtectedRoute path="/admin/notifications" component={SystemNotifications} />
-      <ProtectedRoute path="/admin/feedback" component={FeedbackList} />
-      <ProtectedRoute path="/admin/simple-feedback" component={SimpleFeedback} />
-      
-      {/* Public routes */}
-      <Route path="/auth" component={AuthPage} />
-      <Route path="/features" component={Features} />
-      <Route path="/pricing" component={Pricing} />
-      <Route path="/contact" component={Contact} />
-      <Route path="/demo" component={Demo} />
-      
-      <Route component={NotFound} />
-    </Switch>
+        {/* 404 fallback */}
+        <Route component={NotFound} />
+      </Switch>
+    </AppShell>
   );
 }

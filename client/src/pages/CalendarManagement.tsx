@@ -24,7 +24,6 @@ import {
   ArrowUpDown
 } from "lucide-react";
 import AuthHeader from '@/components/auth/AuthHeader';
-import Sidebar from '@/components/layout/Sidebar';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import {
