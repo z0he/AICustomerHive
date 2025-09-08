@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useVoiceRecognition } from "@/hooks/use-voice-recognition";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from 'wouter';
 
 // Components
 import AuthHeader from "@/components/auth/AuthHeader";
@@ -33,6 +34,7 @@ const Dashboard = () => {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   
   // Voice recognition hook
   // We need a local state for interpretedCommand to make our suggestion system work
@@ -343,12 +345,7 @@ const Dashboard = () => {
           break;
           
         case "show_customers":
-          toast({
-            title: "Showing customer information",
-            description: "Displaying your customer data.",
-          });
-          // Redirect to customer management page for better information display
-          window.location.href = '/customer-management';
+          navigate("/contacts?stage=customer");
           closeVoiceModal();
           break;
         case "show_customer_count":
@@ -366,6 +363,47 @@ const Dashboard = () => {
           closeVoiceModal();
           break;
           
+        // Navigation intents
+        case "navigate_contacts":
+          navigate("/contacts");
+          closeVoiceModal();
+          break;
+        
+        case "navigate_journeys":
+          navigate("/journeys");
+          closeVoiceModal();
+          break;
+        
+        case "navigate_campaigns":
+          navigate("/campaigns");
+          closeVoiceModal();
+          break;
+        
+        case "navigate_email":
+          navigate("/email");
+          closeVoiceModal();
+          break;
+        
+        case "navigate_forms":
+          navigate("/marketing-forms");
+          closeVoiceModal();
+          break;
+        
+        case "navigate_calendar":
+          navigate("/calendar");
+          closeVoiceModal();
+          break;
+        
+        case "navigate_analytics":
+          navigate("/analytics");
+          closeVoiceModal();
+          break;
+        
+        case "navigate_dashboard":
+          navigate("/dashboard");
+          closeVoiceModal();
+          break;
+        
         default:
           toast({
             title: "Command recognized",

@@ -81,7 +81,8 @@ export async function interpretVoiceCommand(text: string, userId?: number): Prom
             role: "system",
             content: 
               "You are an AI assistant for a CRM system. Analyze the voice command and determine the user's intent. " +
-              "Valid intents are: create_campaign, show_campaign_performance, show_campaign_status, send_email, create_lead_list, show_leads, show_lead_count, show_customer_count. " +
+              "Valid intents are: create_campaign, show_campaign_performance, show_campaign_status, send_email, create_lead_list, show_leads, show_lead_count, show_customer_count, navigate_contacts, navigate_journeys, navigate_campaigns, navigate_email, navigate_forms, navigate_calendar, navigate_analytics, navigate_dashboard. " +
+              "For navigation commands like 'go to contacts', 'show contacts', 'open contact page' use navigate_contacts. For 'go to journeys', 'show journeys' use navigate_journeys. For 'go to campaigns' use navigate_campaigns. For 'go to emails' use navigate_email. For 'go to forms' use navigate_forms. For 'go to calendar' use navigate_calendar. For 'go to analytics' use navigate_analytics. For 'go to dashboard' use navigate_dashboard. " +
               "For commands asking about how many leads or customers exist, use show_lead_count or show_customer_count intents. " +
               "Return the result as JSON with intent and action fields. The action field should contain a clean version of the command."
           },
@@ -188,6 +189,25 @@ export async function interpretVoiceCommand(text: string, userId?: number): Prom
             action: "Show me my customers"
           };
         }
+      } else if (textLower.includes("go to") || textLower.includes("navigate") || textLower.includes("open") || textLower.includes("show me the")) {
+        // Navigation commands
+        if (textLower.includes("contact")) {
+          return { intent: "navigate_contacts", action: "Navigate to contacts page" };
+        } else if (textLower.includes("journey")) {
+          return { intent: "navigate_journeys", action: "Navigate to customer journeys page" };
+        } else if (textLower.includes("campaign")) {
+          return { intent: "navigate_campaigns", action: "Navigate to campaigns page" };
+        } else if (textLower.includes("email")) {
+          return { intent: "navigate_email", action: "Navigate to email page" };
+        } else if (textLower.includes("form")) {
+          return { intent: "navigate_forms", action: "Navigate to forms page" };
+        } else if (textLower.includes("calendar")) {
+          return { intent: "navigate_calendar", action: "Navigate to calendar page" };
+        } else if (textLower.includes("analytic")) {
+          return { intent: "navigate_analytics", action: "Navigate to analytics page" };
+        } else if (textLower.includes("dashboard")) {
+          return { intent: "navigate_dashboard", action: "Navigate to dashboard" };
+        }
       } else {
         return {
           intent: "unknown",
@@ -220,6 +240,25 @@ export async function interpretVoiceCommand(text: string, userId?: number): Prom
         intent: "show_customers",
         action: "Show me my customers"
       };
+    } else if (textLower.includes("go to") || textLower.includes("navigate") || textLower.includes("open")) {
+      // Navigation fallback commands
+      if (textLower.includes("contact")) {
+        return { intent: "navigate_contacts", action: "Navigate to contacts page" };
+      } else if (textLower.includes("journey")) {
+        return { intent: "navigate_journeys", action: "Navigate to customer journeys page" };
+      } else if (textLower.includes("campaign")) {
+        return { intent: "navigate_campaigns", action: "Navigate to campaigns page" };
+      } else if (textLower.includes("email")) {
+        return { intent: "navigate_email", action: "Navigate to email page" };
+      } else if (textLower.includes("form")) {
+        return { intent: "navigate_forms", action: "Navigate to forms page" };
+      } else if (textLower.includes("calendar")) {
+        return { intent: "navigate_calendar", action: "Navigate to calendar page" };
+      } else if (textLower.includes("analytic")) {
+        return { intent: "navigate_analytics", action: "Navigate to analytics page" };
+      } else if (textLower.includes("dashboard")) {
+        return { intent: "navigate_dashboard", action: "Navigate to dashboard" };
+      }
     } else {
       return {
         intent: "unknown",
