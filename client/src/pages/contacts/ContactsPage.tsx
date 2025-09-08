@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useQueryParam } from '@/lib/useQueryParam';
 import { useToast } from '@/hooks/use-toast';
 import ContactDrawer from './ContactDrawer';
+import EditContactModal from './EditContactModal';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -65,6 +66,8 @@ export default function ContactsPage() {
   const [owner, setOwner] = useState<string>('');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
   // Fetch contacts based on current filters
   const { 
@@ -122,6 +125,21 @@ export default function ContactsPage() {
     setSelectedContact(null);
   };
 
+  const handleAddContact = () => {
+    setEditingContact(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditContact = (contact: Contact) => {
+    setEditingContact(contact);
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingContact(null);
+  };
+
   const currentStageInfo = LIFECYCLE_STAGES.find(s => s.value === stage);
 
   if (error) {
@@ -149,7 +167,7 @@ export default function ContactsPage() {
             Manage all your contacts across their lifecycle
           </p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={handleAddContact}>
           <Plus className="h-4 w-4" />
           Add Contact
         </Button>
@@ -285,6 +303,14 @@ export default function ContactsPage() {
         contact={selectedContact}
         isOpen={isDrawerOpen}
         onClose={closeDrawer}
+      />
+
+      {/* Edit Contact Modal */}
+      <EditContactModal
+        contact={editingContact}
+        isOpen={isEditModalOpen}
+        onClose={closeEditModal}
+        mode={editingContact ? 'edit' : 'add'}
       />
     </div>
   );
