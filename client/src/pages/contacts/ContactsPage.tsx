@@ -228,12 +228,12 @@ export default function ContactsPage() {
             />
           </div>
         </div>
-        <Select value={owner} onValueChange={setOwner}>
+        <Select value={owner || "all"} onValueChange={(value) => setOwner(value === "all" ? "" : value)}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="All owners" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All owners</SelectItem>
+            <SelectItem value="all">All owners</SelectItem>
             <SelectItem value="John Doe">John Doe</SelectItem>
             <SelectItem value="Jane Smith">Jane Smith</SelectItem>
             <SelectItem value="Unassigned">Unassigned</SelectItem>
