@@ -82,6 +82,24 @@ export function AppRoutes({ user }: { user: any }) {
         <Route path="/journey">
           <Redirect to="/journeys" />
         </Route>
+        <Route path="/customer-journey">
+          <Redirect to="/journeys" />
+        </Route>
+        <Route path="/lead-management">
+          <Redirect to="/contacts?stage=lead" />
+        </Route>
+        <Route path="/customer-management">
+          <Redirect to="/contacts?stage=customer" />
+        </Route>
+        <Route path="/contact-management">
+          <Redirect to="/contacts" />
+        </Route>
+        <Route path="/email-management">
+          <Redirect to="/email" />
+        </Route>
+        <Route path="/sequences">
+          <Redirect to="/automation" />
+        </Route>
 
         {/* Admin routes */}
         <ProtectedRoute path="/admin/notifications" component={SystemNotifications} />
