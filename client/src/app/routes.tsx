@@ -4,7 +4,7 @@ import { AppShell } from "@/app/AppShell";
 
 // Main application pages mapped to their exact routes
 import Dashboard from "@/pages/Dashboard";
-import Customers from "@/pages/Customers";  // serves /contacts
+import ContactsPage from "@/pages/contacts/ContactsPage";  // serves /contacts
 import CustomerJourney from "@/pages/CustomerJourney";  // serves /journeys
 import UnifiedSegments from "@/pages/UnifiedSegments";  // serves /segments
 import Campaigns from "@/pages/Campaigns";
@@ -55,7 +55,7 @@ export function AppRoutes({ user }: { user: any }) {
 
         {/* Main application routes */}
         <ProtectedRoute path="/dashboard" component={Dashboard} />
-        <ProtectedRoute path="/contacts" component={Customers} />
+        <ProtectedRoute path="/contacts" component={ContactsPage} />
         <ProtectedRoute path="/journeys" component={CustomerJourney} />
         <ProtectedRoute path="/segments" component={UnifiedSegments} />
         <ProtectedRoute path="/campaigns" component={Campaigns} />

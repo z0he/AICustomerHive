@@ -15,7 +15,20 @@ const NAV: { label: string; items: NavItem[] }[] = [
   {
     label: 'CRM',
     items: [
-      { icon: Users, label: 'Contacts', href: '/contacts', flagKey: 'ff.contacts_unified' },
+      { 
+        icon: Users, 
+        label: 'Contacts', 
+        href: '/contacts', 
+        flagKey: 'ff.contacts_unified',
+        children: [
+          { label: 'All', href: '/contacts?stage=all' },
+          { label: 'Leads', href: '/contacts?stage=lead' },
+          { label: 'Opportunities', href: '/contacts?stage=opportunity' },
+          { label: 'Customers', href: '/contacts?stage=customer' },
+          { label: 'Evangelists', href: '/contacts?stage=evangelist' },
+          { label: 'Churned', href: '/contacts?stage=churned' },
+        ]
+      },
       { icon: Map, label: 'Journeys', href: '/journeys', flagKey: 'ff.journey_unified' },
       { icon: Filter, label: 'Segments', href: '/segments', flagKey: 'ff.unified_segments' },
     ],
@@ -53,6 +66,23 @@ const NAV: { label: string; items: NavItem[] }[] = [
 
 function isActive(current: string, href: string) {
   if (href === '/dashboard') return current === '/dashboard';
+  
+  // Special handling for query-based routes like /contacts?stage=...
+  if (href.includes('?')) {
+    const [path, query] = href.split('?');
+    if (current.startsWith(path)) {
+      // For contacts children, check if the current URL matches the query
+      if (path === '/contacts' && current === path) {
+        // Parent contacts is active if we're on any contacts page
+        return true;
+      }
+      if (current.includes(query)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  
   return current === href || current.startsWith(href + '/');
 }
 

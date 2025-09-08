@@ -1,0 +1,151 @@
+You’re working in the AICRM React 18 + TS app (Vite, Wouter, TanStack Query, Tailwind/shadcn).
+Backend is already unified (contacts with lifecycleStage). Navigation is unified.
+
+Goal
+
+Implement the HubSpot-style Contacts page at /contacts that reads ?stage= and shows pills for All, Leads, Opportunities, Customers, Evangelists, Churned.
+
+In the sidebar, show children items under Contacts that deep-link to:
+
+/contacts?stage=all (default)
+
+/contacts?stage=lead
+
+/contacts?stage=opportunity
+
+/contacts?stage=customer
+
+/contacts?stage=evangelist
+
+/contacts?stage=churned
+
+Keep legacy redirects:
+
+/customers → /contacts?stage=customer
+
+/leads → /contacts?stage=lead
+
+Hard rules
+
+Do not create any new top-level pages (only /contacts page component).
+
+Do not add any second/legacy sidebar — the only sidebar lives in src/app/AppShell.tsx + src/app/nav/sidebar.tsx.
+
+If a referenced file path differs, locate the appropriate file and use it; do not duplicate.
+
+1) Utilities (URL query helper)
+
+Create (or update) src/lib/useQueryParam.ts:
+
+useQueryParam<T>(key: string, defaultValue: T)
+
+returns [value: T, setValue: (val: T) => void]
+
+reads from window.location.search, writes with history.pushState using Wouter’s setLocation if available
+
+getQueryParam() safe reader
+
+Acceptance:
+
+Calling setValue('lead') updates URL to /contacts?stage=lead without full refresh.
+
+2) Contacts page
+
+Create (or update) src/pages/contacts/ContactsPage.tsx with these behaviors:
+
+Read stage from query (all default).
+
+Render pills (buttons) for: all | lead | opportunity | customer | evangelist | churned.
+
+Clicking a pill calls setStage() (query update) and re-fetches.
+
+Top row: search input, owner filter (dropdown placeholder), “Advanced filters” drawer (placeholder).
+
+Table columns: Name, Email, Job Title, Industry, Country/Region, Lifecycle Stage, Source, Last Activity Date, Owner.
+
+Fetch with TanStack Query:
+
+GET /api/contacts?stage=<stage>&q=<search>&owner=<owner>
+
+Use sensible queryKey (e.g., ['contacts', stage, search, owner])
+
+Add loading skeleton, empty state (per stage), error state.
+
+Row click: for now console.log('open contact', id); do not create a new page.
+
+Acceptance:
+
+/contacts shows “All” selected by default.
+
+/contacts?stage=lead selects the “Leads” pill and filters accordingly, and the parent “Contacts” is active in the sidebar.
+
+3) Route wiring
+
+Open the main routes file (e.g., src/app/routes.tsx or src/App.tsx) and ensure:
+
+Route /contacts renders the component above.
+
+Add/keep legacy redirects:
+
+/customers → /contacts?stage=customer
+
+/leads → /contacts?stage=lead
+
+Acceptance:
+
+Navigating to /customers or /leads takes me to /contacts?stage=… with the correct pill active.
+
+4) Sidebar quick links under Contacts
+
+Open src/app/nav/sidebar.tsx (your consolidated sidebar).
+Update the Contacts item to include children that link to the filtered views:
+
+// Pseudocode structure; adapt to your nav shape
+{
+  label: 'Contacts',
+  icon: Users,
+  path: '/contacts',          // parent path
+  children: [
+    { label: 'All',          path: '/contacts?stage=all' },
+    { label: 'Leads',        path: '/contacts?stage=lead' },
+    { label: 'Opportunities',path: '/contacts?stage=opportunity' },
+    { label: 'Customers',    path: '/contacts?stage=customer' },
+    { label: 'Evangelists',  path: '/contacts?stage=evangelist' },
+    { label: 'Churned',      path: '/contacts?stage=churned' },
+  ]
+}
+
+
+Active state logic:
+
+Parent “Contacts” is active if pathname === '/contacts' regardless of query.
+
+A child is active if pathname === '/contacts' AND the child’s stage matches ?stage.
+
+Do not create separate routes for each stage; they should all render /contacts.
+
+Acceptance:
+
+Sidebar shows the children under Contacts.
+
+Clicking “Customers” goes to /contacts?stage=customer and highlights the corresponding child.
+
+5) QA checklist (must pass before you finish)
+
+Only one sidebar across all pages.
+
+/contacts shows pills; clicking pills updates URL and refetches.
+
+/contacts?stage=lead|opportunity|customer|evangelist|churned all work with correct pill active.
+
+Sidebar “Contacts” has working children that deep-link to each stage.
+
+/customers and /leads still redirect properly.
+
+No other navigation or pages are broken.
+
+When done, reply with:
+
+The list of files changed
+
+A short click-path showing each acceptance item you verified
