@@ -41,6 +41,7 @@ import {
 
 // Shared types
 import { Customer, Lead, CustomerTouchpoint, JourneyStage } from "@shared/schema";
+import { Contact } from "@shared/schema";
 
 export default function CustomerJourney() {
   const { toast } = useToast();
@@ -49,17 +50,15 @@ export default function CustomerJourney() {
   const [timeRange, setTimeRange] = useState("30d");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch customers data
-  const { data: customers = [], isLoading: isLoadingCustomers } = useQuery<Customer[]>({
-    queryKey: ["/api/customers"],
+  // Fetch all contacts (unified leads and customers)
+  const { data: contactsResponse, isLoading: isLoadingContacts } = useQuery({
+    queryKey: ["/api/contacts"],
     retry: 1
   });
-
-  // Fetch leads data
-  const { data: leads = [], isLoading: isLoadingLeads } = useQuery<Lead[]>({
-    queryKey: ["/api/leads"],
-    retry: 1
-  });
+  
+  const contacts: Contact[] = contactsResponse?.contacts || [];
+  const customers = contacts.filter(c => c.contactType === 'customer');
+  const leads = contacts.filter(c => c.contactType === 'lead');
 
   // Fetch touchpoints data
   const { data: touchpoints = [], isLoading: isLoadingTouchpoints } = useQuery<CustomerTouchpoint[]>({
@@ -75,18 +74,22 @@ export default function CustomerJourney() {
 
   // Calculate journey metrics
   const journeyMetrics = useMemo(() => {
+    const totalContacts = contacts.length;
     const totalCustomers = customers.length;
     const totalLeads = leads.length;
     const totalTouchpoints = touchpoints.length;
     
-    // Calculate average journey length
-    const customerJourneys = customers.map(customer => {
-      const customerTouchpoints = touchpoints.filter(t => t.customerId === customer.id);
-      return customerTouchpoints.length;
+    // Calculate average journey length for all contacts
+    const contactJourneys = contacts.map(contact => {
+      const contactTouchpoints = touchpoints.filter(t => 
+        (contact.contactType === 'customer' && t.customerId === contact.id) ||
+        (contact.contactType === 'lead' && t.leadId === contact.id)
+      );
+      return contactTouchpoints.length;
     });
     
-    const avgTouchpoints = customerJourneys.length > 0 
-      ? customerJourneys.reduce((a, b) => a + b, 0) / customerJourneys.length 
+    const avgTouchpoints = contactJourneys.length > 0 
+      ? contactJourneys.reduce((a, b) => a + b, 0) / contactJourneys.length 
       : 0;
     
     // Calculate conversion rate
@@ -102,6 +105,7 @@ export default function CustomerJourney() {
       .sort(([,a], [,b]) => b - a)[0]?.[0] || "None";
 
     return {
+      totalContacts,
       totalCustomers,
       totalLeads,
       totalTouchpoints,
@@ -109,19 +113,49 @@ export default function CustomerJourney() {
       conversionRate: Math.round(conversionRate * 10) / 10,
       mostCommonTouchpoint
     };
-  }, [customers, leads, touchpoints]);
+  }, [contacts, customers, leads, touchpoints]);
 
-  // Filter customers based on search
-  const filteredCustomers = useMemo(() => {
-    if (!searchQuery) return customers;
-    return customers.filter(customer => 
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.company?.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter contacts based on search
+  const filteredContacts = useMemo(() => {
+    if (!searchQuery) return contacts;
+    return contacts.filter(contact => 
+      contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contact.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      contact.company?.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [customers, searchQuery]);
+  }, [contacts, searchQuery]);
+  
+  // Filter customers for legacy components that still need Customer[] type
+  const filteredCustomers = useMemo(() => {
+    return filteredContacts.filter(c => c.contactType === 'customer').map(contact => ({
+      id: contact.id,
+      name: contact.name,
+      email: contact.email,
+      firstName: contact.name.split(' ')[0] || contact.name,
+      lastName: contact.name.split(' ').slice(1).join(' ') || '',
+      initials: contact.initials,
+      phone: contact.phone,
+      company: contact.company,
+      jobTitle: contact.jobTitle,
+      linkedinUrl: contact.linkedinUrl,
+      lifecycleStage: contact.lifecycleStage,
+      leadStatus: contact.leadStatus,
+      contactSource: contact.contactSource,
+      leadScore: contact.score,
+      tags: contact.tags,
+      notes: contact.notes,
+      country: contact.country,
+      legalBasis: contact.legalBasis,
+      createdAt: contact.createdAt.toISOString(),
+      customFields: {},
+      status: 'active',
+      isSample: false,
+      currentJourneyStageId: contact.currentJourneyStageId,
+      journeyEntryDate: contact.journeyEntryDate?.toISOString() || null
+    }));
+  }, [filteredContacts]);
 
-  if (isLoadingCustomers || isLoadingLeads || isLoadingTouchpoints || isLoadingStages) {
+  if (isLoadingContacts || isLoadingTouchpoints || isLoadingStages) {
     return (
       <div className="min-h-screen bg-slate-50">
         <AuthHeader />
@@ -159,10 +193,10 @@ export default function CustomerJourney() {
               <div>
                 <h1 className="text-3xl font-bold text-slate-900 flex items-center">
                   <Route className="mr-3 h-8 w-8 text-primary" />
-                  Customer Journey Mapping
+                  Contact Journey Mapping
                 </h1>
                 <p className="text-slate-500 mt-1">
-                  Visualize and analyze customer touchpoints across their entire journey
+                  Visualize and analyze all contact touchpoints across their entire journey - leads and customers
                 </p>
               </div>
               <div className="flex items-center space-x-3">
@@ -190,16 +224,42 @@ export default function CustomerJourney() {
           </div>
 
           {/* Journey Metrics Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Contacts</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{journeyMetrics.totalContacts}</div>
+                <p className="text-xs text-muted-foreground">
+                  All contact journeys
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Customers</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{journeyMetrics.totalCustomers}</div>
                 <p className="text-xs text-muted-foreground">
-                  Active customer journeys
+                  Converted contacts
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Leads</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{journeyMetrics.totalLeads}</div>
+                <p className="text-xs text-muted-foreground">
+                  Prospective contacts
                 </p>
               </CardContent>
             </Card>
@@ -207,12 +267,12 @@ export default function CustomerJourney() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Touchpoints</CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
+                <Map className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{journeyMetrics.totalTouchpoints}</div>
                 <p className="text-xs text-muted-foreground">
-                  Across all customers
+                  Across all contacts
                 </p>
               </CardContent>
             </Card>
@@ -225,7 +285,7 @@ export default function CustomerJourney() {
               <CardContent>
                 <div className="text-2xl font-bold">{journeyMetrics.avgTouchpoints}</div>
                 <p className="text-xs text-muted-foreground">
-                  Touchpoints per customer
+                  Touchpoints per contact
                 </p>
               </CardContent>
             </Card>
@@ -447,10 +507,10 @@ export default function CustomerJourney() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {customers.slice(0, 3).map(customer => {
+                      {filteredCustomers.slice(0, 3).map(customer => {
                         const unifiedContact = {
                           id: customer.id,
-                          name: `${customer.firstName} ${customer.lastName}`.trim(),
+                          name: customer.name,
                           email: customer.email,
                           phone: customer.phone,
                           company: customer.company,
@@ -463,7 +523,7 @@ export default function CustomerJourney() {
                           country: customer.country,
                           linkedinUrl: customer.linkedinUrl,
                           location: customer.location,
-                          initials: customer.firstName?.charAt(0) + customer.lastName?.charAt(0) || 'C',
+                          initials: customer.initials,
                           createdAt: customer.createdAt,
                           currentJourneyStageId: customer.currentJourneyStageId,
                           journeyEntryDate: customer.journeyEntryDate
@@ -489,14 +549,14 @@ export default function CustomerJourney() {
             <TabsContent value="analytics" className="space-y-6">
               <TouchpointAnalytics 
                 touchpoints={touchpoints}
-                customers={customers}
+                customers={filteredCustomers}
                 timeRange={timeRange}
               />
             </TabsContent>
 
             <TabsContent value="visualization" className="space-y-6">
               <JourneyVisualization 
-                customers={customers}
+                customers={filteredCustomers}
                 touchpoints={touchpoints}
                 journeyStages={journeyStages}
                 timeRange={timeRange}
