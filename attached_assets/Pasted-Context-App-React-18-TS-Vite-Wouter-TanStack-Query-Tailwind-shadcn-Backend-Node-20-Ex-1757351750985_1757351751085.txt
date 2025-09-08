@@ -1,0 +1,287 @@
+Context
+App: React 18 + TS + Vite + Wouter + TanStack Query + Tailwind/shadcn.
+Backend: Node 20 + Express + Drizzle + Postgres.
+We already migrated to a unified contacts model with lifecycleStage & status.
+Current issues:
+
+Frontend calls /api/contacts but backend exposes /api/unified-contacts.
+
+Contacts list shows, but clicking a row doesn’t open details (no drawer).
+
+“Add Contact” button has no handler.
+
+Old header nav still shows; sidebar exists but some items are wrong (Email → Sequences still there, Data → Quality missing in nav, etc.).
+
+Voice actions show a toast instead of navigating.
+
+Journeys still says “Customer”; we want Contact Journeys and it must include all contacts.
+
+Keep existing routes exactly as they are (root paths), but the sidebar must be the single layout everywhere.
+
+Keep these exact page routes (do not rename):
+
+/dashboard, /contacts, /journeys, /segments, /campaigns, /automation, /email, /email-delivery, /marketing-forms, /calendar, /customer-data, /data/quality, /analytics, /settings.
+
+Legacy redirects that must remain: /customers → /contacts?stage=customer, /leads → /contacts?stage=lead, /journey → /journeys, / → /dashboard.
+
+1) Fix API mismatch + CRUD
+
+Goal: Frontend should call /api/contacts, backend should serve it (proxy to the existing unified service).
+
+Server changes
+
+File (create if missing): server/routes/contacts.ts
+
+Implement:
+
+GET /api/contacts → read query stage, q, owner and proxy to existing unified contacts service (currently at /api/unified-contacts).
+
+POST /api/contacts → create a contact (mirror the unified create).
+
+PATCH /api/contacts/:id → update.
+
+DELETE /api/contacts/:id → delete (soft delete if that’s your pattern).
+
+Wire it in server/index.ts (or your main Express app): app.use('/api/contacts', contactsRouter).
+
+Keep /api/unified-contacts for backward compat; /api/contacts is the new canonical path.
+
+Contract
+
+Query params:
+
+stage ∈ all|lead|mql|opportunity|customer|evangelist|churned (map “opportunities” → opportunity).
+
+q (free text), owner (owner id or “unassigned”).
+
+Response: array of contacts with fields used in the table (name, email, jobTitle, industry, country, lifecycleStage, source, lastActivityAt, owner).
+
+2) Contacts page (HubSpot-style) — pills + drawer + add/edit
+
+Files
+
+src/pages/contacts/ContactsPage.tsx (update)
+
+src/pages/contacts/ContactDrawer.tsx (new)
+
+src/pages/contacts/EditContactModal.tsx (new)
+
+src/lib/useQueryParam.ts (ensure exists: get, set, useQueryParam)
+
+Do
+
+Stage pills (as in your screenshot): All, Leads, Opportunities, Customers, Evangelists, Churned.
+
+Default stage=all if missing.
+
+Clicking a pill updates ?stage= via useQueryParam and refetches TanStack Query.
+
+Map UI → API: Leads→lead, Opportunities→opportunity, Customers→customer, Evangelists→evangelist, Churned→churned.
+
+Data fetch: TanStack Query → GET /api/contacts?stage=...&q=...&owner=....
+
+Row interaction: clicking a row opens ContactDrawer (right side drawer).
+Tabs inside drawer (match legacy lead/customer card):
+
+Profile: core fields (email, jobTitle, company, location, owner, addedOn).
+
+Notes: simple textarea + list.
+
+Activity: pulls timeline (emails sent, opens/clicks, form submits, page visits).
+
+Scoring: sliders + calculated score (use the existing “Lead Score” model).
+
+Marketing: preferences (email/SMS/calls toggles), consent checkboxes (GDPR/CASL/CCPA), “Save Marketing Preferences”.
+Use existing backend endpoints if they already exist; else create minimal placeholders behind /api/contacts/:id/....
+
+Edit/New:
+
+“Add Contact” button → opens EditContactModal.
+
+Modal fields mirror drawer Profile fields + lifecycleStage + status.
+
+On save: POST /api/contacts; on edit from drawer: PATCH /api/contacts/:id; invalidate queries.
+
+Keep “Advanced filters” as a drawer placeholder (no need to implement logic now).
+
+3) Navigation & layout — single AppShell, correct links, remove duplicates
+
+Files
+
+src/app/AppShell.tsx (ensure this wraps all pages)
+
+src/app/nav/sidebar.tsx (single sidebar component)
+
+src/app/routes.tsx (or src/App.tsx — the router entry)
+
+Do
+
+Sidebar items & exact paths:
+
+General
+
+Dashboard → /dashboard
+
+CRM
+
+Contacts → /contacts (submenu quick links on click target pills by navigating to ?stage=...: All/Leads/Opportunities/Customers/Evangelists/Churned)
+
+Journeys → /journeys
+
+Segments → /segments
+
+Marketing
+
+Campaigns → /campaigns
+
+Automation → /automation (move Email Sequences here)
+
+Email → /email
+
+Deliverability → /email-delivery
+
+Operations
+
+Calendar → /calendar
+
+Data → no click; children:
+
+Export / Import → /customer-data
+
+Data Quality → /data/quality
+
+Analytics → /analytics
+
+Settings → /settings
+
+Remove any legacy page-level sidebars/headers so only AppShell sidebar shows.
+
+Keep top header menu minimal (logo + user menu). Remove legacy main-nav duplicates (Dashboard/Customers/Campaigns… in the header).
+
+Ensure active highlighting uses Wouter’s useLocation.
+
+4) Voice → navigate (not toast)
+
+Files
+
+src/features/voice/voiceIntents.ts or wherever intents live
+
+src/features/voice/useVoiceCommands.ts
+
+Do
+
+Map intents to navigation, not toast:
+
+“list all customers” → navigate to /contacts?stage=customer
+
+“show my leads” → /contacts?stage=lead
+
+“show opportunities” → /contacts?stage=opportunity
+
+default “open contacts” → /contacts
+
+Use Wouter’s useLocation()[1] to push path.
+
+5) Journeys — include all contacts + rename UI
+
+Files
+
+src/pages/journeys/JourneysPage.tsx (update headings & tabs text)
+
+Keep route /journeys
+
+Do
+
+Rename heading to Contact Journey Mapping.
+
+Remove the “Unified View” tab if it’s redundant; keep: Journey Map, Analytics, Visualization, Stages.
+
+Ensure the explorer/search + “All Stages” filter pulls from all contacts (leads + customers) via the unified journey service.
+
+Wire website tracking events and form submissions (already working) so Recent Activity and Explorer show contact-level events (not just customers).
+
+6) Email — move Sequences to Automation
+
+Files
+
+src/pages/email/EmailPage.tsx
+
+src/pages/automation/AutomationPage.tsx (or create /automation/workflows)
+
+Do
+
+Remove the Sequences tab from /email.
+
+Add a small banner/CTA inside /email saying “Sequences have moved to Automation” with a button to /automation.
+
+Under /automation, list sequences and allow enable/disable/edit. Reuse existing components you already have under the Email → Sequences tab.
+
+7) Keep all root routes and modals working
+
+Verify the following pages still render unchanged (just inside AppShell):
+
+/dashboard, /segments, /campaigns, /automation, /email, /email-delivery, /marketing-forms, /calendar, /customer-data, /data/quality, /analytics, /settings.
+
+Modals/forms connection
+
+New Segment modal → filters should reference unified contact fields (use lifecycleStage, not legacy type).
+
+Create Campaign Email modal → personalization tokens should be {{contact.firstName}}, etc.
+
+Everything that targets “leads” or “customers” must now target via lifecycleStage IN (...).
+
+8) Small polish / QA
+
+Ensure Contacts left submenu (All/Leads/Opportunities/Customers/Evangelists/Churned) navigates by setting ?stage= (not separate routes).
+
+Table empty states per stage, and loading skeleton.
+
+ContactDrawer close should preserve the current list/scroll.
+
+Keep legacy redirects:
+
+/customers → /contacts?stage=customer
+
+/leads → /contacts?stage=lead
+
+/journey → /journeys
+
+/ → /dashboard
+
+9) Where to touch code (quick index)
+
+Server: server/routes/contacts.ts, server/index.ts
+
+Contacts: src/pages/contacts/ContactsPage.tsx, ContactDrawer.tsx, EditContactModal.tsx
+
+Nav/Layout: src/app/AppShell.tsx, src/app/nav/sidebar.tsx, router entry
+
+Hooks: src/lib/useQueryParam.ts
+
+Voice: src/features/voice/* (intents + navigation)
+
+Journeys: src/pages/journeys/JourneysPage.tsx
+
+Email/Automation: src/pages/email/EmailPage.tsx, src/pages/automation/*
+
+Segments/Campaign modals: ensure tokens/filters use unified contact fields
+
+10) Acceptance checks
+
+/contacts loads; pills switch data via ?stage=.
+
+Clicking a row opens ContactDrawer with tabs (Profile/Notes/Activity/Scoring/Marketing); edit works; Add Contact works.
+
+Voice commands navigate to the appropriate contacts view.
+
+Only one sidebar exists; header top-nav duplicates are gone.
+
+/journeys shows Contact Journey Mapping and includes leads & customers.
+
+/email no longer has Sequences; /automation does.
+
+Data menu shows Export / Import (/customer-data) and Data Quality (/data/quality).
+
+All listed routes work; legacy redirects work.
+
+Please implement exactly as described. If any referenced file doesn’t exist, create it in the closest matching path. Reuse existing components and styles; do not recreate working features.
