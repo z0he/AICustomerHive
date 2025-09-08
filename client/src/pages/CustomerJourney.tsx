@@ -51,12 +51,16 @@ export default function CustomerJourney() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch all contacts (unified leads and customers)
-  const { data: contactsResponse, isLoading: isLoadingContacts } = useQuery({
+  const { data: contactsResponse, isLoading: isLoadingContacts } = useQuery<{contacts: any[]}>({
     queryKey: ["/api/contacts"],
     retry: 1
   });
   
-  const contacts: Contact[] = contactsResponse?.contacts || [];
+  const contacts: Contact[] = (contactsResponse?.contacts || []).map((c: any) => ({
+    ...c,
+    createdAt: new Date(c.createdAt),
+    journeyEntryDate: c.journeyEntryDate ? new Date(c.journeyEntryDate) : null
+  }));
   const customers = contacts.filter(c => c.contactType === 'customer');
   const leads = contacts.filter(c => c.contactType === 'lead');
 
@@ -134,10 +138,10 @@ export default function CustomerJourney() {
       firstName: contact.name.split(' ')[0] || contact.name,
       lastName: contact.name.split(' ').slice(1).join(' ') || '',
       initials: contact.initials,
-      phone: contact.phone,
-      company: contact.company,
-      jobTitle: contact.jobTitle,
-      linkedinUrl: contact.linkedinUrl,
+      phone: contact.phone || null,
+      company: contact.company || null,
+      jobTitle: contact.jobTitle || null,
+      linkedinUrl: contact.linkedinUrl || null,
       lifecycleStage: contact.lifecycleStage,
       leadStatus: contact.leadStatus,
       contactSource: contact.contactSource,
@@ -147,11 +151,15 @@ export default function CustomerJourney() {
       country: contact.country,
       legalBasis: contact.legalBasis,
       createdAt: contact.createdAt.toISOString(),
+      industry: contact.industry,
+      contactOwner: contact.contactOwner,
+      contactType: contact.contactType,
+      location: contact.location,
       customFields: {},
       status: 'active',
       isSample: false,
       currentJourneyStageId: contact.currentJourneyStageId,
-      journeyEntryDate: contact.journeyEntryDate?.toISOString() || null
+      journeyEntryDate: contact.journeyEntryDate ? new Date(contact.journeyEntryDate).toISOString() : null
     }));
   }, [filteredContacts]);
 
@@ -515,18 +523,18 @@ export default function CustomerJourney() {
                           phone: customer.phone,
                           company: customer.company,
                           jobTitle: customer.jobTitle,
-                          industry: customer.industry,
+                          industry: customer.industry || null,
                           contactType: 'customer' as const,
                           lifecycleStage: customer.lifecycleStage,
-                          contactOwner: customer.contactOwner,
+                          contactOwner: customer.contactOwner || null,
                           contactSource: customer.contactSource,
                           country: customer.country,
                           linkedinUrl: customer.linkedinUrl,
-                          location: customer.location,
+                          location: customer.location || null,
                           initials: customer.initials,
-                          createdAt: customer.createdAt,
+                          createdAt: new Date(customer.createdAt),
                           currentJourneyStageId: customer.currentJourneyStageId,
-                          journeyEntryDate: customer.journeyEntryDate
+                          journeyEntryDate: customer.journeyEntryDate ? new Date(customer.journeyEntryDate) : null
                         };
                         
                         return (
