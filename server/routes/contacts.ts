@@ -67,11 +67,13 @@ router.get('/', async (req: Request, res: Response) => {
     if (owner && owner !== 'all') {
       if (owner === 'unassigned') {
         filteredContacts = filteredContacts.filter(contact => 
-          !contact.owner || contact.owner === 'Unassigned'
+          (!contact.leadOwner && !contact.contactOwner) || 
+          contact.leadOwner === 'Unassigned' || 
+          contact.contactOwner === 'Unassigned'
         );
       } else {
         filteredContacts = filteredContacts.filter(contact => 
-          contact.owner === owner
+          contact.leadOwner === owner || contact.contactOwner === owner
         );
       }
     }
@@ -133,12 +135,12 @@ router.post('/', async (req: Request, res: Response) => {
         company: validatedData.company || '',
         jobTitle: validatedData.jobTitle || '',
         industry: validatedData.industry || '',
-        location: validatedData.country || '',
+        country: validatedData.country || '',
         phone: validatedData.phone || '',
         lifecycleStage: validatedData.lifecycleStage,
         customerStatus: validatedData.status || 'active',
-        customerOwner: validatedData.owner || '',
-        customerSource: validatedData.source || '',
+        contactOwner: validatedData.owner || '',
+        contactSource: validatedData.source || '',
       };
       
       const customer = await storage.createCustomer(customerData);
@@ -150,12 +152,12 @@ router.post('/', async (req: Request, res: Response) => {
         jobTitle: customer.jobTitle,
         company: customer.company,
         industry: customer.industry,
-        country: customer.location,
+        country: customer.country,
         lifecycleStage: customer.lifecycleStage,
-        owner: customer.customerOwner,
-        source: customer.customerSource,
+        owner: customer.contactOwner,
+        source: customer.contactSource,
         phone: customer.phone,
-        lastActivity: customer.lastContactDate,
+        lastActivity: customer.createdAt,
       });
     } else {
       // Create as lead
@@ -165,9 +167,8 @@ router.post('/', async (req: Request, res: Response) => {
         company: validatedData.company || '',
         jobTitle: validatedData.jobTitle || '',
         industry: validatedData.industry || '',
-        location: validatedData.country || '',
+        country: validatedData.country || '',
         phone: validatedData.phone || '',
-        lifecycleStage: validatedData.lifecycleStage,
         leadStatus: validatedData.status || 'new',
         leadOwner: validatedData.owner || '',
         leadSource: validatedData.source || '',
@@ -184,11 +185,11 @@ router.post('/', async (req: Request, res: Response) => {
         company: lead.company,
         industry: lead.industry,
         country: lead.location,
-        lifecycleStage: lead.lifecycleStage,
+        lifecycleStage: 'lead', // All leads have 'lead' lifecycle stage
         owner: lead.leadOwner,
         source: lead.leadSource,
         phone: lead.phone,
-        lastActivity: lead.lastContactDate,
+        lastActivity: lead.createdAt,
       });
     }
 
@@ -231,7 +232,6 @@ router.patch('/:id', async (req: Request, res: Response) => {
       if (validatedData.industry) leadData.industry = validatedData.industry;
       if (validatedData.country) leadData.location = validatedData.country;
       if (validatedData.phone) leadData.phone = validatedData.phone;
-      if (validatedData.lifecycleStage) leadData.lifecycleStage = validatedData.lifecycleStage;
       if (validatedData.status) leadData.leadStatus = validatedData.status;
       if (validatedData.owner) leadData.leadOwner = validatedData.owner;
       if (validatedData.source) leadData.leadSource = validatedData.source;
@@ -247,11 +247,11 @@ router.patch('/:id', async (req: Request, res: Response) => {
         company: updatedContact.company,
         industry: updatedContact.industry,
         country: updatedContact.location,
-        lifecycleStage: updatedContact.lifecycleStage,
+        lifecycleStage: 'lead',
         owner: updatedContact.leadOwner,
         source: updatedContact.leadSource,
         phone: updatedContact.phone,
-        lastActivity: updatedContact.lastContactDate,
+        lastActivity: updatedContact.createdAt,
       };
     } else {
       // This is a customer
@@ -266,12 +266,12 @@ router.patch('/:id', async (req: Request, res: Response) => {
       if (validatedData.company) customerData.company = validatedData.company;
       if (validatedData.jobTitle) customerData.jobTitle = validatedData.jobTitle;
       if (validatedData.industry) customerData.industry = validatedData.industry;
-      if (validatedData.country) customerData.location = validatedData.country;
+      if (validatedData.country) customerData.country = validatedData.country;
       if (validatedData.phone) customerData.phone = validatedData.phone;
       if (validatedData.lifecycleStage) customerData.lifecycleStage = validatedData.lifecycleStage;
       if (validatedData.status) customerData.customerStatus = validatedData.status;
-      if (validatedData.owner) customerData.customerOwner = validatedData.owner;
-      if (validatedData.source) customerData.customerSource = validatedData.source;
+      if (validatedData.owner) customerData.contactOwner = validatedData.owner;
+      if (validatedData.source) customerData.contactSource = validatedData.source;
       
       updatedContact = await storage.updateCustomer(contactId, customerData);
       
@@ -283,12 +283,12 @@ router.patch('/:id', async (req: Request, res: Response) => {
         jobTitle: updatedContact.jobTitle,
         company: updatedContact.company,
         industry: updatedContact.industry,
-        country: updatedContact.location,
+        country: updatedContact.country,
         lifecycleStage: updatedContact.lifecycleStage,
-        owner: updatedContact.customerOwner,
-        source: updatedContact.customerSource,
+        owner: updatedContact.contactOwner,
+        source: updatedContact.contactSource,
         phone: updatedContact.phone,
-        lastActivity: updatedContact.lastContactDate,
+        lastActivity: updatedContact.createdAt,
       };
     }
 
