@@ -21,14 +21,12 @@ import {
   Send,
   RefreshCw,
   UserPlus,
-  Clock
+  History
 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import EmailTemplateCard from '@/components/email/EmailTemplateCard';
 import EmailCampaignIntegration from '@/components/email/EmailCampaignIntegration';
-import EmailAnalytics from '@/components/email/EmailAnalytics';
-import EmailSequenceManager from '@/components/email/EmailSequenceManager';
 import AuthHeader from '@/components/auth/AuthHeader';
 import {
   Select,
@@ -340,15 +338,14 @@ const EmailManagement: React.FC = () => {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
           <div className="container mx-auto py-4">
-            <h1 className="text-3xl font-bold mb-6">Email Management</h1>
+            <h1 className="text-3xl font-bold mb-6">Email</h1>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="configuration">Configuration</TabsTrigger>
                 <TabsTrigger value="templates">Templates</TabsTrigger>
                 <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-                <TabsTrigger value="sequences">Sequences</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="logs">Email Logs</TabsTrigger>
               </TabsList>
               
               {/* Configuration Tab */}
@@ -831,41 +828,77 @@ const EmailManagement: React.FC = () => {
                 </Card>
               </TabsContent>
               
-              {/* Sequences Tab */}
-              <TabsContent value="sequences" className="mt-4">
+              {/* Email Logs Tab */}
+              <TabsContent value="logs" className="mt-4">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
-                      <Clock className="mr-2" size={20} />
-                      Email Sequences
+                      <History className="mr-2" size={20} />
+                      Email Logs
                     </CardTitle>
                     <CardDescription>
-                      Set up automated email sequences for lead nurturing
+                      View all sent emails and their delivery status
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <EmailSequenceManager />
+                    {isLogsLoading ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    ) : logsError ? (
+                      <Alert variant="destructive" className="mb-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error loading email logs</AlertTitle>
+                        <AlertDescription>
+                          There was an error loading your email logs. Please try again.
+                        </AlertDescription>
+                      </Alert>
+                    ) : !emailLogs.length ? (
+                      <div className="text-center py-8">
+                        <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-medium">No Email Logs</h3>
+                        <p className="text-muted-foreground">
+                          No emails have been sent yet. Send your first email to see logs here.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Recipient</TableHead>
+                              <TableHead>Subject</TableHead>
+                              <TableHead>Sent At</TableHead>
+                              <TableHead>Type</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {emailLogs.map((log: any, index: number) => (
+                              <TableRow key={log.id || index}>
+                                <TableCell>
+                                  {getStatusBadge(log.status)}
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                  {log.recipient || 'N/A'}
+                                </TableCell>
+                                <TableCell>{log.subject || 'N/A'}</TableCell>
+                                <TableCell>
+                                  {log.sentAt ? formatDate(log.sentAt) : 'N/A'}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">{log.type || 'direct'}</Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
               
-              {/* Analytics Tab */}
-              <TabsContent value="analytics" className="mt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <FileText className="mr-2" size={20} />
-                      Email Analytics
-                    </CardTitle>
-                    <CardDescription>
-                      Track the performance of your email campaigns
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <EmailAnalytics />
-                  </CardContent>
-                </Card>
-              </TabsContent>
             </Tabs>
           </div>
         </main>
