@@ -65,7 +65,7 @@ export default function ContactsPage() {
 
   // Fetch contacts based on current filters
   const { 
-    data: contacts = [], 
+    data: response, 
     isLoading, 
     error 
   } = useQuery({
@@ -74,76 +74,25 @@ export default function ContactsPage() {
       const params = new URLSearchParams();
       if (stage !== 'all') params.set('stage', stage);
       if (search) params.set('q', search);
-      if (owner) params.set('owner', owner);
+      if (owner && owner !== 'all') params.set('owner', owner);
 
-      // First try the unified contacts endpoint
-      try {
-        const response = await fetch(`/api/contacts?${params}`);
-        if (response.ok) {
-          return await response.json();
-        }
-      } catch (e) {
-        // Fall back to existing endpoints
+      const res = await fetch(`/api/contacts?${params}`);
+      if (!res.ok) {
+        throw new Error('Failed to fetch contacts');
       }
-
-      // Fallback: fetch from existing endpoints and transform
-      const [customersRes, leadsRes] = await Promise.all([
-        fetch('/api/customers'),
-        fetch('/api/leads')
-      ]);
-
-      const customers = customersRes.ok ? await customersRes.json() : [];
-      const leads = leadsRes.ok ? await leadsRes.json() : [];
-
-      // Transform and combine data
-      const transformedContacts: Contact[] = [
-        ...customers.map((c: any) => ({
-          id: c.id,
-          name: c.firstName && c.lastName ? `${c.firstName} ${c.lastName}` : c.name || 'Unknown',
-          email: c.email,
-          jobTitle: c.jobTitle,
-          industry: c.industry,
-          country: c.location,
-          lifecycleStage: 'customer',
-          source: c.acquisitionChannel || 'unknown',
-          lastActivity: c.lastInteractionDate || c.createdAt,
-          owner: c.assignedTo || 'Unassigned',
-          company: c.company
-        })),
-        ...leads.map((l: any) => ({
-          id: l.id + 10000, // Offset to avoid ID conflicts
-          name: l.name,
-          email: l.email,
-          jobTitle: l.jobTitle,
-          industry: l.industry,
-          country: l.location,
-          lifecycleStage: l.leadStatus === 'qualified' ? 'opportunity' : 'lead',
-          source: l.leadSource || 'unknown',
-          lastActivity: l.lastContactDate || l.createdAt,
-          owner: l.leadOwner || 'Unassigned',
-          company: l.company
-        }))
-      ];
-
-      // Filter by stage if not 'all'
-      if (stage !== 'all') {
-        return transformedContacts.filter(c => c.lifecycleStage === stage);
-      }
-
-      // Filter by search if provided
-      if (search) {
-        const searchLower = search.toLowerCase();
-        return transformedContacts.filter((c: Contact) => 
-          c.name.toLowerCase().includes(searchLower) ||
-          c.email.toLowerCase().includes(searchLower) ||
-          (c.company && c.company.toLowerCase().includes(searchLower))
-        );
-      }
-
-      return transformedContacts;
-    },
-    staleTime: 30000, // 30 seconds
+      return res.json();
+    }
   });
+
+  const contacts: Contact[] = response?.contacts || [];
+  const stageCounts = response?.counts || {
+    all: 0,
+    lead: 0,
+    opportunity: 0,
+    customer: 0,
+    evangelist: 0,
+    churned: 0
+  };
 
   const getStageColor = (stageValue: string) => {
     const stage = LIFECYCLE_STAGES.find(s => s.value === stageValue);
