@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useQueryParam } from '@/lib/useQueryParam';
 import { useToast } from '@/hooks/use-toast';
+import ContactDrawer from './ContactDrawer';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -62,6 +63,8 @@ export default function ContactsPage() {
   const [stage, setStage] = useQueryParam<LifecycleStage>('stage', 'all');
   const [search, setSearch] = useState('');
   const [owner, setOwner] = useState<string>('');
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   // Fetch contacts based on current filters
   const { 
@@ -110,10 +113,13 @@ export default function ContactsPage() {
 
   const handleContactClick = (contact: Contact) => {
     console.log('open contact', contact.id, contact);
-    toast({
-      title: 'Contact Details',
-      description: `Opening ${contact.name} - Feature coming soon!`,
-    });
+    setSelectedContact(contact);
+    setIsDrawerOpen(true);
+  };
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+    setSelectedContact(null);
   };
 
   const currentStageInfo = LIFECYCLE_STAGES.find(s => s.value === stage);
@@ -273,6 +279,13 @@ export default function ContactsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Contact Detail Drawer */}
+      <ContactDrawer 
+        contact={selectedContact}
+        isOpen={isDrawerOpen}
+        onClose={closeDrawer}
+      />
     </div>
   );
 }
