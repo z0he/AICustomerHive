@@ -19,7 +19,6 @@ const NAV: { label: string; items: NavItem[] }[] = [
         icon: Users, 
         label: 'Contacts', 
         href: '/contacts', 
-        flagKey: 'ff.contacts_unified',
         children: [
           { label: 'All', href: '/contacts?stage=all' },
           { label: 'Leads', href: '/contacts?stage=lead' },
@@ -29,15 +28,14 @@ const NAV: { label: string; items: NavItem[] }[] = [
           { label: 'Churned', href: '/contacts?stage=churned' },
         ]
       },
-      { icon: Map, label: 'Journeys', href: '/journeys', flagKey: 'ff.journey_unified' },
-      { icon: Filter, label: 'Segments', href: '/segments', flagKey: 'ff.unified_segments' },
+      { icon: Map, label: 'Contact Journey Mapping', href: '/journeys' },
     ],
   },
   {
     label: 'Marketing',
     items: [
       { icon: Megaphone, label: 'Campaigns', href: '/campaigns' },
-      { icon: Zap, label: 'Automation', href: '/automation', flagKey: 'ff.automation_unified' },
+      { icon: Zap, label: 'Automation', href: '/automation' },
       {
         icon: Mail, label: 'Email', href: '/email',
         children: [
