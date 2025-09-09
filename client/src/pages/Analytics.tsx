@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Components
-import AuthHeader from "@/components/auth/AuthHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -436,17 +435,8 @@ const Analytics = () => {
   };
   
   return (
-    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <AuthHeader 
-        user={userData || { id: 1, name: "John Doe", initials: "JD" }} 
-        notifications={notifications || []} 
-        onLogout={handleLogout} 
-      />
-      
-      <div className="flex-1 overflow-hidden">
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
+    <div className="bg-slate-50 p-6">
+      <div>
           <div className="max-w-6xl mx-auto">
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-3 sm:space-y-0">
@@ -808,8 +798,7 @@ const Analytics = () => {
               </Card>
             </TabsContent>
           </Tabs>
-          </div>
-        </main>
+        </div>
       </div>
     </div>
   );
