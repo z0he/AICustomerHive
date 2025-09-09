@@ -6,7 +6,6 @@ import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from 'wouter';
 
 // Components
-import AuthHeader from "@/components/auth/AuthHeader";
 import VoiceCommandInterface from "@/components/voice/VoiceCommandInterface";
 import UsageWarning from "@/components/usage/UsageWarning";
 import VoiceCommandModal from "@/components/modals/VoiceCommandModal";
@@ -559,17 +558,14 @@ const Dashboard = () => {
   };
   
   return (
-    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <AuthHeader 
-        user={userData?.user || userData || { id: 1, name: "John Doe", initials: "JD" }} 
-        notifications={notifications || []} 
-        onLogout={handleLogout} 
-      />
+    <div className="bg-slate-50 p-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
+        <p className="text-slate-500 mt-1">Welcome back, track your CRM performance</p>
+      </div>
       
-      <div className="flex-1 overflow-hidden">
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
+      <div>
           {/* Voice Command Interface */}
           <VoiceCommandInterface 
             isListening={isListening}
@@ -699,8 +695,7 @@ const Dashboard = () => {
                 onAddTask={() => toast({ title: "Coming soon", description: "This feature is under development" })}
               />
             </div>
-          </div>
-        </main>
+        </div>
       </div>
       
       {/* Voice Command Modal */}
