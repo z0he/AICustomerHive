@@ -27,7 +27,6 @@ import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import EmailTemplateCard from '@/components/email/EmailTemplateCard';
 import EmailCampaignIntegration from '@/components/email/EmailCampaignIntegration';
-import AuthHeader from '@/components/auth/AuthHeader';
 import {
   Select,
   SelectContent,
@@ -326,19 +325,15 @@ const EmailManagement: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <AuthHeader 
-        user={userData?.user || { id: 1, name: "User", initials: "U" }} 
-        notifications={notifications} 
-        onLogout={handleLogout} 
-      />
+    <div className="bg-slate-50 p-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Email Management</h1>
+        <p className="text-slate-500 mt-1">Create templates, send emails, and manage your email campaigns</p>
+      </div>
       
-      <div className="flex-1 overflow-hidden">
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
-          <div className="container mx-auto py-4">
-            <h1 className="text-3xl font-bold mb-6">Email</h1>
+      <div>
+          <div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
               <TabsList className="grid w-full grid-cols-4">
@@ -900,8 +895,7 @@ const EmailManagement: React.FC = () => {
               </TabsContent>
               
             </Tabs>
-          </div>
-        </main>
+        </div>
       </div>
     </div>
   );
