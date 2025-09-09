@@ -4,7 +4,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 // Components
-import AuthHeader from "@/components/auth/AuthHeader";
 import Sidebar from "@/components/layout/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -165,10 +164,8 @@ export default function CustomerJourney() {
 
   if (isLoadingContacts || isLoadingTouchpoints || isLoadingStages) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <AuthHeader />
-        <div className="flex">
-          <main className="flex-1 p-6">
+      <div className="bg-slate-50 p-6">
+        <div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
                 <Card key={i}>
@@ -184,23 +181,19 @@ export default function CustomerJourney() {
                 </Card>
               ))}
             </div>
-          </main>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AuthHeader />
-      <div className="flex">
-        <main className="flex-1 p-6">
-          {/* Header */}
-          <div className="mb-6">
+    <div className="bg-slate-50 p-6">
+      {/* Page Header */}
+      <div className="mb-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-slate-900 flex items-center">
-                  <Route className="mr-3 h-8 w-8 text-primary" />
+                <h1 className="text-2xl font-bold text-slate-900 flex items-center">
+                  <Route className="mr-3 h-7 w-7 text-primary" />
                   Contact Journey Mapping
                 </h1>
                 <p className="text-slate-500 mt-1">
@@ -577,7 +570,7 @@ export default function CustomerJourney() {
               />
             </TabsContent>
           </Tabs>
-        </main>
+        </div>
       </div>
     </div>
   );

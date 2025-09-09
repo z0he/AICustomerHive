@@ -5,7 +5,6 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
 // Components
-import AuthHeader from "@/components/auth/AuthHeader";
 import Sidebar from "@/components/layout/Sidebar";
 import CreateCampaignModal from "@/components/modals/CreateCampaignModal";
 import { Button } from "@/components/ui/button";
@@ -244,18 +243,8 @@ const Campaigns = () => {
   };
   
   return (
-    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <AuthHeader 
-        user={userData || { id: 1, name: "John Doe", initials: "JD" }} 
-        notifications={notifications || []} 
-        onLogout={handleLogout} 
-      />
-      
-      <div className="flex-1 overflow-hidden">
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6">
-          <div className="max-w-6xl mx-auto">
+    <div className="bg-slate-50 p-6">
+      <div className="max-w-6xl">
             {/* Page Header */}
             <div className="flex justify-between items-center mb-6">
               <div>
@@ -358,9 +347,7 @@ const Campaigns = () => {
                 </Button>
               </div>
             )}
-          </div>
-        </main>
-      </div>
+        </div>
       
       {/* Create Campaign Modal */}
       <CreateCampaignModal
