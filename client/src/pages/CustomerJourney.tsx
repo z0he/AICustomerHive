@@ -569,9 +569,7 @@ export default function CustomerJourney() {
                 journeyStages={journeyStages}
               />
             </TabsContent>
-          </Tabs>
-        </div>
-      </div>
+      </Tabs>
     </div>
   );
 }
