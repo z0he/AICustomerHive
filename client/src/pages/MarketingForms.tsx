@@ -28,7 +28,6 @@ import { queryClient } from '@/lib/queryClient';
 import { CreateFormDialog } from '@/components/marketing/CreateFormDialog';
 import { FormPreviewDialog } from '@/components/marketing/FormPreviewDialog';
 import { MarketingFormStats } from '@/components/marketing/MarketingFormStats';
-import AuthHeader from '@/components/auth/AuthHeader';
 
 const MarketingForms = () => {
   const [activeTab, setActiveTab] = useState('all');
@@ -113,15 +112,15 @@ const MarketingForms = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <div className="flex-1 flex flex-col">
-        <AuthHeader />
-        <main className="flex-1 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold">Marketing Forms</h1>
-              <p className="text-muted-foreground">Create and manage forms for your website</p>
-            </div>
+    <div className="bg-slate-50 p-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Marketing Forms</h1>
+        <p className="text-slate-500 mt-1">Create and manage forms for your website</p>
+      </div>
+      
+      <div>
+          <div className="flex justify-end mb-6">
             <div className="flex gap-2">
               <Button 
                 onClick={() => setIsCreateFormOpen(true)}
@@ -265,8 +264,7 @@ const MarketingForms = () => {
               <MarketingFormStats />
             </CardContent>
           </Card>
-        </main>
-      </div>
+        </div>
 
       {/* Form Creation Dialog */}
       <CreateFormDialog 
