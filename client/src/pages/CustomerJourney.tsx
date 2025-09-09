@@ -190,17 +190,17 @@ export default function CustomerJourney() {
     <div className="bg-slate-50 p-6">
       {/* Page Header */}
       <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900 flex items-center">
-                  <Route className="mr-3 h-7 w-7 text-primary" />
-                  Contact Journey Mapping
-                </h1>
-                <p className="text-slate-500 mt-1">
-                  Visualize and analyze all contact touchpoints across their entire journey - leads and customers
-                </p>
-              </div>
-              <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 flex items-center">
+              <Route className="mr-3 h-7 w-7 text-primary" />
+              Contact Journey Mapping
+            </h1>
+            <p className="text-slate-500 mt-1">
+              Visualize and analyze all contact touchpoints across their entire journey - leads and customers
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
                 <Select value={timeRange} onValueChange={setTimeRange}>
                   <SelectTrigger className="w-[120px]">
                     <SelectValue />
@@ -220,12 +220,12 @@ export default function CustomerJourney() {
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Refresh
                 </Button>
-              </div>
-            </div>
           </div>
+        </div>
+      </div>
 
-          {/* Journey Metrics Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+      {/* Journey Metrics Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Contacts</CardTitle>
@@ -305,8 +305,8 @@ export default function CustomerJourney() {
             </Card>
           </div>
 
-          {/* Main Content Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview" className="flex items-center">
                 <Map className="mr-2 h-4 w-4" />
@@ -570,6 +570,7 @@ export default function CustomerJourney() {
               />
             </TabsContent>
           </Tabs>
+        </div>
       </div>
     </div>
   );
