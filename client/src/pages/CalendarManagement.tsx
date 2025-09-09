@@ -23,7 +23,6 @@ import {
   CheckCircle,
   ArrowUpDown
 } from "lucide-react";
-import AuthHeader from '@/components/auth/AuthHeader';
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import {
@@ -473,19 +472,15 @@ const CalendarManagement: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <AuthHeader 
-        user={userData?.user || { id: 1, name: "User", initials: "U" }} 
-        notifications={notifications} 
-        onLogout={handleLogout} 
-      />
+    <div className="bg-slate-50 p-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Calendar Management</h1>
+        <p className="text-slate-500 mt-1">Manage events, appointments, and schedule</p>
+      </div>
       
-      <div className="flex-1 overflow-hidden">
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
-          <div className="container mx-auto py-4">
-            <h1 className="text-3xl font-bold mb-6">Calendar Management</h1>
+      <div>
+          <div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Calendar Sidebar */}
@@ -1884,8 +1879,7 @@ const CalendarManagement: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-          </div>
-        </main>
+        </div>
       </div>
     </div>
   );

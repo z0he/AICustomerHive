@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Download, Upload, AlertCircle, CheckCircle, FilePlus, FileText, FileUp } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
-import AuthHeader from '@/components/auth/AuthHeader';
 import FieldMapping from '@/components/data/FieldMapping';
 
 const CustomerData = () => {
@@ -605,19 +604,15 @@ const CustomerData = () => {
   };
 
   return (
-    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <AuthHeader 
-        user={userData?.user || { id: 1, name: "User", initials: "U" }} 
-        notifications={notifications} 
-        onLogout={handleLogout} 
-      />
+    <div className="bg-slate-50 p-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900">Customer Data Management</h1>
+        <p className="text-slate-500 mt-1">Import and export customer data</p>
+      </div>
       
-      <div className="flex-1 overflow-hidden">
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
-          <div className="container mx-auto py-4">
-            <h1 className="text-3xl font-bold mb-6">Customer Data Management</h1>
+      <div>
+          <div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
         <TabsList className="grid w-full grid-cols-2">
@@ -901,8 +896,7 @@ const CustomerData = () => {
           </Card>
         </TabsContent>
       </Tabs>
-          </div>
-        </main>
+        </div>
       </div>
     </div>
   );
