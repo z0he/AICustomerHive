@@ -570,7 +570,6 @@ export default function CustomerJourney() {
               />
             </TabsContent>
           </Tabs>
-        </div>
       </div>
     </div>
   );
