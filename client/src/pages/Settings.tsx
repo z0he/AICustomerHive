@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
 // UI Components
-import AuthHeader from '@/components/auth/AuthHeader';
 import UsageWarning from '@/components/usage/UsageWarning';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -511,22 +510,18 @@ const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-50 text-slate-800 h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <AuthHeader 
-        user={userData?.user || { id: 1, name: "User", initials: "U" }} 
-        notifications={notifications} 
-        onLogout={handleLogout} 
-      />
+    <div className="bg-slate-50 p-6">
+      {/* Page Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+          <Settings className="h-7 w-7 text-primary" />
+          Settings
+        </h1>
+        <p className="text-slate-500 mt-1">Manage your account settings and preferences</p>
+      </div>
       
-      <div className="flex-1 overflow-hidden">
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 p-4">
-          <div className="container mx-auto py-4 max-w-5xl">
-            <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">
-              <Settings className="h-8 w-8 text-primary" />
-              Settings
-            </h1>
+      <div>
+          <div className="max-w-5xl">
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
               <TabsList className="grid w-full grid-cols-5">
@@ -1441,8 +1436,7 @@ const SettingsPage: React.FC = () => {
                 )}
               </TabsContent>
             </Tabs>
-          </div>
-        </main>
+        </div>
       </div>
     </div>
   );
