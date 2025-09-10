@@ -18,15 +18,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
       { 
         icon: Users, 
         label: 'Contacts', 
-        href: '/contacts', 
-        children: [
-          { label: 'All', href: '/contacts?stage=all' },
-          { label: 'Leads', href: '/contacts?stage=lead' },
-          { label: 'Opportunities', href: '/contacts?stage=opportunity' },
-          { label: 'Customers', href: '/contacts?stage=customer' },
-          { label: 'Evangelists', href: '/contacts?stage=evangelist' },
-          { label: 'Churned', href: '/contacts?stage=churned' },
-        ]
+        href: '/contacts'
       },
       { icon: Map, label: 'Contact Journey Mapping', href: '/journeys' },
     ],
