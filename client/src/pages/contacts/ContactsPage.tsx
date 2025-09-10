@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useQueryParam } from '@/lib/useQueryParam';
 import { useToast } from '@/hooks/use-toast';
@@ -82,6 +82,9 @@ export default function ContactsPage() {
       if (search) params.set('q', search);
       if (owner && owner !== 'all') params.set('owner', owner);
 
+      console.log('[FRONTEND DEBUG] Fetching contacts with:', { stage, search, owner });
+      console.log('[FRONTEND DEBUG] API URL:', `/api/contacts?${params}`);
+
       const res = await fetch(`/api/contacts?${params}`);
       if (!res.ok) {
         throw new Error('Failed to fetch contacts');
@@ -89,6 +92,11 @@ export default function ContactsPage() {
       return res.json();
     }
   });
+
+  // Debug the stage value changes
+  React.useEffect(() => {
+    console.log('[FRONTEND DEBUG] Stage changed to:', stage);
+  }, [stage]);
 
   const contacts: Contact[] = response?.contacts || [];
   const stageCounts = response?.counts || {
@@ -175,17 +183,29 @@ export default function ContactsPage() {
 
       {/* Stage Pills */}
       <div className="flex items-center gap-2 flex-wrap">
-        {LIFECYCLE_STAGES.map((stageOption) => (
-          <Button
-            key={stageOption.value}
-            variant={stage === stageOption.value ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStage(stageOption.value)}
-            className={stage === stageOption.value ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
-          >
-            {stageOption.label}
-          </Button>
-        ))}
+        {LIFECYCLE_STAGES.map((stageOption) => {
+          const isActive = stage === stageOption.value;
+          return (
+            <Button
+              key={stageOption.value}
+              variant={isActive ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => {
+                console.log('[FRONTEND DEBUG] Clicked stage button:', stageOption.value);
+                console.log('[FRONTEND DEBUG] Current stage before click:', stage);
+                setStage(stageOption.value);
+              }}
+              className={isActive ? 'bg-emerald-600 hover:bg-emerald-700' : ''}
+            >
+              {stageOption.label} {isActive && '✓'}
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* Debug Info */}
+      <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+        DEBUG: Current stage = "{stage}" | Total contacts: {contacts.length}
       </div>
 
       {/* Filters */}
