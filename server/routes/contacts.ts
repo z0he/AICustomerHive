@@ -343,7 +343,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       await storage.updateLead(leadId, { leadStatus: 'deleted' });
     } else {
       // This is a customer - soft delete by updating status
-      await storage.updateCustomer(contactId, { customerStatus: 'deleted' });
+      await storage.updateCustomer(contactId, { status: 'deleted' });
     }
 
     res.json({ success: true, message: 'Contact deleted successfully' });

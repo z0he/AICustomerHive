@@ -152,6 +152,7 @@ export const insertCustomerSchema = createInsertSchema(customers).pick({
   contactType: true,
   legalBasis: true,
   customFields: true,
+  status: true,
 });
 
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
