@@ -1,0 +1,191 @@
+Contacts Module Fix & Completion
+Design: Use the existing colour tokens/variables already in the app (do not substitute hex values). Maintain current typography, spacing, and component patterns.
+
+0) What’s already built (must be preserved & wired)
+
+Lead/Contact Scoring system (sliders + predicted score UI like in screenshots).
+
+Re-use this feature for Contacts where applicable (or expose as read-only if scoped to Leads only).
+
+Ensure scoring data is stored, recalculated, and surfaced in the Contacts table, contact header badge, and detail view.
+
+Marketing Preferences tab (email/SMS/phone toggles, comms preferences, consent checkboxes).
+
+Restore this tab in Contact detail and persist to backend; expose via read/write endpoints.
+
+1) Lifecycle filters on top only
+
+Keep top chips: All, Leads, Opportunities, Customers, Evangelists, Churned.
+
+Remove lifecycle items from the left sidebar.
+
+Chips reflect active state and filter by contact.lifecycle_stage.
+
+2) Main table — data binding & correctness
+
+Problem observed: legacy contacts show values for Industry, Country/Region, Lifecycle, Source; newly added contacts also had these entered, but columns show blank.
+Action:
+
+Audit the field keys used in: create/edit DTOs, API responses, table cell selectors. Fix any mismatches (e.g., country, countryRegion, country_region, region), normalise via a mapping layer.
+
+After create/edit, optimistically update the cache and re-fetch to ensure table reflects current values.
+
+Columns (keep order): Name, Email, Job Title, Industry, Country/Region, Lifecycle Stage, Source, Last Activity, Owner, Score (Score optional if available).
+
+“Last Activity” shows relative time or “Never”.
+
+All columns sortable (incl. Score when present).
+
+3) Advanced Filters — HubSpot-style builder
+
+Implement a property-driven filter builder inspired by HubSpot:
+
+Left panel: current filters; AND/OR group support; quick clear.
+
+Right panel: searchable property catalogue sourced from AICRM Contact schema (dynamic), grouped (e.g., Contact Info, Calculated, Activity, Marketing/Consent, Scoring).
+
+Type-aware operators:
+
+Text: contains/equals/starts/ends/empty/not empty
+
+Enum: is/is not/in/not in
+
+Number: =, ≠, >, ≥, <, ≤, between
+
+Date: before/after/between/is empty
+
+Boolean: is true/false
+
+Persist Saved Views (name, filters, sort, columns, page size).
+
+Show active filter count on the “Advanced Filters” button.
+
+4) Add / Edit Contact forms
+
+Country/Region, Industry, Source are dropdowns (controlled).
+
+Country/Region uses the existing list in the app (do not add a new source).
+
+Industry/Source use existing enums; show an “Other” option with free-text when selected.
+
+Required: Name, Email (validate).
+
+Edit modal must be centred and responsive (was squashed right).
+
+Fields parity across Add/Edit; include: Phone, Company, Tags (token input), Address, Owner, Marketing Preferences tab, Scoring tab (if enabled for contacts), Notes, Activity (read-only lists).
+
+Buttons: Save, Cancel, and “Open full page”.
+
+5) Row actions (three dots)
+
+Actions: View, Edit, Add Note, Log Activity, Change Lifecycle, Assign Owner, Delete (confirm).
+
+Fully keyboard + screen-reader accessible.
+
+6) Notes
+
+Modal/panel composer; CRUD + pin/unpin; markdown render (sanitised).
+
+Model (confirm/align with backend): {id, contactId, authorId, body, createdAt, updatedAt, pinned}.
+
+7) Activity Tracking
+
+Log activity (email/call/meeting/task/system) with occurredAt.
+
+Timeline on detail view with type filters.
+
+API parity with existing Activities endpoints.
+
+8) Scoring — integrate existing system
+
+Use the already-built scoring engine/UI.
+
+Ensure recalculation on: contact save, scheduled job, and explicit “Recalculate” action.
+
+Expose contact.score in table and detail header.
+
+Provide a small badge with colour/shape from existing design tokens (no new colours).
+
+9) Marketing tab — restore and wire
+
+Bring back the full Marketing Preferences + Communication Preferences + Consent Management UI.
+
+Persist to backend; surface read-only summary chips in contact header (e.g., “Email: Opt-in”).
+
+If Email module events exist, show engagement metrics list.
+
+10) Pagination, search, and state
+
+Server-side pagination with page size (10/25/50/100).
+
+Debounced search (Name/Email/Company).
+
+Preserve filters/sort/search/page in URL query params.
+
+11) Error, loading, and empty states
+
+Skeleton loaders for table and panels.
+
+Clear empty states (“No contacts match your filters.”).
+
+Centralised error toasts.
+
+12) API (adjust to project conventions; keep shapes consistent)
+
+GET /api/contacts?query=&lifecycle=&ownerIds=&countryRegion=&industry=&source=&hasActivity=&hasNotes=&createdFrom=&createdTo=&lastActivityFrom=&lastActivityTo=&page=1&pageSize=25&sort=field:dir
+
+POST /api/contacts
+
+PATCH /api/contacts/:id
+
+DELETE /api/contacts/:id
+
+POST /api/contacts/:id/notes | PATCH /api/notes/:id | DELETE /api/notes/:id
+
+POST /api/contacts/:id/activities | GET /api/contacts/:id/activities
+
+Scoring: POST /api/contacts/:id/recalculate-score (or reuse existing service)
+
+Marketing prefs/consent: read/write endpoints as already defined; if missing, add minimal REST with existing models.
+
+13) Technical
+
+Frontend: React + TypeScript; React Query; RHF + Zod for forms.
+
+Use existing component library and existing theme tokens.
+
+Add unit tests for:
+
+DTO↔UI field mapping (Country/Region/Industry/Source)
+
+Filter builder (operators per type)
+
+Pagination state preservation
+
+Notes and Activities CRUD
+
+Scoring recalculation visibility
+
+Marketing prefs persistence
+
+Add e2e tests (Cypress/Playwright) for: Add→Table reflect, Edit→Table reflect, Advanced Filters apply/clear, Save View restore.
+
+14) Acceptance Criteria
+
+Colour scheme matches current app theme (no new hexes).
+
+Existing Scoring UI and Marketing Preferences tab are restored and functional.
+
+When a new contact is created/edited with Industry/Country/Region/Lifecycle/Source, the main table immediately shows those values (no blanks).
+
+Advanced Filters works HubSpot-style with property catalogue, type-aware operators, AND/OR groups, saved views, and active count.
+
+Table has correct columns (incl. Score where available), sorting, and server-side pagination with state preserved.
+
+Three-dots actions all work; Edit modal is centred/responsive.
+
+Notes and Activities are fully usable; timeline renders.
+
+All tests pass; lint clean; short demo video/gif included in PR.
+
+Use this spec to refactor and complete the Contacts module without changing the established visual language.
