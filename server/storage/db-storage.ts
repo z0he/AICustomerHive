@@ -2027,7 +2027,7 @@ export class DbStorage implements IStorage {
       // Convert leads to unified Contact format
       leadResults.forEach(lead => {
         unifiedContacts.push({
-          id: lead.id,
+          id: `lead_${lead.id}`, // Prefix to avoid ID conflicts with customers
           name: lead.name,
           email: lead.email,
           phone: lead.phone,
@@ -2035,6 +2035,10 @@ export class DbStorage implements IStorage {
           jobTitle: lead.jobTitle,
           industry: lead.industry,
           contactType: 'lead',
+          lifecycleStage: 'lead', // Map lead status to lifecycle stage for consistency
+          source: lead.leadSource, // Map to consistent field name
+          owner: lead.leadOwner, // Map to consistent field name
+          country: lead.location, // Map location to country for table display
           leadSource: lead.leadSource,
           leadStatus: lead.leadStatus,
           leadOwner: lead.leadOwner,
@@ -2054,7 +2058,7 @@ export class DbStorage implements IStorage {
       // Convert customers to unified Contact format
       customerResults.forEach(customer => {
         unifiedContacts.push({
-          id: customer.id,
+          id: `customer_${customer.id}`, // Prefix to avoid ID conflicts with leads
           name: `${customer.firstName} ${customer.lastName}`.trim(),
           email: customer.email,
           phone: customer.phone,
@@ -2063,9 +2067,11 @@ export class DbStorage implements IStorage {
           industry: customer.industry,
           contactType: 'customer',
           lifecycleStage: customer.lifecycleStage,
+          source: customer.contactSource, // Map to consistent field name
+          owner: customer.contactOwner, // Map to consistent field name
+          country: customer.country,
           contactOwner: customer.contactOwner,
           contactSource: customer.contactSource,
-          country: customer.country,
           linkedinUrl: customer.linkedinUrl,
           legalBasis: customer.legalBasis,
           location: customer.location,

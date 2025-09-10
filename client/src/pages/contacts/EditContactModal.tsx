@@ -91,7 +91,7 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
   });
 
   // Reset form when contact changes or modal opens/closes
-  useState(() => {
+  React.useEffect(() => {
     if (isOpen) {
       form.reset({
         name: contact?.name || '',

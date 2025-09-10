@@ -209,7 +209,7 @@ router.post('/', async (req: Request, res: Response) => {
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    const contactId = parseInt(req.params.id);
+    const contactIdStr = req.params.id;
     
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -217,12 +217,32 @@ router.patch('/:id', async (req: Request, res: Response) => {
 
     const validatedData = updateContactSchema.parse(req.body);
 
-    // Check if this is a lead (ID > 10000) or customer (ID <= 10000)
+    // Parse the prefixed contact ID to determine type and actual ID
+    let contactType: 'lead' | 'customer';
+    let actualId: number;
+    
+    if (contactIdStr.startsWith('lead_')) {
+      contactType = 'lead';
+      actualId = parseInt(contactIdStr.replace('lead_', ''));
+    } else if (contactIdStr.startsWith('customer_')) {
+      contactType = 'customer';
+      actualId = parseInt(contactIdStr.replace('customer_', ''));
+    } else {
+      // Fallback for old numeric IDs
+      const numericId = parseInt(contactIdStr);
+      if (numericId > 10000) {
+        contactType = 'lead';
+        actualId = numericId - 10000;
+      } else {
+        contactType = 'customer';
+        actualId = numericId;
+      }
+    }
+
     let updatedContact;
     
-    if (contactId > 10000) {
+    if (contactType === 'lead') {
       // This is a lead
-      const leadId = contactId - 10000;
       const leadData: any = {};
       
       if (validatedData.name) leadData.name = validatedData.name;
@@ -236,11 +256,11 @@ router.patch('/:id', async (req: Request, res: Response) => {
       if (validatedData.owner) leadData.leadOwner = validatedData.owner;
       if (validatedData.source) leadData.leadSource = validatedData.source;
       
-      updatedContact = await storage.updateLead(leadId, leadData);
+      updatedContact = await storage.updateLead(actualId, leadData);
       
       // Transform back to unified format
       updatedContact = {
-        id: updatedContact.id + 10000,
+        id: `lead_${updatedContact.id}`,
         name: updatedContact.name,
         email: updatedContact.email,
         jobTitle: updatedContact.jobTitle,
@@ -273,11 +293,11 @@ router.patch('/:id', async (req: Request, res: Response) => {
       if (validatedData.owner) customerData.contactOwner = validatedData.owner;
       if (validatedData.source) customerData.contactSource = validatedData.source;
       
-      updatedContact = await storage.updateCustomer(contactId, customerData);
+      updatedContact = await storage.updateCustomer(actualId, customerData);
       
       // Transform back to unified format
       updatedContact = {
-        id: updatedContact.id,
+        id: `customer_${updatedContact.id}`,
         name: `${updatedContact.firstName} ${updatedContact.lastName}`.trim(),
         email: updatedContact.email,
         jobTitle: updatedContact.jobTitle,

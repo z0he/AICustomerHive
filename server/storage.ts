@@ -2227,6 +2227,16 @@ export class MemStorage implements IStorage {
     throw new Error("Customer Journey not implemented in MemStorage - use DbStorage");
   }
 
+  async updateCustomer(id: number, data: Partial<InsertCustomer>): Promise<Customer> {
+    const customer = this.customers.get(id);
+    if (!customer) {
+      throw new Error(`Customer with ID ${id} not found`);
+    }
+    const updatedCustomer = { ...customer, ...data };
+    this.customers.set(id, updatedCustomer);
+    return updatedCustomer;
+  }
+
   async updateCustomerTouchpoint(id: number, touchpointData: Partial<CustomerTouchpoint>): Promise<CustomerTouchpoint> {
     throw new Error("Customer Journey not implemented in MemStorage - use DbStorage");
   }
