@@ -44,13 +44,6 @@ router.get('/', async (req: Request, res: Response) => {
     // Get all contacts from the unified service
     const allContacts = await storage.getUnifiedContacts(userId);
     
-    // Debug logging for filtering
-    console.log(`[CONTACTS DEBUG] Total contacts: ${allContacts.length}`);
-    console.log(`[CONTACTS DEBUG] Stage filter: ${stage} -> ${mappedStage}`);
-    if (allContacts.length > 0) {
-      console.log(`[CONTACTS DEBUG] Sample contact lifecycle stages:`, allContacts.slice(0, 3).map(c => ({ id: c.id, name: c.name, lifecycleStage: c.lifecycleStage })));
-    }
-    
     let filteredContacts = allContacts;
 
     // Filter by lifecycle stage
@@ -58,7 +51,6 @@ router.get('/', async (req: Request, res: Response) => {
       filteredContacts = filteredContacts.filter(contact => 
         contact.lifecycleStage === mappedStage
       );
-      console.log(`[CONTACTS DEBUG] After filtering by '${mappedStage}': ${filteredContacts.length} contacts`);
     }
 
     // Filter by search query

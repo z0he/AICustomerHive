@@ -19,13 +19,10 @@ export function useQueryParam<T extends string>(key: string, defaultValue: T): [
 
   useEffect(() => {
     const newValue = getCurrentValue();
-    console.log(`[useQueryParam] Location changed, updating ${key} from "${value}" to "${newValue}"`);
     setValue(newValue);
   }, [location, key, defaultValue]);
 
   const updateValue = (newValue: T) => {
-    console.log(`[useQueryParam] Updating ${key} from "${value}" to "${newValue}"`);
-    
     const url = new URL(window.location.href);
     
     if (newValue === defaultValue) {
@@ -35,7 +32,6 @@ export function useQueryParam<T extends string>(key: string, defaultValue: T): [
     }
     
     const newPath = `${url.pathname}${url.search}`;
-    console.log(`[useQueryParam] Setting location to: ${newPath}`);
     setLocation(newPath);
     
     // Immediately update state for synchronous UI updates
