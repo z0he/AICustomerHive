@@ -146,7 +146,7 @@ router.post('/', async (req: Request, res: Response) => {
       const customer = await storage.createCustomer(customerData);
       
       res.status(201).json({
-        id: customer.id,
+        id: `customer_${customer.id}`, // Use prefixed ID format
         name: `${customer.firstName} ${customer.lastName}`.trim(),
         email: customer.email,
         jobTitle: customer.jobTitle,
@@ -167,7 +167,7 @@ router.post('/', async (req: Request, res: Response) => {
         company: validatedData.company || '',
         jobTitle: validatedData.jobTitle || '',
         industry: validatedData.industry || '',
-        country: validatedData.country || '',
+        location: validatedData.country || '', // Store country in location field for leads
         phone: validatedData.phone || '',
         leadStatus: validatedData.status || 'new',
         leadOwner: validatedData.owner || '',
@@ -178,14 +178,14 @@ router.post('/', async (req: Request, res: Response) => {
       const lead = await storage.createLead(leadData);
       
       res.status(201).json({
-        id: lead.id + 10000, // Offset to match frontend transformation
+        id: `lead_${lead.id}`, // Use prefixed ID format
         name: lead.name,
         email: lead.email,
         jobTitle: lead.jobTitle,
         company: lead.company,
         industry: lead.industry,
         country: lead.location,
-        lifecycleStage: 'lead', // All leads have 'lead' lifecycle stage
+        lifecycleStage: validatedData.lifecycleStage || 'lead', // Use the provided lifecycle stage
         owner: lead.leadOwner,
         source: lead.leadSource,
         phone: lead.phone,
