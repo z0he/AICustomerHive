@@ -2,26 +2,86 @@ import { Router } from "express";
 import { Request, Response } from "express";
 import { storage } from "../storage.js";
 import { z } from "zod";
-import { insertCustomerSchema, insertLeadSchema } from "../../shared/schema.js";
+import { insertCustomerSchema, insertLeadSchema, industryEnum, contactSourceEnum } from "../../shared/schema.js";
 
 const router = Router();
 
-// Validation schemas
-const createContactSchema = z.object({
-  name: z.string().min(1),
+// Industry values for validation
+const INDUSTRY_VALUES = [
+  "Accounting","Airlines/Aviation","Alternative Dispute Resolution","Alternative Medicine","Animation",
+  "Apparel & Fashion","Architecture & Planning","Arts and Crafts","Automotive","Aviation & Aerospace",
+  "Banking","Biotechnology","Broadcast Media","Building Materials","Business Supplies and Equipment",
+  "Capital Markets","Chemicals","Civic & Social Organization","Civil Engineering","Commercial Real Estate",
+  "Computer & Network Security","Computer Games","Computer Hardware","Computer Networking","Computer Software",
+  "Internet","Construction","Consumer Electronics","Consumer Goods","Consumer Services","Cosmetics","Dairy",
+  "Defense & Space","Design","Education Management","E-Learning","Electrical/Electronic Manufacturing",
+  "Entertainment","Environmental Services","Events Services","Executive Office","Facilities Services",
+  "Farming","Financial Services","Fine Art","Fishery","Food & Beverages","Food Production","Fund-Raising",
+  "Furniture","Gambling & Casinos","Glass, Ceramics & Concrete","Government Administration","Government Relations",
+  "Graphic Design","Health, Wellness and Fitness","Higher Education","Hospital & Health Care","Hospitality",
+  "Human Resources","Import and Export","Individual & Family Services","Industrial Automation","Information Services",
+  "Information Technology and Services","Insurance","International Affairs","International Trade and Development",
+  "Investment Banking","Investment Management","Judiciary","Law Enforcement","Law Practice","Legal Services",
+  "Legislative Office","Leisure, Travel & Tourism","Libraries","Logistics and Supply Chain","Luxury Goods & Jewelry",
+  "Machinery","Management Consulting","Maritime","Market Research","Marketing and Advertising",
+  "Mechanical or Industrial Engineering","Media Production","Medical Devices","Medical Practice","Mental Health Care",
+  "Military","Mining & Metals","Motion Pictures and Film","Museums and Institutions","Music","Nanotechnology",
+  "Newspapers","Non-Profit Organization Management","Oil & Energy","Online Media","Outsourcing/Offshoring",
+  "Package/Freight Delivery","Packaging and Containers","Paper & Forest Products","Performing Arts","Pharmaceuticals",
+  "Philanthropy","Photography","Plastics","Political Organization","Primary/Secondary Education","Printing",
+  "Professional Training & Coaching","Program Development","Public Policy","Public Relations and Communications",
+  "Public Safety","Publishing","Railroad Manufacture","Ranching","Real Estate","Recreational Facilities and Services",
+  "Religious Institutions","Renewables & Environment","Research","Restaurants","Retail","Security and Investigations",
+  "Semiconductors","Shipbuilding","Sporting Goods","Sports","Staffing and Recruiting","Supermarkets",
+  "Telecommunications","Textiles","Think Tanks","Tobacco","Translation and Localization","Transportation/Trucking/Railroad",
+  "Utilities","Venture Capital & Private Equity","Veterinary","Warehousing","Wholesale","Wine and Spirits","Wireless","Writing and Editing"
+] as const;
+
+// Contact source values for validation
+const CONTACT_SOURCE_VALUES = [
+  "Website","Referral","Social Media","Email Campaign","Event","Paid Search","Organic Search",
+  "Direct","Trade Show","Webinar","Cold Call","Partner","Advertisement","Content Marketing","Other"
+] as const;
+
+// Base schema for contact fields
+const contactFieldsSchema = z.object({
+  // Support both legacy name field and new firstName/lastName
+  name: z.string().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   email: z.string().email(),
   jobTitle: z.string().optional(),
   company: z.string().optional(),
-  industry: z.string().optional(),
+  industry: z.enum(INDUSTRY_VALUES).optional(),
   country: z.string().optional(),
   phone: z.string().optional(),
   lifecycleStage: z.enum(['lead', 'opportunity', 'customer', 'evangelist', 'churned']).default('lead'),
   status: z.string().optional(),
   owner: z.string().optional(),
-  source: z.string().optional(),
+  contactSource: z.enum(CONTACT_SOURCE_VALUES).optional(),
+  source: z.string().optional(), // Legacy field for backward compatibility
+  // UTM tracking fields
+  utmSource: z.string().optional(),
+  utmMedium: z.string().optional(),
+  utmCampaign: z.string().optional(),
+  utmTerm: z.string().optional(),
+  utmContent: z.string().optional(),
+  trackingCode: z.string().optional(),
+  referrerUrl: z.string().optional(),
+  landingPageUrl: z.string().optional(),
 });
 
-const updateContactSchema = createContactSchema.partial();
+// Enhanced validation schema with firstName/lastName validation
+const createContactSchema = contactFieldsSchema.refine((data) => {
+  // Ensure either name OR firstName is provided
+  return data.name || data.firstName;
+}, {
+  message: "Either 'name' or 'firstName' must be provided",
+  path: ["name"]
+});
+
+// Update schema uses partial of the base schema (without the refine validation)
+const updateContactSchema = contactFieldsSchema.partial();
 
 /**
  * GET /api/contacts
@@ -125,22 +185,58 @@ router.post('/', async (req: Request, res: Response) => {
 
     const validatedData = createContactSchema.parse(req.body);
     
+    // Handle firstName/lastName logic with backward compatibility
+    let firstName = validatedData.firstName || '';
+    let lastName = validatedData.lastName || '';
+    let fullName = validatedData.name || '';
+    
+    if (validatedData.firstName && validatedData.lastName) {
+      // Use provided firstName/lastName
+      fullName = `${validatedData.firstName} ${validatedData.lastName}`.trim();
+    } else if (validatedData.name) {
+      // Split name for backward compatibility
+      const nameParts = validatedData.name.split(' ');
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
+    } else if (validatedData.firstName) {
+      // Only firstName provided
+      fullName = validatedData.firstName;
+      firstName = validatedData.firstName;
+    }
+    
+    // Handle contact source with backward compatibility
+    const contactSource = validatedData.contactSource || validatedData.source || '';
+    
+    // Prepare UTM tracking data for customFields
+    const trackingData: any = {};
+    if (validatedData.utmSource) trackingData.utmSource = validatedData.utmSource;
+    if (validatedData.utmMedium) trackingData.utmMedium = validatedData.utmMedium;
+    if (validatedData.utmCampaign) trackingData.utmCampaign = validatedData.utmCampaign;
+    if (validatedData.utmTerm) trackingData.utmTerm = validatedData.utmTerm;
+    if (validatedData.utmContent) trackingData.utmContent = validatedData.utmContent;
+    if (validatedData.trackingCode) trackingData.trackingCode = validatedData.trackingCode;
+    if (validatedData.referrerUrl) trackingData.referrerUrl = validatedData.referrerUrl;
+    if (validatedData.landingPageUrl) trackingData.landingPageUrl = validatedData.landingPageUrl;
+    
     // Determine if this should be a lead or customer based on lifecycleStage
     if (validatedData.lifecycleStage === 'customer' || validatedData.lifecycleStage === 'evangelist') {
       // Create as customer
       const customerData = {
         email: validatedData.email,
-        firstName: validatedData.name.split(' ')[0] || '',
-        lastName: validatedData.name.split(' ').slice(1).join(' ') || '',
+        firstName: firstName,
+        lastName: lastName,
+        name: fullName,
+        initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase(),
         company: validatedData.company || '',
         jobTitle: validatedData.jobTitle || '',
         industry: validatedData.industry || '',
         country: validatedData.country || '',
         phone: validatedData.phone || '',
         lifecycleStage: validatedData.lifecycleStage,
-        customerStatus: validatedData.status || 'active',
+        status: validatedData.status || 'active', // Fixed: use 'status' not 'customerStatus'
         contactOwner: validatedData.owner || '',
-        contactSource: validatedData.source || '',
+        contactSource: contactSource,
+        customFields: Object.keys(trackingData).length > 0 ? trackingData : undefined,
       };
       
       const customer = await storage.createCustomer(customerData);
@@ -162,7 +258,8 @@ router.post('/', async (req: Request, res: Response) => {
     } else {
       // Create as lead
       const leadData = {
-        name: validatedData.name,
+        name: fullName,
+        initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase(),
         email: validatedData.email,
         company: validatedData.company || '',
         jobTitle: validatedData.jobTitle || '',
@@ -171,8 +268,9 @@ router.post('/', async (req: Request, res: Response) => {
         phone: validatedData.phone || '',
         leadStatus: validatedData.status || 'new',
         leadOwner: validatedData.owner || '',
-        leadSource: validatedData.source || '',
+        leadSource: contactSource,
         score: 0,
+        customFields: Object.keys(trackingData).length > 0 ? trackingData : undefined,
       };
       
       const lead = await storage.createLead(leadData);

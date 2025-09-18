@@ -892,6 +892,43 @@ export const contactStatusEnum = pgEnum("contact_status", [
   "active","inactive","lost"
 ]);
 
+// Industry enum with complete list
+export const industryEnum = pgEnum("industry", [
+  "Accounting","Airlines/Aviation","Alternative Dispute Resolution","Alternative Medicine","Animation",
+  "Apparel & Fashion","Architecture & Planning","Arts and Crafts","Automotive","Aviation & Aerospace",
+  "Banking","Biotechnology","Broadcast Media","Building Materials","Business Supplies and Equipment",
+  "Capital Markets","Chemicals","Civic & Social Organization","Civil Engineering","Commercial Real Estate",
+  "Computer & Network Security","Computer Games","Computer Hardware","Computer Networking","Computer Software",
+  "Internet","Construction","Consumer Electronics","Consumer Goods","Consumer Services","Cosmetics","Dairy",
+  "Defense & Space","Design","Education Management","E-Learning","Electrical/Electronic Manufacturing",
+  "Entertainment","Environmental Services","Events Services","Executive Office","Facilities Services",
+  "Farming","Financial Services","Fine Art","Fishery","Food & Beverages","Food Production","Fund-Raising",
+  "Furniture","Gambling & Casinos","Glass, Ceramics & Concrete","Government Administration","Government Relations",
+  "Graphic Design","Health, Wellness and Fitness","Higher Education","Hospital & Health Care","Hospitality",
+  "Human Resources","Import and Export","Individual & Family Services","Industrial Automation","Information Services",
+  "Information Technology and Services","Insurance","International Affairs","International Trade and Development",
+  "Investment Banking","Investment Management","Judiciary","Law Enforcement","Law Practice","Legal Services",
+  "Legislative Office","Leisure, Travel & Tourism","Libraries","Logistics and Supply Chain","Luxury Goods & Jewelry",
+  "Machinery","Management Consulting","Maritime","Market Research","Marketing and Advertising",
+  "Mechanical or Industrial Engineering","Media Production","Medical Devices","Medical Practice","Mental Health Care",
+  "Military","Mining & Metals","Motion Pictures and Film","Museums and Institutions","Music","Nanotechnology",
+  "Newspapers","Non-Profit Organization Management","Oil & Energy","Online Media","Outsourcing/Offshoring",
+  "Package/Freight Delivery","Packaging and Containers","Paper & Forest Products","Performing Arts","Pharmaceuticals",
+  "Philanthropy","Photography","Plastics","Political Organization","Primary/Secondary Education","Printing",
+  "Professional Training & Coaching","Program Development","Public Policy","Public Relations and Communications",
+  "Public Safety","Publishing","Railroad Manufacture","Ranching","Real Estate","Recreational Facilities and Services",
+  "Religious Institutions","Renewables & Environment","Research","Restaurants","Retail","Security and Investigations",
+  "Semiconductors","Shipbuilding","Sporting Goods","Sports","Staffing and Recruiting","Supermarkets",
+  "Telecommunications","Textiles","Think Tanks","Tobacco","Translation and Localization","Transportation/Trucking/Railroad",
+  "Utilities","Venture Capital & Private Equity","Veterinary","Warehousing","Wholesale","Wine and Spirits","Wireless","Writing and Editing"
+]);
+
+// Contact source enum for tracking
+export const contactSourceEnum = pgEnum("contact_source", [
+  "Website","Referral","Social Media","Email Campaign","Event","Paid Search","Organic Search",
+  "Direct","Trade Show","Webinar","Cold Call","Partner","Advertisement","Content Marketing","Other"
+]);
+
 export const contacts = pgTable("contacts", {
   id: uuid("id").defaultRandom().primaryKey(),
   firstName: varchar("first_name", { length: 120 }),
@@ -900,11 +937,22 @@ export const contacts = pgTable("contacts", {
   phone: varchar("phone", { length: 64 }),
   company: varchar("company", { length: 160 }),
   jobTitle: varchar("job_title", { length: 160 }),
+  industry: industryEnum("industry"),
+  contactSource: contactSourceEnum("contact_source"),
   lifecycleStage: lifecycleStageEnum("lifecycle_stage").notNull().default("lead"),
   status: contactStatusEnum("status").notNull().default("active"),
   ownerId: uuid("owner_id"),
   tags: jsonb("tags").$type<string[]>().default([]).notNull(),
   properties: jsonb("properties").$type<Record<string, unknown>>().default({}).notNull(),
+  // Tracking integration fields
+  trackingCode: varchar("tracking_code", { length: 100 }), // UTM parameters, campaign codes
+  referrerUrl: varchar("referrer_url", { length: 500 }), // Where they came from
+  landingPageUrl: varchar("landing_page_url", { length: 500 }), // First page visited
+  utmSource: varchar("utm_source", { length: 100 }),
+  utmMedium: varchar("utm_medium", { length: 100 }),
+  utmCampaign: varchar("utm_campaign", { length: 100 }),
+  utmTerm: varchar("utm_term", { length: 100 }),
+  utmContent: varchar("utm_content", { length: 100 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -917,11 +965,21 @@ export const insertContactSchema = createInsertSchema(contacts).pick({
   phone: true,
   company: true,
   jobTitle: true,
+  industry: true,
+  contactSource: true,
   lifecycleStage: true,
   status: true,
   ownerId: true,
   tags: true,
   properties: true,
+  trackingCode: true,
+  referrerUrl: true,
+  landingPageUrl: true,
+  utmSource: true,
+  utmMedium: true,
+  utmCampaign: true,
+  utmTerm: true,
+  utmContent: true,
 });
 
 export type InsertContact = z.infer<typeof insertContactSchema>;
