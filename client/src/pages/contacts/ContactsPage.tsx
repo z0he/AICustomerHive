@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useQueryParam } from '@/lib/useQueryParam';
 import { useToast } from '@/hooks/use-toast';
+import type { ContactSegmentFilter } from '@shared/schema';
 import ContactDrawer from './ContactDrawer';
 import EditContactModal from './EditContactModal';
+import AdvancedFilters from '@/components/contacts/AdvancedFilters';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -68,19 +70,26 @@ export default function ContactsPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [advancedFilters, setAdvancedFilters] = useState<ContactSegmentFilter[]>([]);
 
   // Fetch contacts based on current filters
   const { 
     data: response, 
     isLoading, 
-    error 
+    error,
+    refetch: refetchContacts
   } = useQuery({
-    queryKey: ['contacts', stage, search, owner],
+    queryKey: ['contacts', stage, search, owner, advancedFilters],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (stage !== 'all') params.set('stage', stage);
       if (search) params.set('q', search);
       if (owner && owner !== 'all') params.set('owner', owner);
+      
+      // Add advanced filters
+      if (advancedFilters.length > 0) {
+        params.set('advancedFilters', JSON.stringify(advancedFilters));
+      }
 
       const res = await fetch(`/api/contacts?${params}`);
       if (!res.ok) {
@@ -138,6 +147,14 @@ export default function ContactsPage() {
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setEditingContact(null);
+  };
+
+  const handleAdvancedFiltersChange = (filters: ContactSegmentFilter[]) => {
+    setAdvancedFilters(filters);
+  };
+
+  const handleApplyAdvancedFilters = () => {
+    refetchContacts();
   };
 
   const currentStageInfo = LIFECYCLE_STAGES.find(s => s.value === stage);
@@ -212,10 +229,12 @@ export default function ContactsPage() {
             <SelectItem value="Unassigned">Unassigned</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm" className="flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          Advanced filters
-        </Button>
+        {/* Advanced Filters Component */}
+        <AdvancedFilters
+          filters={advancedFilters}
+          onFiltersChange={handleAdvancedFiltersChange}
+          onApplyFilters={handleApplyAdvancedFilters}
+        />
       </div>
 
       {/* Results */}

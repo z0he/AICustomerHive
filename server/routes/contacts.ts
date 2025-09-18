@@ -83,6 +83,62 @@ const createContactSchema = contactFieldsSchema.refine((data) => {
 // Update schema uses partial of the base schema (without the refine validation)
 const updateContactSchema = contactFieldsSchema.partial();
 
+// Advanced filter evaluation function
+function evaluateAdvancedFilters(contact: any, filters: any[]): boolean {
+  // For now, implement basic AND logic (all filters must match)
+  return filters.every(filter => evaluateFilter(contact, filter));
+}
+
+function evaluateFilter(contact: any, filter: any): boolean {
+  const { field, operator, value } = filter;
+  
+  // Get the field value from the contact
+  let fieldValue = contact[field];
+  
+  // Handle nested field access (e.g., for customFields)
+  if (field.includes('.')) {
+    const keys = field.split('.');
+    fieldValue = keys.reduce((obj, key) => obj?.[key], contact);
+  }
+  
+  // Convert to string for text operations
+  const fieldStr = String(fieldValue || '').toLowerCase();
+  const valueStr = String(value || '').toLowerCase();
+  
+  switch (operator) {
+    case 'equals':
+      return fieldValue === value;
+    case 'notEquals':
+      return fieldValue !== value;
+    case 'contains':
+      return fieldStr.includes(valueStr);
+    case 'startsWith':
+      return fieldStr.startsWith(valueStr);
+    case 'endsWith':
+      return fieldStr.endsWith(valueStr);
+    case 'greaterThan':
+      return Number(fieldValue) > Number(value);
+    case 'lessThan':
+      return Number(fieldValue) < Number(value);
+    case 'greaterThanOrEqual':
+      return Number(fieldValue) >= Number(value);
+    case 'lessThanOrEqual':
+      return Number(fieldValue) <= Number(value);
+    case 'isEmpty':
+      return !fieldValue || fieldValue === '';
+    case 'isNotEmpty':
+      return fieldValue && fieldValue !== '';
+    case 'in':
+      if (Array.isArray(value)) {
+        return value.includes(fieldValue);
+      }
+      return false;
+    default:
+      console.warn('Unknown filter operator:', operator);
+      return true;
+  }
+}
+
 /**
  * GET /api/contacts
  * Main unified contacts endpoint - replaces the frontend's need to call /api/unified-contacts
@@ -95,7 +151,7 @@ router.get('/', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const { stage, q, owner, page = '1', limit = '50' } = req.query;
+    const { stage, q, owner, page = '1', limit = '50', advancedFilters } = req.query;
 
     // Map frontend stage names to backend values
     let mappedStage = stage as string;
@@ -105,6 +161,20 @@ router.get('/', async (req: Request, res: Response) => {
     const allContacts = await storage.getUnifiedContacts(userId);
     
     let filteredContacts = allContacts;
+
+    // Apply advanced filters if provided
+    if (advancedFilters && typeof advancedFilters === 'string') {
+      try {
+        const filters = JSON.parse(advancedFilters);
+        if (Array.isArray(filters) && filters.length > 0) {
+          filteredContacts = filteredContacts.filter(contact => {
+            return evaluateAdvancedFilters(contact, filters);
+          });
+        }
+      } catch (error) {
+        console.error('Error parsing advanced filters:', error);
+      }
+    }
 
     // Filter by lifecycle stage
     if (mappedStage && mappedStage !== 'all') {
