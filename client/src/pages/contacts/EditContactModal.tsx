@@ -103,10 +103,10 @@ const contactSchema = z.object({
   phone: z.string().optional(),
   jobTitle: z.string().optional(),
   company: z.string().optional(),
-  industry: z.enum(INDUSTRIES).optional(),
+  industry: z.preprocess(v => v === '' ? undefined : v, z.enum(INDUSTRIES).optional()),
   country: z.string().optional(),
   lifecycleStage: z.enum(['lead', 'opportunity', 'customer', 'evangelist', 'churned']).default('lead'),
-  contactSource: z.enum(CONTACT_SOURCES).optional(),
+  contactSource: z.preprocess(v => v === '' ? undefined : v, z.enum(CONTACT_SOURCES).optional()),
   source: z.string().optional(), // Legacy field for backward compatibility
   owner: z.string().optional(),
 }).refine((data) => {
@@ -426,7 +426,7 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Lifecycle Stage</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select stage" />
@@ -487,10 +487,10 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
             </div>
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button type="button" variant="outline" onClick={onClose} data-testid="button-cancel">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} data-testid="button-submit">
                 {isLoading ? 'Saving...' : (mode === 'add' ? 'Create Contact' : 'Save Changes')}
               </Button>
             </DialogFooter>
