@@ -103,7 +103,9 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
       return response.json();
     },
     onSuccess: () => {
+      // Force refetch of notes with await
       queryClient.invalidateQueries({ queryKey: ['contactNotes', contact?.id] });
+      queryClient.refetchQueries({ queryKey: ['contactNotes', contact?.id] });
       setNewNote('');
       toast({
         title: 'Note added',
