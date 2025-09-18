@@ -36,6 +36,7 @@ import {
 
 import LeadForm from "./LeadForm";
 import LeadScoringCard from "./LeadScoringCard";
+import LeadScoringAlgorithm from "./LeadScoringAlgorithm";
 
 interface LeadDetailsProps {
   lead: any;
@@ -376,11 +377,28 @@ export default function LeadDetails({
             </TabsContent>
             
             <TabsContent value="scoring" className="mt-2">
-              <LeadScoringCard 
-                lead={lead}
-                onUpdateScore={onUpdateScore}
-                isUpdating={isUpdating}
-              />
+              <div className="space-y-6">
+                <LeadScoringCard 
+                  lead={lead}
+                  onUpdateScore={onUpdateScore}
+                  isUpdating={isUpdating}
+                />
+                
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold mb-4">Advanced Scoring Configuration</h3>
+                  <LeadScoringAlgorithm
+                    lead={lead}
+                    onScoreUpdate={(newScore, breakdown) => {
+                      console.log('Advanced score update:', newScore, breakdown);
+                      // Update the lead score with the new calculation
+                      if (onUpdateScore) {
+                        onUpdateScore({ score: newScore, scoreBreakdown: breakdown });
+                      }
+                    }}
+                    mode="individual"
+                  />
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="marketing" className="mt-2">
