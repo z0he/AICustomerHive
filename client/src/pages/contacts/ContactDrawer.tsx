@@ -3,6 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 
+// Lead Scoring Components
+import LeadScoringCard from '@/components/leads/LeadScoringCard';
+import LeadScoringAlgorithm from '@/components/leads/LeadScoringAlgorithm';
+
 // UI Components
 import {
   Sheet,
@@ -99,6 +103,15 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
   const handleAddNote = () => {
     if (!newNote.trim()) return;
     addNoteMutation.mutate(newNote);
+  };
+
+  // Handle lead scoring update
+  const handleScoreUpdate = (scoringData: any) => {
+    toast({
+      title: 'Score updated',
+      description: 'Lead score has been updated successfully.',
+    });
+    // TODO: Implement actual score update API call
   };
 
   const getStageColor = (stage?: string) => {
@@ -295,21 +308,31 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
 
           {/* Scoring Tab */}
           <TabsContent value="scoring" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Star className="h-5 w-5" />
-                  Lead Scoring
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Star className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                  <p>Lead scoring analysis coming soon</p>
-                  <p className="text-sm">Engagement score, conversion probability, and recommendations</p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <LeadScoringCard
+                lead={contact}
+                onUpdateScore={handleScoreUpdate}
+                isUpdating={false}
+              />
+              
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Advanced Scoring Configuration
+                </h3>
+                <LeadScoringAlgorithm
+                  lead={contact as any}
+                  onScoreUpdate={(newScore, breakdown) => {
+                    console.log('Advanced score update:', newScore, breakdown);
+                    // Update the lead score with the new calculation
+                    if (handleScoreUpdate) {
+                      handleScoreUpdate({ score: newScore, scoreBreakdown: breakdown });
+                    }
+                  }}
+                  mode="individual"
+                />
+              </div>
+            </div>
           </TabsContent>
 
           {/* Marketing Tab */}
