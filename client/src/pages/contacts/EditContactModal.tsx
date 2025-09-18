@@ -34,9 +34,47 @@ import {
 } from '@/components/ui/form';
 import { Plus, Edit3 } from 'lucide-react';
 
+// Industry and Contact Source options
+const INDUSTRIES = [
+  "Accounting","Airlines/Aviation","Alternative Dispute Resolution","Alternative Medicine","Animation",
+  "Apparel & Fashion","Architecture & Planning","Arts and Crafts","Automotive","Aviation & Aerospace",
+  "Banking","Biotechnology","Broadcast Media","Building Materials","Business Supplies and Equipment",
+  "Capital Markets","Chemicals","Civic & Social Organization","Civil Engineering","Commercial Real Estate",
+  "Computer & Network Security","Computer Games","Computer Hardware","Computer Networking","Computer Software",
+  "Internet","Construction","Consumer Electronics","Consumer Goods","Consumer Services","Cosmetics","Dairy",
+  "Defense & Space","Design","Education Management","E-Learning","Electrical/Electronic Manufacturing",
+  "Entertainment","Environmental Services","Events Services","Executive Office","Facilities Services",
+  "Farming","Financial Services","Fine Art","Fishery","Food & Beverages","Food Production","Fund-Raising",
+  "Furniture","Gambling & Casinos","Glass, Ceramics & Concrete","Government Administration","Government Relations",
+  "Graphic Design","Health, Wellness and Fitness","Higher Education","Hospital & Health Care","Hospitality",
+  "Human Resources","Import and Export","Individual & Family Services","Industrial Automation","Information Services",
+  "Information Technology and Services","Insurance","International Affairs","International Trade and Development",
+  "Investment Banking","Investment Management","Judiciary","Law Enforcement","Law Practice","Legal Services",
+  "Legislative Office","Leisure, Travel & Tourism","Libraries","Logistics and Supply Chain","Luxury Goods & Jewelry",
+  "Machinery","Management Consulting","Maritime","Market Research","Marketing and Advertising",
+  "Mechanical or Industrial Engineering","Media Production","Medical Devices","Medical Practice","Mental Health Care",
+  "Military","Mining & Metals","Motion Pictures and Film","Museums and Institutions","Music","Nanotechnology",
+  "Newspapers","Non-Profit Organization Management","Oil & Energy","Online Media","Outsourcing/Offshoring",
+  "Package/Freight Delivery","Packaging and Containers","Paper & Forest Products","Performing Arts","Pharmaceuticals",
+  "Philanthropy","Photography","Plastics","Political Organization","Primary/Secondary Education","Printing",
+  "Professional Training & Coaching","Program Development","Public Policy","Public Relations and Communications",
+  "Public Safety","Publishing","Railroad Manufacture","Ranching","Real Estate","Recreational Facilities and Services",
+  "Religious Institutions","Renewables & Environment","Research","Restaurants","Retail","Security and Investigations",
+  "Semiconductors","Shipbuilding","Sporting Goods","Sports","Staffing and Recruiting","Supermarkets",
+  "Telecommunications","Textiles","Think Tanks","Tobacco","Translation and Localization","Transportation/Trucking/Railroad",
+  "Utilities","Venture Capital & Private Equity","Veterinary","Warehousing","Wholesale","Wine and Spirits","Wireless","Writing and Editing"
+] as const;
+
+const CONTACT_SOURCES = [
+  "Website","Referral","Social Media","Email Campaign","Event","Paid Search","Organic Search",
+  "Direct","Trade Show","Webinar","Cold Call","Partner","Advertisement","Content Marketing","Other"
+] as const;
+
 interface Contact {
   id: number;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone?: string;
   jobTitle?: string;
@@ -45,6 +83,7 @@ interface Contact {
   country?: string;
   lifecycleStage?: string;
   source?: string;
+  contactSource?: string;
   owner?: string;
 }
 
@@ -56,16 +95,26 @@ interface EditContactModalProps {
 }
 
 const contactSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  // Support both legacy name field and new firstName/lastName
+  name: z.string().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
   jobTitle: z.string().optional(),
   company: z.string().optional(),
-  industry: z.string().optional(),
+  industry: z.enum(INDUSTRIES).optional(),
   country: z.string().optional(),
   lifecycleStage: z.enum(['lead', 'opportunity', 'customer', 'evangelist', 'churned']).default('lead'),
-  source: z.string().optional(),
+  contactSource: z.enum(CONTACT_SOURCES).optional(),
+  source: z.string().optional(), // Legacy field for backward compatibility
   owner: z.string().optional(),
+}).refine((data) => {
+  // Ensure either name OR firstName is provided
+  return data.name || data.firstName;
+}, {
+  message: "Either full name or first name is required",
+  path: ["firstName"]
 });
 
 type ContactFormData = z.infer<typeof contactSchema>;
@@ -78,13 +127,16 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
     resolver: zodResolver(contactSchema),
     defaultValues: {
       name: contact?.name || '',
+      firstName: contact?.firstName || (contact?.name ? contact.name.split(' ')[0] : ''),
+      lastName: contact?.lastName || (contact?.name ? contact.name.split(' ').slice(1).join(' ') : ''),
       email: contact?.email || '',
       phone: contact?.phone || '',
       jobTitle: contact?.jobTitle || '',
       company: contact?.company || '',
-      industry: contact?.industry || '',
+      industry: contact?.industry as any || '',
       country: contact?.country || '',
       lifecycleStage: (contact?.lifecycleStage as any) || 'lead',
+      contactSource: contact?.contactSource as any || '',
       source: contact?.source || '',
       owner: contact?.owner || '',
     },
@@ -95,13 +147,16 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
     if (isOpen) {
       form.reset({
         name: contact?.name || '',
+        firstName: contact?.firstName || (contact?.name ? contact.name.split(' ')[0] : ''),
+        lastName: contact?.lastName || (contact?.name ? contact.name.split(' ').slice(1).join(' ') : ''),
         email: contact?.email || '',
         phone: contact?.phone || '',
         jobTitle: contact?.jobTitle || '',
         company: contact?.company || '',
-        industry: contact?.industry || '',
+        industry: contact?.industry as any || '',
         country: contact?.country || '',
         lifecycleStage: (contact?.lifecycleStage as any) || 'lead',
+        contactSource: contact?.contactSource as any || '',
         source: contact?.source || '',
         owner: contact?.owner || '',
       });
@@ -208,15 +263,37 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
                 Basic Information
               </h4>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
-                  name="name"
+                  name="firstName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Name *</FormLabel>
+                      <FormLabel>First Name *</FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" {...field} />
+                        <Input 
+                          placeholder="John" 
+                          data-testid="input-firstName"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Doe" 
+                          data-testid="input-lastName"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -230,7 +307,12 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
                     <FormItem>
                       <FormLabel>Email *</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="john@example.com" {...field} />
+                        <Input 
+                          type="email" 
+                          placeholder="john@example.com" 
+                          data-testid="input-email"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -311,9 +393,20 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Industry</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Technology" {...field} />
-                    </FormControl>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger data-testid="select-industry">
+                          <SelectValue placeholder="Select industry" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="max-h-[200px]">
+                        {INDUSTRIES.map((industry) => (
+                          <SelectItem key={industry} value={industry}>
+                            {industry}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -354,13 +447,24 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
 
                 <FormField
                   control={form.control}
-                  name="source"
+                  name="contactSource"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Source</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Website, Referral, etc." {...field} />
-                      </FormControl>
+                      <FormLabel>Contact Source</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-contactSource">
+                            <SelectValue placeholder="Select source" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {CONTACT_SOURCES.map((source) => (
+                            <SelectItem key={source} value={source}>
+                              {source}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
