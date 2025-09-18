@@ -86,7 +86,23 @@ const updateContactSchema = contactFieldsSchema.partial();
 // Advanced filter evaluation function
 function evaluateAdvancedFilters(contact: any, filters: any[]): boolean {
   // For now, implement basic AND logic (all filters must match)
-  return filters.every(filter => evaluateFilter(contact, filter));
+  const result = filters.every(filter => evaluateFilter(contact, filter));
+  
+  // Debug logging
+  if (filters.length > 0) {
+    console.log(`Evaluating contact ${contact.name} (${contact.id}) against filters:`, filters);
+    console.log(`Contact data:`, { 
+      name: contact.name, 
+      firstName: contact.name?.split(' ')[0], 
+      lastName: contact.name?.split(' ').slice(1).join(' '),
+      contactSource: contact.contactSource, 
+      source: contact.source, 
+      industry: contact.industry 
+    });
+    console.log(`Filter result: ${result}`);
+  }
+  
+  return result;
 }
 
 function evaluateFilter(contact: any, filter: any): boolean {
@@ -95,10 +111,21 @@ function evaluateFilter(contact: any, filter: any): boolean {
   // Get the field value from the contact
   let fieldValue = contact[field];
   
-  // Handle nested field access (e.g., for customFields)
-  if (field.includes('.')) {
+  // Handle special field mappings
+  if (field === 'firstName') {
+    // Extract firstName from name field
+    fieldValue = contact.name ? contact.name.split(' ')[0] : '';
+  } else if (field === 'lastName') {
+    // Extract lastName from name field
+    const nameParts = contact.name ? contact.name.split(' ') : [];
+    fieldValue = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+  } else if (field === 'contactSource') {
+    // Check both contactSource and source fields for backward compatibility
+    fieldValue = contact.contactSource || contact.source || '';
+  } else if (field.includes('.')) {
+    // Handle nested field access (e.g., for customFields)
     const keys = field.split('.');
-    fieldValue = keys.reduce((obj, key) => obj?.[key], contact);
+    fieldValue = keys.reduce((obj: any, key: string) => obj?.[key], contact);
   }
   
   // Convert to string for text operations
