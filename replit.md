@@ -125,10 +125,39 @@ AICRM is a comprehensive CRM platform that combines traditional customer relatio
 - **Environment Variables**: Secure configuration management
 - **Health Checks**: Port monitoring and application status
 
+## Recent Changes (September 2025)
+
+### Contact Management System Restoration Project
+
+**🎯 Goal**: Restore and enhance the contact management system with HubSpot-style functionality including lead scoring, advanced filters, and tracking integration.
+
+**📋 Progress Summary**:
+- ✅ **Phases 1-5 Complete**: Database schema, backend routes, contact forms, advanced filters, and lead scoring fully operational
+- 🔄 **Phase 6 In Progress**: Contact source & journey integration with UTM tracking (backend logic complete, UI integration pending)
+
+**🛠️ Current Status**:
+- **Working Features**: Contact creation, advanced filters, lead scoring with interactive sliders, contact detail view with all tabs functional
+- **Tracking Integration**: UTM parameter capture and contact source intelligence implemented and logging successfully
+- **Next Phase**: Complete UI integration for tracking data display and touchpoint history
+
 ## Changelog
 
 ```
 Changelog:
+- September 19, 2025. Phase 6 Started: Contact Source & Journey Integration
+  - ✓ Created comprehensive contact tracking integration service with UTM parameter capture
+  - ✓ Implemented contact source intelligence with confidence scoring and mapping logic
+  - ✓ Built automatic touchpoint stitching for anonymous visitor attribution
+  - ✓ Enhanced contact creation API to capture and log tracking data
+  - ✓ Added support for referrer tracking and landing page detection
+  - → In Progress: Complete UI integration to display tracking data in contact detail views
+- September 18, 2025. Phases 4-5 Complete: Advanced Filters + Lead Scoring Restoration
+  - ✅ Implemented comprehensive advanced filters with HubSpot-style interface
+  - ✅ Added complete industry dropdown with 147 industries and contact source tracking
+  - ✅ Restored interactive lead scoring functionality with sliders and algorithm configuration
+  - ✅ Enhanced contact detail view with all functional tabs (Profile, Notes, Activity, Scoring, Marketing)
+  - ✅ Implemented proper UX patterns: simple add contact form vs comprehensive detail overlay
+  - ✅ Fixed firstName/lastName field separation and proper backend field mapping
 - February 3, 2025. Phase 2 Complete: Unified Segmentation System with UX Consolidation
   - ✓ Created complete unified contact segments database schema with filtering capabilities
   - ✓ Built comprehensive backend API for unified contact management and segmentation
