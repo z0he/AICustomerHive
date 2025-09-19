@@ -3,6 +3,11 @@ import { Request, Response } from "express";
 import { storage } from "../storage.js";
 import { z } from "zod";
 import { insertCustomerSchema, insertLeadSchema, industryEnum, contactSourceEnum } from "../../shared/schema.js";
+import { 
+  createContactWithTracking, 
+  analyzeContactSourceFromTouchpoints,
+  extractUTMFromRequest 
+} from "../services/contact-tracking-integration.js";
 
 const router = Router();
 
@@ -285,92 +290,39 @@ router.post('/', async (req: Request, res: Response) => {
       firstName = validatedData.firstName;
     }
     
-    // Handle contact source with backward compatibility
-    const contactSource = validatedData.contactSource || validatedData.source || '';
+    // Prepare contact data for enhanced tracking
+    const contactData = {
+      ...validatedData,
+      firstName,
+      lastName,
+      name: fullName,
+      initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+    };
     
-    // Prepare UTM tracking data for customFields
-    const trackingData: any = {};
-    if (validatedData.utmSource) trackingData.utmSource = validatedData.utmSource;
-    if (validatedData.utmMedium) trackingData.utmMedium = validatedData.utmMedium;
-    if (validatedData.utmCampaign) trackingData.utmCampaign = validatedData.utmCampaign;
-    if (validatedData.utmTerm) trackingData.utmTerm = validatedData.utmTerm;
-    if (validatedData.utmContent) trackingData.utmContent = validatedData.utmContent;
-    if (validatedData.trackingCode) trackingData.trackingCode = validatedData.trackingCode;
-    if (validatedData.referrerUrl) trackingData.referrerUrl = validatedData.referrerUrl;
-    if (validatedData.landingPageUrl) trackingData.landingPageUrl = validatedData.landingPageUrl;
+    // Use enhanced contact creation with tracking integration
+    const result = await createContactWithTracking(contactData, req, userId);
     
-    // Determine if this should be a lead or customer based on lifecycleStage
-    if (validatedData.lifecycleStage === 'customer' || validatedData.lifecycleStage === 'evangelist') {
-      // Create as customer
-      const customerData = {
-        email: validatedData.email,
-        firstName: firstName,
-        lastName: lastName,
-        name: fullName,
-        initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase(),
-        company: validatedData.company || '',
-        jobTitle: validatedData.jobTitle || '',
-        industry: validatedData.industry || '',
-        country: validatedData.country || '',
-        phone: validatedData.phone || '',
-        lifecycleStage: validatedData.lifecycleStage,
-        status: validatedData.status || 'active', // Fixed: use 'status' not 'customerStatus'
-        contactOwner: validatedData.owner || '',
-        contactSource: contactSource,
-        customFields: Object.keys(trackingData).length > 0 ? trackingData : undefined,
-      };
-      
-      const customer = await storage.createCustomer(customerData);
-      
-      res.status(201).json({
-        id: `customer_${customer.id}`, // Use prefixed ID format
-        name: `${customer.firstName} ${customer.lastName}`.trim(),
-        email: customer.email,
-        jobTitle: customer.jobTitle,
-        company: customer.company,
-        industry: customer.industry,
-        country: customer.country,
-        lifecycleStage: customer.lifecycleStage,
-        owner: customer.contactOwner,
-        source: customer.contactSource,
-        phone: customer.phone,
-        lastActivity: customer.createdAt,
-      });
-    } else {
-      // Create as lead
-      const leadData = {
-        name: fullName,
-        initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase(),
-        email: validatedData.email,
-        company: validatedData.company || '',
-        jobTitle: validatedData.jobTitle || '',
-        industry: validatedData.industry || '',
-        location: validatedData.country || '', // Store country in location field for leads
-        phone: validatedData.phone || '',
-        leadStatus: validatedData.status || 'new',
-        leadOwner: validatedData.owner || '',
-        leadSource: contactSource,
-        score: 0,
-        customFields: Object.keys(trackingData).length > 0 ? trackingData : undefined,
-      };
-      
-      const lead = await storage.createLead(leadData);
-      
-      res.status(201).json({
-        id: `lead_${lead.id}`, // Use prefixed ID format
-        name: lead.name,
-        email: lead.email,
-        jobTitle: lead.jobTitle,
-        company: lead.company,
-        industry: lead.industry,
-        country: lead.location,
-        lifecycleStage: validatedData.lifecycleStage || 'lead', // Use the provided lifecycle stage
-        owner: lead.leadOwner,
-        source: lead.leadSource,
-        phone: lead.phone,
-        lastActivity: lead.createdAt,
-      });
-    }
+    // Return enhanced response with tracking information
+    const response: any = {
+      ...result.contact,
+      tracking: {
+        utm: result.utm,
+        sourceIntelligence: result.sourceIntelligence,
+        stitchedTouchpoints: result.stitched || 0
+      }
+    };
+    
+    // Log the tracking integration for debugging
+    console.log('Contact created with tracking integration:', {
+      contactId: result.contact.id,
+      email: result.contact.email,
+      detectedSource: result.contact.contactSource || result.contact.source,
+      utmData: result.utm,
+      sourceConfidence: result.sourceIntelligence?.confidence,
+      stitchedTouchpoints: result.stitched
+    });
+    
+    res.status(201).json(response);
 
   } catch (error) {
     console.error('Error creating contact:', error);
