@@ -83,6 +83,7 @@ interface Contact {
 
 export default function ContactsPage() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [stage, setStage] = useQueryParam<LifecycleStage>('stage', 'all');
   const [search, setSearch] = useState('');
   const [owner, setOwner] = useState<string>('');
@@ -91,6 +92,15 @@ export default function ContactsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [advancedFilters, setAdvancedFilters] = useState<ContactSegmentFilter[]>([]);
+  
+  // Bulk selection state
+  const [selectedContactIds, setSelectedContactIds] = useState<Set<number>>(new Set());
+  const [isSelectAll, setIsSelectAll] = useState(false);
+  
+  // Delete confirmation state
+  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   // Fetch contacts based on current filters
   const { 
@@ -127,6 +137,104 @@ export default function ContactsPage() {
     customer: 0,
     evangelist: 0,
     churned: 0
+  };
+
+  // Delete mutations
+  const deleteMutation = useMutation({
+    mutationFn: async (contactId: number) => {
+      return await apiRequest(`/api/contacts/${contactId}`, 'DELETE');
+    },
+    onSuccess: (_, contactId) => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      setSelectedContactIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(contactId);
+        return newSet;
+      });
+      toast({
+        title: "Contact deleted",
+        description: "The contact has been successfully deleted.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete the contact. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (contactIds: number[]) => {
+      await Promise.all(
+        contactIds.map(id => apiRequest(`/api/contacts/${id}`, 'DELETE'))
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      setSelectedContactIds(new Set());
+      setIsSelectAll(false);
+      toast({
+        title: "Contacts deleted",
+        description: `Successfully deleted ${selectedContactIds.size} contacts.`,
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Bulk delete failed",
+        description: "Failed to delete some contacts. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Bulk selection handlers
+  const handleSelectAll = (checked: boolean) => {
+    setIsSelectAll(checked);
+    if (checked) {
+      setSelectedContactIds(new Set(contacts.map(c => c.id)));
+    } else {
+      setSelectedContactIds(new Set());
+    }
+  };
+
+  const handleSelectContact = (contactId: number, checked: boolean) => {
+    setSelectedContactIds(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(contactId);
+      } else {
+        newSet.delete(contactId);
+        setIsSelectAll(false);
+      }
+      return newSet;
+    });
+  };
+
+  // Delete handlers
+  const handleDeleteContact = (contact: Contact) => {
+    setContactToDelete(contact);
+    setShowDeleteConfirm(true);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedContactIds.size > 0) {
+      setShowBulkDeleteConfirm(true);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (contactToDelete) {
+      deleteMutation.mutate(contactToDelete.id);
+      setShowDeleteConfirm(false);
+      setContactToDelete(null);
+    }
+  };
+
+  const confirmBulkDelete = () => {
+    bulkDeleteMutation.mutate(Array.from(selectedContactIds));
+    setShowBulkDeleteConfirm(false);
   };
 
   const getStageColor = (stageValue: string) => {
