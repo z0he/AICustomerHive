@@ -301,8 +301,8 @@ export default function ContactsPage() {
                       <TableCell>{contact.industry || '—'}</TableCell>
                       <TableCell>{contact.country || '—'}</TableCell>
                       <TableCell>
-                        <Badge className={getStageColor(contact.lifecycleStage)}>
-                          {LIFECYCLE_STAGES.find(s => s.value === contact.lifecycleStage)?.label || contact.lifecycleStage}
+                        <Badge className={getStageColor(contact.lifecycleStage || 'lead')}>
+                          {LIFECYCLE_STAGES.find(s => s.value === contact.lifecycleStage)?.label || contact.lifecycleStage || 'Lead'}
                         </Badge>
                       </TableCell>
                       <TableCell>{contact.source || '—'}</TableCell>
