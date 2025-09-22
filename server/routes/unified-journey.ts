@@ -12,7 +12,18 @@ const router = Router();
  */
 router.get('/contacts/:id/journey-analytics', async (req, res) => {
   try {
-    const contactId = parseInt(req.params.id);
+    // Parse contact ID - handle both "lead_56" and "customer_4" formats
+    const contactIdParam = req.params.id;
+    let contactId: number;
+    
+    if (contactIdParam.startsWith('lead_')) {
+      contactId = parseInt(contactIdParam.replace('lead_', ''));
+    } else if (contactIdParam.startsWith('customer_')) {
+      contactId = parseInt(contactIdParam.replace('customer_', ''));
+    } else {
+      contactId = parseInt(contactIdParam);
+    }
+    
     const { contactType } = req.query;
     
     if (!contactType || (contactType !== 'lead' && contactType !== 'customer')) {
@@ -41,7 +52,18 @@ router.get('/contacts/:id/journey-analytics', async (req, res) => {
  */
 router.get('/contacts/:id/touchpoints', async (req, res) => {
   try {
-    const contactId = parseInt(req.params.id);
+    // Parse contact ID - handle both "lead_56" and "customer_4" formats
+    const contactIdParam = req.params.id;
+    let contactId: number;
+    
+    if (contactIdParam.startsWith('lead_')) {
+      contactId = parseInt(contactIdParam.replace('lead_', ''));
+    } else if (contactIdParam.startsWith('customer_')) {
+      contactId = parseInt(contactIdParam.replace('customer_', ''));
+    } else {
+      contactId = parseInt(contactIdParam);
+    }
+    
     const { contactType } = req.query;
     
     if (!contactType || (contactType !== 'lead' && contactType !== 'customer')) {
