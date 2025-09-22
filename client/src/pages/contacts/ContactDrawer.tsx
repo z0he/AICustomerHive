@@ -62,6 +62,7 @@ interface Contact {
   jobTitle?: string;
   company?: string;
   industry?: string;
+  contactType?: 'lead' | 'customer';
   country?: string;
   lifecycleStage?: string;
   source?: string;
@@ -96,17 +97,20 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
     enabled: !!contact?.id && isOpen,
   });
 
+  // Determine contact type for API calls
+  const contactType = contact?.contactType || (contact?.lifecycleStage === 'customer' ? 'customer' : 'lead');
+
   // Fetch journey analytics for attribution and UTM data
   const { data: journeyAnalytics } = useQuery({
-    queryKey: ['journeyAnalytics', contact?.id],
-    queryFn: () => fetch(`/api/contacts/${contact?.id}/journey-analytics?contactType=${contact?.contactType || 'lead'}`).then(res => res.ok ? res.json() : null),
+    queryKey: ['journeyAnalytics', contact?.id, contactType],
+    queryFn: () => fetch(`/api/contacts/${contact?.id}/journey-analytics?contactType=${contactType}`).then(res => res.ok ? res.json() : null),
     enabled: !!contact?.id && isOpen,
   });
 
   // Fetch touchpoints for activity timeline
   const { data: touchpoints = [] } = useQuery({
-    queryKey: ['contactTouchpoints', contact?.id],
-    queryFn: () => fetch(`/api/contacts/${contact?.id}/touchpoints?contactType=${contact?.contactType || 'lead'}`).then(res => res.ok ? res.json() : []),
+    queryKey: ['contactTouchpoints', contact?.id, contactType],
+    queryFn: () => fetch(`/api/contacts/${contact?.id}/touchpoints?contactType=${contactType}`).then(res => res.ok ? res.json() : []),
     enabled: !!contact?.id && isOpen,
   });
 
@@ -268,8 +272,8 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Source:</span>
-                    <Badge variant="secondary">{journeyAnalytics.sourceIntelligence.suggestedSource}</Badge>
-                    <span className="text-muted-foreground">({journeyAnalytics.sourceIntelligence.confidence}% confidence)</span>
+                    <Badge variant="secondary" data-testid="text-attribution-source">{journeyAnalytics.sourceIntelligence.suggestedSource}</Badge>
+                    <span className="text-muted-foreground" data-testid="text-attribution-confidence">({journeyAnalytics.sourceIntelligence.confidence}% confidence)</span>
                     {journeyAnalytics.utmData && Object.values(journeyAnalytics.utmData).some(Boolean) && (
                       <Button
                         variant="ghost"
@@ -292,7 +296,7 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
                       {journeyAnalytics.utmData.utmSource && (
                         <div className="flex items-center gap-1">
                           <span className="font-medium">Source:</span>
-                          <Badge variant="outline" className="text-xs">{journeyAnalytics.utmData.utmSource}</Badge>
+                          <Badge variant="outline" className="text-xs" data-testid="text-utm-source">{journeyAnalytics.utmData.utmSource}</Badge>
                         </div>
                       )}
                       {journeyAnalytics.utmData.utmMedium && (
@@ -359,11 +363,11 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
 
         <Tabs defaultValue="profile" className="w-full">
           <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
-            <TabsTrigger value="scoring">Scoring</TabsTrigger>
-            <TabsTrigger value="marketing">Marketing</TabsTrigger>
+            <TabsTrigger value="profile" data-testid="tab-profile">Profile</TabsTrigger>
+            <TabsTrigger value="notes" data-testid="tab-notes">Notes</TabsTrigger>
+            <TabsTrigger value="activity" data-testid="tab-activity">Activity</TabsTrigger>
+            <TabsTrigger value="scoring" data-testid="tab-scoring">Scoring</TabsTrigger>
+            <TabsTrigger value="marketing" data-testid="tab-marketing">Marketing</TabsTrigger>
           </TabsList>
 
           {/* Profile Tab */}
@@ -442,6 +446,7 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
                       onClick={handleAddNote}
                       disabled={!newNote.trim() || addNoteMutation.isPending}
                       size="sm"
+                      data-testid="button-add-note"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Note
@@ -491,7 +496,7 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {activityData.map((activity, index) => {
+                    {activityData.map((activity: any, index: number) => {
                       const IconComponent = activity.icon;
                       const timeAgo = new Date(activity.timestamp).toLocaleString();
                       return (
