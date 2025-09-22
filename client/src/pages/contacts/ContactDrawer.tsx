@@ -74,6 +74,7 @@ interface ContactDrawerProps {
   contact: Contact | null;
   isOpen: boolean;
   onClose: () => void;
+  onEdit?: (contact: Contact) => void;
 }
 
 interface Note {
@@ -83,11 +84,10 @@ interface Note {
   createdBy: string;
 }
 
-export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawerProps) {
+export default function ContactDrawer({ contact, isOpen, onClose, onEdit }: ContactDrawerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState('');
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [showUTMDetails, setShowUTMDetails] = useState(false);
 
   // Fetch contact notes
@@ -353,7 +353,8 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setIsEditingProfile(!isEditingProfile)}
+              onClick={() => contact && onEdit?.(contact)}
+              data-testid="button-edit-contact"
             >
               <Edit3 className="h-4 w-4 mr-2" />
               Edit

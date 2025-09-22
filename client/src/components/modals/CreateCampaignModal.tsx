@@ -399,7 +399,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[1200px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center text-lg">
             <Megaphone className="text-primary-500 mr-2" size={20} />

@@ -739,7 +739,7 @@ const CalendarManagement: React.FC = () => {
 
       {/* Create Event Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[1200px]">
           <DialogHeader>
             <DialogTitle>Create New Event</DialogTitle>
             <DialogDescription>
@@ -1290,7 +1290,7 @@ const CalendarManagement: React.FC = () => {
 
       {/* Edit Event Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[1200px]">
           <DialogHeader>
             <DialogTitle>Edit Event</DialogTitle>
             <DialogDescription>

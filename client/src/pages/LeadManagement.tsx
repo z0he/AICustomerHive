@@ -394,7 +394,7 @@ export default function LeadManagement() {
                         Add New Lead
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[600px]">
+                    <DialogContent className="sm:max-w-[1200px]">
                       <DialogHeader>
                         <DialogTitle>Add New Lead</DialogTitle>
                       </DialogHeader>

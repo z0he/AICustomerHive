@@ -322,6 +322,7 @@ export default function ContactsPage() {
         contact={selectedContact}
         isOpen={isDrawerOpen}
         onClose={closeDrawer}
+        onEdit={handleEditContact}
       />
 
       {/* Edit Contact Modal */}

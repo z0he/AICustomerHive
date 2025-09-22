@@ -135,7 +135,7 @@ export default function CustomerDetails({
                   Edit
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="sm:max-w-[1200px]">
                 <DialogHeader>
                   <DialogTitle>Edit Customer</DialogTitle>
                 </DialogHeader>
