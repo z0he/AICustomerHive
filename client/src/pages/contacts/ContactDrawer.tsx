@@ -47,7 +47,11 @@ import {
   CheckCircle,
   XCircle,
   Settings,
-  Shield
+  Shield,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 
 interface Contact {
@@ -83,11 +87,26 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
   const queryClient = useQueryClient();
   const [newNote, setNewNote] = useState('');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showUTMDetails, setShowUTMDetails] = useState(false);
 
   // Fetch contact notes
   const { data: notes = [] } = useQuery({
     queryKey: ['contactNotes', contact?.id],
     queryFn: () => fetch(`/api/contacts/${contact?.id}/notes`).then(res => res.json()),
+    enabled: !!contact?.id && isOpen,
+  });
+
+  // Fetch journey analytics for attribution and UTM data
+  const { data: journeyAnalytics } = useQuery({
+    queryKey: ['journeyAnalytics', contact?.id],
+    queryFn: () => fetch(`/api/contacts/${contact?.id}/journey-analytics?contactType=${contact?.contactType || 'lead'}`).then(res => res.ok ? res.json() : null),
+    enabled: !!contact?.id && isOpen,
+  });
+
+  // Fetch touchpoints for activity timeline
+  const { data: touchpoints = [] } = useQuery({
+    queryKey: ['contactTouchpoints', contact?.id],
+    queryFn: () => fetch(`/api/contacts/${contact?.id}/touchpoints?contactType=${contact?.contactType || 'lead'}`).then(res => res.ok ? res.json() : []),
     enabled: !!contact?.id && isOpen,
   });
 
@@ -128,49 +147,44 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
     // TODO: Implement actual score update API call
   };
 
-  // Mock activity data - in real app, fetch from API
-  const mockActivity = [
-    {
-      id: 1,
-      type: 'email_open',
-      title: 'Opened email: "Welcome to our platform"',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-      icon: Mail,
-      color: 'bg-blue-100 text-blue-600'
-    },
-    {
-      id: 2,
-      type: 'website_visit',
-      title: 'Visited pricing page',
-      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-      icon: Eye,
-      color: 'bg-green-100 text-green-600'
-    },
-    {
-      id: 3,
-      type: 'email_click',
-      title: 'Clicked CTA button in email campaign',
-      timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-      icon: MousePointer,
-      color: 'bg-purple-100 text-purple-600'
-    },
-    {
-      id: 4,
-      type: 'form_submit',
-      title: 'Submitted contact form',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      icon: FileText,
-      color: 'bg-orange-100 text-orange-600'
-    },
-    {
-      id: 5,
-      type: 'meeting_scheduled',
-      title: 'Scheduled demo meeting',
-      timestamp: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-      icon: Video,
-      color: 'bg-indigo-100 text-indigo-600'
-    }
-  ];
+  // Map touchpoints to activity format
+  const mapTouchpointToActivity = (touchpoint: any) => {
+    const getIconAndColor = (type: string, subtype?: string) => {
+      switch (type) {
+        case 'email_open':
+          return { icon: Mail, color: 'bg-blue-100 text-blue-600' };
+        case 'email_click':
+          return { icon: MousePointer, color: 'bg-purple-100 text-purple-600' };
+        case 'web':
+          return { icon: Eye, color: 'bg-green-100 text-green-600' };
+        case 'form_submit':
+          return { icon: FileText, color: 'bg-orange-100 text-orange-600' };
+        case 'website_visit':
+          return { icon: Eye, color: 'bg-green-100 text-green-600' };
+        case 'meeting_scheduled':
+          return { icon: Video, color: 'bg-indigo-100 text-indigo-600' };
+        case 'lead_created':
+          return { icon: User, color: 'bg-yellow-100 text-yellow-600' };
+        default:
+          return { icon: Target, color: 'bg-gray-100 text-gray-600' };
+      }
+    };
+    
+    const { icon, color } = getIconAndColor(touchpoint.touchpointType || touchpoint.type, touchpoint.subtype);
+    
+    return {
+      id: touchpoint.id,
+      type: touchpoint.touchpointType || touchpoint.type,
+      title: touchpoint.description || touchpoint.content || `${touchpoint.touchpointType || touchpoint.type} activity`,
+      timestamp: touchpoint.createdAt || touchpoint.occurredAt,
+      icon,
+      color,
+      meta: touchpoint.meta
+    };
+  };
+  
+  // Convert touchpoints to activity format, take last 10
+  const activityData = touchpoints.map(mapTouchpointToActivity).slice(0, 10);
 
   // Mock marketing data
   const marketingData = {
@@ -231,7 +245,7 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[600px] sm:w-[700px] overflow-y-auto">
+      <SheetContent className="w-[700px] sm:w-[800px] lg:w-[900px] overflow-y-auto">
         <SheetHeader className="space-y-4 pb-6">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
@@ -248,6 +262,85 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
                   </Badge>
                   <Badge variant="outline">{contact.source || 'Unknown source'}</Badge>
                 </div>
+                
+                {/* Attribution Line */}
+                {journeyAnalytics?.sourceIntelligence && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">Source:</span>
+                    <Badge variant="secondary">{journeyAnalytics.sourceIntelligence.suggestedSource}</Badge>
+                    <span className="text-muted-foreground">({journeyAnalytics.sourceIntelligence.confidence}% confidence)</span>
+                    {journeyAnalytics.utmData && Object.values(journeyAnalytics.utmData).some(Boolean) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowUTMDetails(!showUTMDetails)}
+                        className="h-6 px-2 text-xs"
+                        data-testid="button-utm-details"
+                      >
+                        UTM Details
+                        {showUTMDetails ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />}
+                      </Button>
+                    )}
+                  </div>
+                )}
+                
+                {/* UTM Details Collapsible */}
+                {showUTMDetails && journeyAnalytics?.utmData && (
+                  <div className="mt-2 p-3 bg-muted/30 rounded-lg border">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {journeyAnalytics.utmData.utmSource && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Source:</span>
+                          <Badge variant="outline" className="text-xs">{journeyAnalytics.utmData.utmSource}</Badge>
+                        </div>
+                      )}
+                      {journeyAnalytics.utmData.utmMedium && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Medium:</span>
+                          <Badge variant="outline" className="text-xs">{journeyAnalytics.utmData.utmMedium}</Badge>
+                        </div>
+                      )}
+                      {journeyAnalytics.utmData.utmCampaign && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Campaign:</span>
+                          <Badge variant="outline" className="text-xs">{journeyAnalytics.utmData.utmCampaign}</Badge>
+                        </div>
+                      )}
+                      {journeyAnalytics.utmData.utmTerm && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Term:</span>
+                          <Badge variant="outline" className="text-xs">{journeyAnalytics.utmData.utmTerm}</Badge>
+                        </div>
+                      )}
+                      {journeyAnalytics.utmData.utmContent && (
+                        <div className="flex items-center gap-1">
+                          <span className="font-medium">Content:</span>
+                          <Badge variant="outline" className="text-xs">{journeyAnalytics.utmData.utmContent}</Badge>
+                        </div>
+                      )}
+                      {journeyAnalytics.utmData.referrerUrl && (
+                        <div className="flex items-center gap-1 col-span-2">
+                          <span className="font-medium">Referrer:</span>
+                          <a href={journeyAnalytics.utmData.referrerUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                            {journeyAnalytics.utmData.referrerUrl.length > 50 ? journeyAnalytics.utmData.referrerUrl.substring(0, 50) + '...' : journeyAnalytics.utmData.referrerUrl}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      )}
+                      {journeyAnalytics.utmData.landingPageUrl && (
+                        <div className="flex items-center gap-1 col-span-2">
+                          <span className="font-medium">Landing:</span>
+                          <a href={journeyAnalytics.utmData.landingPageUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                            {journeyAnalytics.utmData.landingPageUrl.length > 50 ? journeyAnalytics.utmData.landingPageUrl.substring(0, 50) + '...' : journeyAnalytics.utmData.landingPageUrl}
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
                 <p className="text-sm text-muted-foreground">
                   {contact.jobTitle} {contact.jobTitle && contact.company && 'at'} {contact.company}
                 </p>
@@ -390,7 +483,7 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {mockActivity.length === 0 ? (
+                {activityData.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-30" />
                     <p>No activity recorded yet</p>
@@ -398,11 +491,11 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {mockActivity.map((activity, index) => {
+                    {activityData.map((activity, index) => {
                       const IconComponent = activity.icon;
                       const timeAgo = new Date(activity.timestamp).toLocaleString();
                       return (
-                        <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                        <div key={activity.id} className="flex items-start gap-3 p-3 border rounded-lg" data-testid={`activity-${activity.type}-${activity.id}`}>
                           <div className={`flex h-8 w-8 items-center justify-center rounded-full ${activity.color}`}>
                             <IconComponent className="h-4 w-4" />
                           </div>
@@ -412,6 +505,14 @@ export default function ContactDrawer({ contact, isOpen, onClose }: ContactDrawe
                               <Clock className="h-3 w-3" />
                               <span>{timeAgo}</span>
                             </div>
+                            {activity.meta?.url && (
+                              <div className="mt-1">
+                                <a href={activity.meta.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                  {activity.meta.url.length > 60 ? activity.meta.url.substring(0, 60) + '...' : activity.meta.url}
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
