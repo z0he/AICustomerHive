@@ -54,7 +54,7 @@ interface Contact {
   jobTitle?: string;
   industry?: string;
   country?: string;
-  lifecycleStage: string;
+  lifecycleStage?: string;
   source?: string;
   lastActivity?: string;
   owner?: string;
