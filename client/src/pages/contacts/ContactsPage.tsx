@@ -372,9 +372,23 @@ export default function ContactsPage() {
             <span>
               {currentStageInfo?.label} Contacts ({contacts.length})
             </span>
-            <Button variant="ghost" size="sm">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {selectedContactIds.size > 0 && (
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleteMutation.isPending}
+                  data-testid="button-bulk-delete"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete {selectedContactIds.size} contacts
+                </Button>
+              )}
+              <Button variant="ghost" size="sm">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -405,6 +419,13 @@ export default function ContactsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox
+                        checked={isSelectAll}
+                        onCheckedChange={handleSelectAll}
+                        data-testid="checkbox-select-all"
+                      />
+                    </TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Job Title</TableHead>
@@ -414,28 +435,110 @@ export default function ContactsPage() {
                     <TableHead>Source</TableHead>
                     <TableHead>Last Activity</TableHead>
                     <TableHead>Owner</TableHead>
+                    <TableHead className="w-[50px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {contacts.map((contact: Contact) => (
                     <TableRow 
                       key={contact.id} 
-                      className="cursor-pointer hover:bg-slate-50"
-                      onClick={() => handleContactClick(contact)}
+                      className="hover:bg-slate-50"
                     >
-                      <TableCell className="font-medium">{contact.name}</TableCell>
-                      <TableCell>{contact.email}</TableCell>
-                      <TableCell>{contact.jobTitle || '—'}</TableCell>
-                      <TableCell>{contact.industry || '—'}</TableCell>
-                      <TableCell>{contact.country || '—'}</TableCell>
                       <TableCell>
+                        <Checkbox
+                          checked={selectedContactIds.has(contact.id)}
+                          onCheckedChange={(checked) => handleSelectContact(contact.id, checked as boolean)}
+                          data-testid={`checkbox-contact-${contact.id}`}
+                        />
+                      </TableCell>
+                      <TableCell 
+                        className="font-medium cursor-pointer" 
+                        onClick={() => handleContactClick(contact)}
+                        data-testid={`text-contact-name-${contact.id}`}
+                      >
+                        {contact.name}
+                      </TableCell>
+                      <TableCell 
+                        className="cursor-pointer" 
+                        onClick={() => handleContactClick(contact)}
+                        data-testid={`text-contact-email-${contact.id}`}
+                      >
+                        {contact.email}
+                      </TableCell>
+                      <TableCell 
+                        className="cursor-pointer" 
+                        onClick={() => handleContactClick(contact)}
+                      >
+                        {contact.jobTitle || '—'}
+                      </TableCell>
+                      <TableCell 
+                        className="cursor-pointer" 
+                        onClick={() => handleContactClick(contact)}
+                      >
+                        {contact.industry || '—'}
+                      </TableCell>
+                      <TableCell 
+                        className="cursor-pointer" 
+                        onClick={() => handleContactClick(contact)}
+                      >
+                        {contact.country || '—'}
+                      </TableCell>
+                      <TableCell 
+                        className="cursor-pointer" 
+                        onClick={() => handleContactClick(contact)}
+                      >
                         <Badge className={getStageColor(contact.lifecycleStage || 'lead')}>
                           {LIFECYCLE_STAGES.find(s => s.value === contact.lifecycleStage)?.label || contact.lifecycleStage || 'Lead'}
                         </Badge>
                       </TableCell>
-                      <TableCell>{contact.source || '—'}</TableCell>
-                      <TableCell>{formatDate(contact.lastActivity)}</TableCell>
-                      <TableCell>{contact.owner || 'Unassigned'}</TableCell>
+                      <TableCell 
+                        className="cursor-pointer" 
+                        onClick={() => handleContactClick(contact)}
+                      >
+                        {contact.source || '—'}
+                      </TableCell>
+                      <TableCell 
+                        className="cursor-pointer" 
+                        onClick={() => handleContactClick(contact)}
+                      >
+                        {formatDate(contact.lastActivity)}
+                      </TableCell>
+                      <TableCell 
+                        className="cursor-pointer" 
+                        onClick={() => handleContactClick(contact)}
+                      >
+                        {contact.owner || 'Unassigned'}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              data-testid={`button-contact-actions-${contact.id}`}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem 
+                              onClick={() => handleEditContact(contact)}
+                              data-testid={`button-edit-contact-${contact.id}`}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteContact(contact)}
+                              className="text-red-600"
+                              data-testid={`button-delete-contact-${contact.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
