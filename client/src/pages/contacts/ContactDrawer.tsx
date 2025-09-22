@@ -249,7 +249,7 @@ export default function ContactDrawer({ contact, isOpen, onClose, onEdit }: Cont
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[700px] sm:w-[800px] lg:w-[1000px] xl:w-[1200px] !max-w-none overflow-y-auto">
+      <SheetContent className="w-full sm:w-[85vw] md:w-[720px] lg:w-[1000px] xl:max-w-[1200px] !max-w-[100vw] max-h-screen overflow-y-auto">
         <SheetHeader className="space-y-4 pb-6">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
