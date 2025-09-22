@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -249,6 +249,12 @@ export default function LeadManagement() {
       });
     }
   });
+  
+  // Memoized callback for global score updates to prevent re-render loops
+  const handleGlobalScoreUpdate = useCallback((newScore: number, breakdown: any) => {
+    // This is only for preview/logging purposes - actual mutations should be user-initiated
+    console.log("Global score update:", newScore, breakdown);
+  }, []);
   
   // Helper function to handle lead filtering and sorting
   const getFilteredAndSortedLeads = (): Lead[] => {
@@ -773,9 +779,7 @@ export default function LeadManagement() {
               <TabsContent value="scoring" className="space-y-6">
                 <LeadScoringAlgorithm 
                   mode="global"
-                  onScoreUpdate={(newScore, breakdown) => {
-                    console.log("Global score update:", newScore, breakdown);
-                  }}
+                  onScoreUpdate={handleGlobalScoreUpdate}
                 />
               </TabsContent>
 

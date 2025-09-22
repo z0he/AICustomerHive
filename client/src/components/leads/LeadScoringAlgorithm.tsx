@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Card, 
@@ -332,12 +332,20 @@ export default function LeadScoringAlgorithm({
     setIsModified(true);
   };
 
-  // Notify parent component of score changes
+  // Use ref-backed pattern to prevent re-render loops
+  const onScoreUpdateRef = useRef(onScoreUpdate);
+  
+  // Update ref when callback changes
   useEffect(() => {
-    if (scoreBreakdown && onScoreUpdate) {
-      onScoreUpdate(scoreBreakdown.totalScore, scoreBreakdown);
+    onScoreUpdateRef.current = onScoreUpdate;
+  }, [onScoreUpdate]);
+  
+  // Notify parent component of score changes (only depends on scoreBreakdown)
+  useEffect(() => {
+    if (scoreBreakdown && onScoreUpdateRef.current) {
+      onScoreUpdateRef.current(scoreBreakdown.totalScore, scoreBreakdown);
     }
-  }, [scoreBreakdown, onScoreUpdate]);
+  }, [scoreBreakdown]);
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-600";
