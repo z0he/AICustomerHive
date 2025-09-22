@@ -303,7 +303,7 @@ export type CalendarEvent = typeof calendarEvents.$inferSelect;
 
 // Unified Contact Interface - represents both leads and customers
 export interface Contact {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone?: string | null;

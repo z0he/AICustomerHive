@@ -2040,8 +2040,6 @@ export class DbStorage implements IStorage {
           industry: lead.industry,
           contactType: 'lead',
           lifecycleStage: 'lead', // Map lead status to lifecycle stage for consistency
-          source: lead.leadSource, // Map to consistent field name
-          owner: lead.leadOwner, // Map to consistent field name
           country: lead.location, // Map location to country for table display
           leadSource: lead.leadSource,
           leadStatus: lead.leadStatus,
@@ -2071,8 +2069,6 @@ export class DbStorage implements IStorage {
           industry: customer.industry,
           contactType: 'customer',
           lifecycleStage: customer.lifecycleStage,
-          source: customer.contactSource, // Map to consistent field name
-          owner: customer.contactOwner, // Map to consistent field name
           country: customer.country,
           contactOwner: customer.contactOwner,
           contactSource: customer.contactSource,
