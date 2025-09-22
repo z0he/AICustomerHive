@@ -461,20 +461,45 @@ router.patch('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    const contactId = parseInt(req.params.id);
+    const rawContactId = req.params.id;
     
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    // Check if this is a lead (ID > 10000) or customer (ID <= 10000)
-    if (contactId > 10000) {
+    // Handle prefixed IDs (customer_123, lead_456) and legacy numeric IDs
+    let actualId: number;
+    let isLead = false;
+    
+    if (rawContactId.startsWith('customer_')) {
+      actualId = parseInt(rawContactId.replace('customer_', ''));
+      isLead = false;
+    } else if (rawContactId.startsWith('lead_')) {
+      actualId = parseInt(rawContactId.replace('lead_', ''));
+      isLead = true;
+    } else {
+      // Legacy numeric ID
+      actualId = parseInt(rawContactId);
+      if (isNaN(actualId)) {
+        return res.status(400).json({ error: 'Invalid contact ID' });
+      }
+      // Check if this is a lead (ID > 10000) or customer (ID <= 10000)
+      isLead = actualId > 10000;
+      if (isLead) {
+        actualId = actualId - 10000;
+      }
+    }
+
+    if (isNaN(actualId)) {
+      return res.status(400).json({ error: 'Invalid contact ID' });
+    }
+
+    if (isLead) {
       // This is a lead - soft delete by updating status
-      const leadId = contactId - 10000;
-      await storage.updateLead(leadId, { leadStatus: 'deleted' });
+      await storage.updateLead(actualId, { leadStatus: 'deleted' });
     } else {
       // This is a customer - soft delete by updating status
-      await storage.updateCustomer(contactId, { status: 'deleted' });
+      await storage.updateCustomer(actualId, { status: 'deleted' });
     }
 
     res.json({ success: true, message: 'Contact deleted successfully' });
