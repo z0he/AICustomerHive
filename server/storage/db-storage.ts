@@ -1,4 +1,4 @@
-import { eq, desc, and, sql, asc, gte, lte } from "drizzle-orm";
+import { eq, desc, and, sql, asc, gte, lte, ne } from "drizzle-orm";
 import { db } from "../db";
 import { IStorage } from "../storage";
 import { 
@@ -2016,10 +2016,14 @@ export class DbStorage implements IStorage {
 
   async getUnifiedContacts(userId?: number): Promise<Contact[]> {
     try {
-      // Get all leads and customers, convert them to unified Contact format
+      // Get all active (non-deleted) leads and customers, convert them to unified Contact format
       const [leadResults, customerResults] = await Promise.all([
-        db.select().from(leads).orderBy(desc(leads.createdAt)),
-        db.select().from(customers).orderBy(desc(customers.createdAt))
+        db.select().from(leads)
+          .where(ne(leads.leadStatus, 'deleted'))
+          .orderBy(desc(leads.createdAt)),
+        db.select().from(customers)
+          .where(ne(customers.status, 'deleted'))
+          .orderBy(desc(customers.createdAt))
       ]);
       
       const unifiedContacts: Contact[] = [];

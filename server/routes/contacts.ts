@@ -471,18 +471,14 @@ router.delete('/:id', async (req: Request, res: Response) => {
     let actualId: number;
     let isLead = false;
     
-    console.log('Deleting contact with raw ID:', rawContactId);
-    
     if (rawContactId.startsWith('customer_')) {
       const idStr = rawContactId.replace('customer_', '');
       actualId = parseInt(idStr);
       isLead = false;
-      console.log('Customer ID extracted:', idStr, 'parsed as:', actualId);
     } else if (rawContactId.startsWith('lead_')) {
       const idStr = rawContactId.replace('lead_', '');
       actualId = parseInt(idStr);
       isLead = true;
-      console.log('Lead ID extracted:', idStr, 'parsed as:', actualId);
     } else {
       // Legacy numeric ID
       actualId = parseInt(rawContactId);
@@ -494,15 +490,11 @@ router.delete('/:id', async (req: Request, res: Response) => {
       if (isLead) {
         actualId = actualId - 10000;
       }
-      console.log('Legacy ID parsed:', actualId, 'isLead:', isLead);
     }
 
     if (isNaN(actualId)) {
-      console.log('Final actualId is NaN, rawContactId was:', rawContactId);
       return res.status(400).json({ error: 'Invalid contact ID - could not parse' });
     }
-    
-    console.log('Final values - actualId:', actualId, 'isLead:', isLead);
 
     if (isLead) {
       // This is a lead - soft delete by updating status
