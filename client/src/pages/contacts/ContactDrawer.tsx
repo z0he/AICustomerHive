@@ -93,7 +93,15 @@ export default function ContactDrawer({ contact, isOpen, onClose, onEdit }: Cont
   // Fetch contact notes
   const { data: notes = [] } = useQuery({
     queryKey: ['contactNotes', contact?.id],
-    queryFn: () => fetch(`/api/contacts/${contact?.id}/notes`).then(res => res.json()),
+    queryFn: async () => {
+      const res = await fetch(`/api/contacts/${contact?.id}/notes`);
+      if (!res.ok) {
+        console.error('Failed to fetch notes:', res.status, res.statusText);
+        return []; // Return empty array on error
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data : []; // Ensure we always return an array
+    },
     enabled: !!contact?.id && isOpen,
   });
 

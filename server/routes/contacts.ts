@@ -518,16 +518,32 @@ router.delete('/:id', async (req: Request, res: Response) => {
  */
 router.get('/:id/notes', async (req: Request, res: Response) => {
   try {
-    const legacyContactId = parseInt(req.params.id);
+    const rawContactId = req.params.id;
     
-    if (isNaN(legacyContactId)) {
-      return res.status(400).json({ error: 'Invalid contact ID' });
+    // Extract numeric ID and determine contact type
+    let actualId: number;
+    let contactType: 'lead' | 'customer';
+    
+    if (rawContactId.startsWith('lead_')) {
+      actualId = parseInt(rawContactId.replace('lead_', ''));
+      contactType = 'lead';
+    } else if (rawContactId.startsWith('customer_')) {
+      actualId = parseInt(rawContactId.replace('customer_', ''));
+      contactType = 'customer';
+    } else {
+      const numericId = parseInt(rawContactId);
+      if (numericId > 10000) {
+        actualId = numericId - 10000;
+        contactType = 'lead';
+      } else {
+        actualId = numericId;
+        contactType = 'customer';
+      }
     }
-
-    // Determine if this is a lead or customer based on ID format
-    const isLead = req.params.id.startsWith('lead_') || legacyContactId > 10000;
-    const actualId = isLead ? (legacyContactId > 10000 ? legacyContactId - 10000 : legacyContactId) : legacyContactId;
-    const contactType = isLead ? 'lead' : 'customer';
+    
+    if (isNaN(actualId)) {
+      return res.status(400).json({ error: 'Invalid contact ID format' });
+    }
     
     // Get unified contact ID
     const unifiedContactId = await storage.getUnifiedContactByLegacyId(actualId, contactType);
@@ -560,22 +576,38 @@ router.get('/:id/notes', async (req: Request, res: Response) => {
  */
 router.post('/:id/notes', async (req: Request, res: Response) => {
   try {
-    const legacyContactId = parseInt(req.params.id);
+    const rawContactId = req.params.id;
     const { content } = req.body;
     const userId = (req as any).user?.id;
     
-    if (isNaN(legacyContactId)) {
-      return res.status(400).json({ error: 'Invalid contact ID' });
+    // Extract numeric ID and determine contact type
+    let actualId: number;
+    let contactType: 'lead' | 'customer';
+    
+    if (rawContactId.startsWith('lead_')) {
+      actualId = parseInt(rawContactId.replace('lead_', ''));
+      contactType = 'lead';
+    } else if (rawContactId.startsWith('customer_')) {
+      actualId = parseInt(rawContactId.replace('customer_', ''));
+      contactType = 'customer';
+    } else {
+      const numericId = parseInt(rawContactId);
+      if (numericId > 10000) {
+        actualId = numericId - 10000;
+        contactType = 'lead';
+      } else {
+        actualId = numericId;
+        contactType = 'customer';
+      }
+    }
+    
+    if (isNaN(actualId)) {
+      return res.status(400).json({ error: 'Invalid contact ID format' });
     }
     
     if (!content || !content.trim()) {
       return res.status(400).json({ error: 'Note content is required' });
     }
-
-    // Determine if this is a lead or customer based on ID format
-    const isLead = req.params.id.startsWith('lead_') || legacyContactId > 10000;
-    const actualId = isLead ? (legacyContactId > 10000 ? legacyContactId - 10000 : legacyContactId) : legacyContactId;
-    const contactType = isLead ? 'lead' : 'customer';
     
     // Get unified contact ID
     const unifiedContactId = await storage.getUnifiedContactByLegacyId(actualId, contactType);
