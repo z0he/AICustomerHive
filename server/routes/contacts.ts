@@ -518,25 +518,36 @@ router.delete('/:id', async (req: Request, res: Response) => {
  */
 router.get('/:id/notes', async (req: Request, res: Response) => {
   try {
-    const contactId = parseInt(req.params.id);
+    const legacyContactId = parseInt(req.params.id);
     
-    // For now, return mock notes - in real implementation, fetch from database
-    const mockNotes = [
-      {
-        id: 1,
-        content: "Initial contact made via website form",
-        createdAt: new Date().toISOString(),
-        createdBy: "System"
-      },
-      {
-        id: 2,
-        content: "Follow-up call scheduled for next week",
-        createdAt: new Date().toISOString(),
-        createdBy: "John Doe"
-      }
-    ];
+    if (isNaN(legacyContactId)) {
+      return res.status(400).json({ error: 'Invalid contact ID' });
+    }
 
-    res.json(mockNotes);
+    // Determine if this is a lead or customer based on ID format
+    const isLead = req.params.id.startsWith('lead_') || legacyContactId > 10000;
+    const actualId = isLead ? (legacyContactId > 10000 ? legacyContactId - 10000 : legacyContactId) : legacyContactId;
+    const contactType = isLead ? 'lead' : 'customer';
+    
+    // Get unified contact ID
+    const unifiedContactId = await storage.getUnifiedContactByLegacyId(actualId, contactType);
+    
+    if (!unifiedContactId) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+
+    // Fetch real notes from database
+    const notes = await storage.getContactNotes(unifiedContactId);
+    
+    // Format response to match expected structure
+    const formattedNotes = notes.map(note => ({
+      id: note.id,
+      content: note.content,
+      createdAt: note.createdAt.toISOString(),
+      createdBy: note.createdBy || 'Unknown'
+    }));
+
+    res.json(formattedNotes);
   } catch (error) {
     console.error('Error fetching contact notes:', error);
     res.status(500).json({ error: 'Failed to fetch notes' });
@@ -549,23 +560,46 @@ router.get('/:id/notes', async (req: Request, res: Response) => {
  */
 router.post('/:id/notes', async (req: Request, res: Response) => {
   try {
-    const contactId = parseInt(req.params.id);
+    const legacyContactId = parseInt(req.params.id);
     const { content } = req.body;
     const userId = (req as any).user?.id;
     
-    if (!content) {
+    if (isNaN(legacyContactId)) {
+      return res.status(400).json({ error: 'Invalid contact ID' });
+    }
+    
+    if (!content || !content.trim()) {
       return res.status(400).json({ error: 'Note content is required' });
     }
 
-    // For now, return mock response - in real implementation, save to database
-    const newNote = {
-      id: Date.now(),
-      content,
-      createdAt: new Date().toISOString(),
-      createdBy: "Current User"
+    // Determine if this is a lead or customer based on ID format
+    const isLead = req.params.id.startsWith('lead_') || legacyContactId > 10000;
+    const actualId = isLead ? (legacyContactId > 10000 ? legacyContactId - 10000 : legacyContactId) : legacyContactId;
+    const contactType = isLead ? 'lead' : 'customer';
+    
+    // Get unified contact ID
+    const unifiedContactId = await storage.getUnifiedContactByLegacyId(actualId, contactType);
+    
+    if (!unifiedContactId) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+
+    // Save real note to database
+    const newNote = await storage.addContactNote({
+      contactId: unifiedContactId,
+      content: content.trim(),
+      createdBy: userId || null
+    });
+    
+    // Format response to match expected structure
+    const formattedNote = {
+      id: newNote.id,
+      content: newNote.content,
+      createdAt: newNote.createdAt.toISOString(),
+      createdBy: newNote.createdBy || 'Current User'
     };
 
-    res.status(201).json(newNote);
+    res.status(201).json(formattedNote);
   } catch (error) {
     console.error('Error creating contact note:', error);
     res.status(500).json({ error: 'Failed to create note' });
