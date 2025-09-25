@@ -2228,15 +2228,43 @@ export class DbStorage implements IStorage {
         const leadResult = await db.select().from(leads).where(eq(leads.id, legacyId));
         if (leadResult.length === 0) return null;
         
-        // For now, return a deterministic UUID based on the legacy ID
-        // In production, you'd store this mapping in a dedicated table
-        return `lead-${legacyId}-uuid`;
+        // Generate a deterministic UUID based on the legacy ID
+        // Using a simple approach: create UUID v5 based on namespace and legacy ID
+        const crypto = await import('crypto');
+        const namespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8'; // Standard UUID namespace
+        const input = `lead-${legacyId}`;
+        
+        // Simple deterministic UUID generation (not UUID v5 but deterministic)
+        const hash = crypto.createHash('sha256').update(`${namespace}-${input}`).digest('hex');
+        const uuid = [
+          hash.substring(0, 8),
+          hash.substring(8, 12),
+          hash.substring(12, 16),
+          hash.substring(16, 20),
+          hash.substring(20, 32)
+        ].join('-');
+        
+        return uuid;
       } else {
         // Check if customer exists
         const customerResult = await db.select().from(customers).where(eq(customers.id, legacyId));
         if (customerResult.length === 0) return null;
         
-        return `customer-${legacyId}-uuid`;
+        // Generate a deterministic UUID for customer
+        const crypto = await import('crypto');
+        const namespace = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+        const input = `customer-${legacyId}`;
+        
+        const hash = crypto.createHash('sha256').update(`${namespace}-${input}`).digest('hex');
+        const uuid = [
+          hash.substring(0, 8),
+          hash.substring(8, 12),
+          hash.substring(12, 16),
+          hash.substring(16, 20),
+          hash.substring(20, 32)
+        ].join('-');
+        
+        return uuid;
       }
     } catch (error) {
       console.error(`Failed to get unified contact ID for legacy ${contactType} ${legacyId}:`, error);
