@@ -990,7 +990,7 @@ export const contactNotes = pgTable("contact_notes", {
   id: uuid("id").defaultRandom().primaryKey(),
   contactId: uuid("contact_id").notNull(), // FK -> contacts.id
   content: text("content").notNull(),
-  createdBy: uuid("created_by"), // nullable - FK to users.id
+  createdBy: integer("created_by"), // nullable - FK to users.id
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
