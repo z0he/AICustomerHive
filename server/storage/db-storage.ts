@@ -23,6 +23,7 @@ import {
   customerTouchpoints, type CustomerTouchpoint, type InsertCustomerTouchpoint,
   journeyStages, type JourneyStage, type InsertJourneyStage,
   contactSegments, type ContactSegment, type InsertContactSegment,
+  contactNotes, type SelectContactNote, type InsertContactNote,
   type Contact, type ContactSegmentFilter
 } from "@shared/schema";
 
@@ -2182,6 +2183,64 @@ export class DbStorage implements IStorage {
     } catch (error) {
       console.error(`Failed to refresh segment counts for #${segmentId}:`, error);
       throw new Error(`Failed to refresh segment counts for #${segmentId}`);
+    }
+  }
+
+  // ----- Contact Notes methods -----
+
+  async getContactNotes(contactId: string): Promise<SelectContactNote[]> {
+    try {
+      const result = await db
+        .select()
+        .from(contactNotes)
+        .where(eq(contactNotes.contactId, contactId))
+        .orderBy(desc(contactNotes.createdAt));
+      
+      return result;
+    } catch (error) {
+      console.error(`Failed to get notes for contact ${contactId}:`, error);
+      throw new Error(`Failed to get notes for contact ${contactId}`);
+    }
+  }
+
+  async addContactNote(contactNote: InsertContactNote): Promise<SelectContactNote> {
+    try {
+      const [result] = await db
+        .insert(contactNotes)
+        .values(contactNote)
+        .returning();
+      
+      return result;
+    } catch (error) {
+      console.error("Failed to add contact note:", error);
+      throw new Error("Failed to add contact note");
+    }
+  }
+
+  async getUnifiedContactByLegacyId(legacyId: number, contactType: 'lead' | 'customer'): Promise<string | null> {
+    try {
+      // For now, we'll create a simple mapping strategy
+      // In a real scenario, you'd have a mapping table or use the unified contacts table
+      // This is a temporary solution until full migration to unified contacts
+      
+      if (contactType === 'lead') {
+        // Check if lead exists
+        const leadResult = await db.select().from(leads).where(eq(leads.id, legacyId));
+        if (leadResult.length === 0) return null;
+        
+        // For now, return a deterministic UUID based on the legacy ID
+        // In production, you'd store this mapping in a dedicated table
+        return `lead-${legacyId}-uuid`;
+      } else {
+        // Check if customer exists
+        const customerResult = await db.select().from(customers).where(eq(customers.id, legacyId));
+        if (customerResult.length === 0) return null;
+        
+        return `customer-${legacyId}-uuid`;
+      }
+    } catch (error) {
+      console.error(`Failed to get unified contact ID for legacy ${contactType} ${legacyId}:`, error);
+      return null;
     }
   }
 }

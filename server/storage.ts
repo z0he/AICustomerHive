@@ -20,6 +20,7 @@ import {
   customerTouchpoints, type CustomerTouchpoint, type InsertCustomerTouchpoint,
   journeyStages, type JourneyStage, type InsertJourneyStage,
   contactSegments, type ContactSegment, type InsertContactSegment,
+  contactNotes, type SelectContactNote, type InsertContactNote,
   type Contact, type ContactSegmentFilter
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
@@ -112,6 +113,11 @@ export interface IStorage {
   assignLeadOwner(id: number, ownerName: string): Promise<Lead>;
   addLeadTags(id: number, tags: string[]): Promise<Lead>;
   addLeadNote(id: number, note: string): Promise<Lead>;
+  
+  // Contact Notes methods (unified contact system)
+  getContactNotes(contactId: string): Promise<SelectContactNote[]>;
+  addContactNote(contactNote: InsertContactNote): Promise<SelectContactNote>;
+  getUnifiedContactByLegacyId(legacyId: number, contactType: 'lead' | 'customer'): Promise<string | null>; // Helper to map legacy IDs to unified contact UUIDs
   
   // Task methods
   getTasks(): Promise<Task[]>;
