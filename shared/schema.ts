@@ -985,6 +985,25 @@ export const insertContactSchema = createInsertSchema(contacts).pick({
 export type InsertContact = z.infer<typeof insertContactSchema>;
 export type SelectContact = typeof contacts.$inferSelect;
 
+// Contact Notes table
+export const contactNotes = pgTable("contact_notes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  contactId: uuid("contact_id").notNull(), // FK -> contacts.id
+  content: text("content").notNull(),
+  createdBy: uuid("created_by"), // nullable - FK to users.id
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// TypeScript types for contact notes
+export const insertContactNoteSchema = createInsertSchema(contactNotes).pick({
+  contactId: true,
+  content: true,
+  createdBy: true,
+});
+
+export type InsertContactNote = z.infer<typeof insertContactNoteSchema>;
+export type SelectContactNote = typeof contactNotes.$inferSelect;
+
 // Journey Tables - Customer Journey Tracking
 // Touchpoint type enum
 export const touchpointTypeEnum = pgEnum("touchpoint_type", [
