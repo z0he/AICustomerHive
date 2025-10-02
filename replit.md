@@ -1,228 +1,46 @@
 # AICRM - AI-Powered Customer Relationship Management System
 
 ## Overview
+AICRM is an AI-powered customer relationship management (CRM) platform that integrates traditional CRM functionalities with advanced AI features. It offers voice-controlled interfaces, intelligent campaign suggestions, customer insights, and automated marketing workflows. The system is designed as a full-stack web application, prioritizing performance and a modern user experience to help businesses manage customer interactions, optimize marketing efforts, and drive sales efficiently. Key ambitions include providing a comprehensive solution for customer journey mapping, lead management, and multi-channel campaign execution, leveraging AI for deeper customer understanding and automation.
 
-AICRM is a comprehensive CRM platform that combines traditional customer relationship management capabilities with AI-powered features. The system provides voice-controlled interfaces, intelligent campaign suggestions, customer insights, and automated marketing workflows. Built as a full-stack web application with a modern tech stack focused on performance and user experience.
+## User Preferences
+Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Styling**: Tailwind CSS with custom brand theming and Radix UI components
-- **State Management**: TanStack Query (React Query) for server state management
-- **Routing**: Wouter for lightweight client-side routing
-- **Build Tool**: Vite for fast development and optimized production builds
-- **UI Components**: Comprehensive component library using shadcn/ui and Radix UI primitives
+### UI/UX Decisions
+The frontend uses React 18 with TypeScript, styled with Tailwind CSS for custom branding and Radix UI components for a robust design system. Shadcn/ui is used for a comprehensive component library. The design emphasizes a professional and intuitive interface with clear navigation and visual analytics.
 
-### Backend Architecture
-- **Runtime**: Node.js with TypeScript (ESM modules)
-- **Framework**: Express.js for REST API endpoints
-- **Authentication**: Passport.js with local and JWT strategies, Google OAuth support
-- **Session Management**: Express sessions with PostgreSQL storage
-- **File Processing**: Express-fileupload for handling file uploads (CSV imports, etc.)
+### Technical Implementations
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Radix UI, TanStack Query for state management, Wouter for routing, Vite for bundling.
+- **Backend**: Node.js 20 with TypeScript (ESM), Express.js for REST APIs, Passport.js for authentication (local, JWT, Google OAuth), Express sessions with PostgreSQL storage, Express-fileupload for file processing.
+- **Database**: PostgreSQL with Drizzle ORM, Neon Database for serverless connection pooling, Drizzle Kit for schema management, custom transaction manager.
 
-### Database Architecture
-- **Primary Database**: PostgreSQL with Drizzle ORM
-- **Connection Pooling**: Neon Database serverless with WebSocket support
-- **Schema Management**: Drizzle Kit for migrations and schema management
-- **Transaction Support**: Custom transaction manager for atomic operations
+### Feature Specifications
+- **Core CRM**: Customer, Lead, and Campaign management, Customer Journey Mapping, Task Management, Calendar Integration.
+- **AI-Powered**: Browser-based Voice Commands, OpenAI-powered AI Assistant, AI-generated Campaign Suggestions, Automated Customer Insights, Smart Email Personalization.
+- **Marketing Automation**: Template-based Email Management, Embeddable Marketing Forms, Scheduled Communications, Web Tracking, Lead Generation.
+- **Hybrid Usage Model**: Tiered access (Free, Pro, Enterprise), support for personal OpenAI and Mailgun API keys, usage tracking, and graceful degradation without AI.
+- **Contact Management**: Unified contact system with lead scoring, advanced filtering, source tracking, and lifecycle stage management.
 
-## Key Components
-
-### Core CRM Features
-- **Customer Management**: Complete customer profiles with activity tracking, segmentation, and lifecycle management
-- **Lead Management**: Lead scoring, source tracking, status management, and conversion pipelines
-- **Customer Journey Mapping**: Visual journey tracking with touchpoint analytics, stage management, and conversion flow visualization
-- **Campaign Management**: Multi-channel campaign creation with A/B testing capabilities
-- **Task Management**: Automated task creation and assignment with priority levels
-- **Calendar Integration**: Event scheduling and management with reminder systems
-
-### AI-Powered Features
-- **Voice Commands**: Browser-based speech recognition for hands-free CRM operations
-- **AI Assistant**: OpenAI-powered chat interface for intelligent CRM assistance
-- **Campaign Suggestions**: AI-generated campaign recommendations based on customer data
-- **Customer Insights**: Automated analysis of customer behavior and engagement patterns
-- **Smart Email Personalization**: Dynamic content generation with token-based personalization
-
-### Marketing Automation
-- **Email Management**: Template-based email campaigns with personalization tokens
-- **Marketing Forms**: Embeddable forms with tracking and analytics
-- **Scheduled Communications**: Automated email scheduling and delivery
-- **Web Tracking**: Visitor tracking and page view analytics
-- **Lead Generation**: Automated lead capture and qualification
-
-### Hybrid Usage Model
-- **Tiered Access**: Free, Pro, and Enterprise tiers with usage limits
-- **Personal API Keys**: Users can provide their own OpenAI and Mailgun keys
-- **Usage Tracking**: Monitor AI prompts and email sending limits
-- **Graceful Degradation**: System functions with or without AI capabilities
-
-## Data Flow
-
-### Authentication Flow
-1. User registration/login through local credentials or Google OAuth
-2. Session creation with PostgreSQL storage
-3. JWT token generation for API access
-4. Middleware-based route protection
-
-### Voice Command Processing
-1. Browser captures speech input via Web Speech API
-2. Transcript sent to OpenAI for intent classification
-3. Structured commands generated and executed
-4. Real-time feedback provided to user interface
-
-### Campaign Management Flow
-1. Campaign creation with target audience definition
-2. Message variant generation for A/B testing
-3. Email template compilation with personalization
-4. Scheduled delivery through Mailgun integration
-5. Performance tracking and analytics collection
-
-### Data Import/Export
-1. CSV/JSON file upload and parsing
-2. Field mapping interface for data transformation
-3. Bulk database operations with validation
-4. Error reporting and success confirmation
+### System Design Choices
+The system uses a modular architecture for both frontend and backend to ensure scalability and maintainability. Authentication is handled via JWT and sessions. Data import/export supports CSV/JSON with field mapping. A dual-table approach for contacts maintains backward compatibility while transitioning to a unified contact system.
 
 ## External Dependencies
 
 ### AI Services
-- **OpenAI API**: GPT-4 integration for voice interpretation, campaign suggestions, and customer insights
-- **Usage Model**: Hybrid approach supporting both shared and personal API keys
+- **OpenAI API**: Used for voice interpretation, campaign suggestions, and customer insights. Supports a hybrid usage model.
 
 ### Email Services
-- **Mailgun**: Primary email delivery service with template support
-- **SendGrid**: Alternative email provider (configured but not primary)
-- **Email Templates**: Professional HTML templates with responsive design
+- **Mailgun**: Primary service for email delivery and template support.
+- **SendGrid**: Alternative email provider (configured).
 
 ### Authentication
-- **Google OAuth**: Third-party authentication integration
-- **Firebase Admin**: Token verification and user management
-- **Passport.js**: Authentication middleware with multiple strategies
+- **Google OAuth**: For third-party authentication.
+- **Firebase Admin**: For token verification and user management.
+- **Passport.js**: Authentication middleware.
 
 ### Infrastructure
-- **Neon Database**: Serverless PostgreSQL hosting
-- **Replit**: Development and deployment platform
-- **WebSocket Support**: Real-time features via ws library
-
-## Deployment Strategy
-
-### Development Environment
-- **Runtime**: Node.js 20 with PostgreSQL 16
-- **Hot Reload**: Vite development server with HMR
-- **Database**: Automatic provisioning with Drizzle migrations
-- **Port Configuration**: Frontend on 5000, proxied through Vite
-
-### Production Build
-- **Frontend**: Vite production build with optimization
-- **Backend**: ESBuild compilation with external packages
-- **Database**: Migration scripts for schema updates
-- **Static Assets**: Served from dist/public directory
-
-### Deployment Configuration
-- **Platform**: Replit with autoscale deployment target
-- **Build Process**: Automated build pipeline with npm scripts
-- **Environment Variables**: Secure configuration management
-- **Health Checks**: Port monitoring and application status
-
-## Recent Changes (September 2025)
-
-### Contact Management System Restoration Project
-
-**🎯 Goal**: Restore and enhance the contact management system with HubSpot-style functionality including lead scoring, advanced filters, and tracking integration.
-
-**📋 Progress Summary**:
-- ✅ **Phases 1-5 Complete**: Database schema, backend routes, contact forms, advanced filters, and lead scoring fully operational
-- 🔄 **Phase 6 In Progress**: Contact source & journey integration with UTM tracking (backend logic complete, UI integration pending)
-
-**🛠️ Current Status**:
-- **Working Features**: Contact creation, advanced filters, lead scoring with interactive sliders, contact detail view with all tabs functional
-- **Tracking Integration**: UTM parameter capture and contact source intelligence implemented and logging successfully
-- **Next Phase**: Complete UI integration for tracking data display and touchpoint history
-
-## Changelog
-
-```
-Changelog:
-- September 19, 2025. Phase 6 Started: Contact Source & Journey Integration
-  - ✓ Created comprehensive contact tracking integration service with UTM parameter capture
-  - ✓ Implemented contact source intelligence with confidence scoring and mapping logic
-  - ✓ Built automatic touchpoint stitching for anonymous visitor attribution
-  - ✓ Enhanced contact creation API to capture and log tracking data
-  - ✓ Added support for referrer tracking and landing page detection
-  - → In Progress: Complete UI integration to display tracking data in contact detail views
-- September 18, 2025. Phases 4-5 Complete: Advanced Filters + Lead Scoring Restoration
-  - ✅ Implemented comprehensive advanced filters with HubSpot-style interface
-  - ✅ Added complete industry dropdown with 147 industries and contact source tracking
-  - ✅ Restored interactive lead scoring functionality with sliders and algorithm configuration
-  - ✅ Enhanced contact detail view with all functional tabs (Profile, Notes, Activity, Scoring, Marketing)
-  - ✅ Implemented proper UX patterns: simple add contact form vs comprehensive detail overlay
-  - ✅ Fixed firstName/lastName field separation and proper backend field mapping
-- February 3, 2025. Phase 2 Complete: Unified Segmentation System with UX Consolidation
-  - ✓ Created complete unified contact segments database schema with filtering capabilities
-  - ✓ Built comprehensive backend API for unified contact management and segmentation
-  - ✓ Implemented professional frontend component for creating and managing segments
-  - ✓ Consolidated UX by redirecting Customer/Lead segment creation to unified system
-  - ✓ Removed separate "Segments" navigation to reduce interface congestion
-  - ✓ All segmentation now happens in one place through unified segments
-- February 3, 2025. Phase 3 Complete: Journey Mapping Clarity  
-  - ✓ Created UnifiedJourneyService with clear stage mapping and progression rules
-  - ✓ Built UnifiedJourneyView component for consistent journey visualization
-  - ✓ Integrated unified journey analytics with contact-specific recommendations
-  - ✓ Enhanced CustomerJourney page with unified view for both leads and customers
-  - ✓ Added unified journey API endpoints for analytics and touchpoint management
-  - ✓ Journey mapping now works seamlessly with unified contact system
-  - → Next: Phase 4 will ensure complete data consistency across all CRM features
-- February 3, 2025. Phase 4 Started: Data Consistency Implementation
-  - ✓ Created comprehensive DataConsistencyService with full audit capabilities
-  - ✓ Built data consistency routes and API endpoints for health monitoring
-  - ✓ Implemented DataConsistency dashboard page with health scoring
-  - ✓ Added navigation and routing for data consistency management
-  - ✓ Fixed unified journey API endpoint query parameter issues
-  - → In Progress: Testing and refining data consistency monitoring system
-- February 3, 2025. Phase 1 Complete: Data Model Unification
-  - ✓ Standardized industry field across leads and customers (contactIndustry → industry)  
-  - ✓ Updated database schema with proper migration of existing data
-  - ✓ Fixed all code references to use unified industry field naming
-  - ✓ Added unified Contact interface for future segmentation enhancements
-  - ✓ Application now fully functional with consistent industry data model
-- January 28, 2025. Completed Customer Journey Mapping feature as core CRM capability
-  - Built comprehensive frontend journey visualization with interactive charts and touchpoint tracking
-  - Created journey stage management system with customizable workflows and performance metrics
-  - Implemented full database schema with customer_touchpoints and journey_stages tables
-  - Added complete CRUD API endpoints for customer journey data management
-  - Integrated Customer Journey navigation in main sidebar for easy access
-  - Sample journey data includes 5 default stages and customer touchpoint examples
-- January 23, 2025. Completed comprehensive A/B Testing for Campaigns system
-  - Enhanced MessageVariants component with professional UI and interactive charts
-  - Added working "Add Test Data" functionality with proper JWT authentication
-  - Implemented winner detection with improvement percentage calculations
-  - Created performance comparison charts with visual analytics
-  - Added A/B testing status indicators on campaign cards
-  - Integrated comprehensive empty states with helpful tips
-  - Fixed API request errors and ensured proper backend integration
-- January 23, 2025. Enhanced demo data labeling for better user experience
-  - Added clear "Demo" badges with test tube icons throughout the lead management system
-  - Customer segments now display "Demo" labels on sample data
-  - Workflow automation shows demo indicators on sample workflows and execution logs
-  - Lead scoring rules marked as "Demo Rule" examples
-  - All demo descriptions include "Demo:" prefix for crystal clear distinction
-- January 7, 2025. Fixed critical usage tracking and email security issues
-  - Fixed email usage tracking bug where sent emails weren't incrementing usage counts
-  - Enhanced email security - users now only see their own email logs (admin sees all)
-  - Added userId tracking to all email sending methods (campaigns, direct emails, templates)
-  - Updated campaign email sending to properly track user ID and increment usage
-  - Fixed email logging database schema to include userId field for proper user-based filtering
-- January 7, 2025. Enhanced hybrid API model with comprehensive domain validation
-  - Added strict domain enforcement to prevent sandbox domain usage
-  - Enhanced API key validation with clear error messages
-  - Added domain validation alerts and user guidance
-  - Fixed email domain enforcement to ensure all emails use mail.aicrm.co.uk
-- June 16, 2025. Initial setup
-```
-
-## User Preferences
-
-```
-Preferred communication style: Simple, everyday language.
-```
+- **Neon Database**: Serverless PostgreSQL hosting.
+- **Replit**: Development and deployment platform.
+- **WebSocket Support**: For real-time features.
