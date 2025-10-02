@@ -373,38 +373,137 @@ router.patch('/:id', async (req: Request, res: Response) => {
     let updatedContact;
     
     if (contactType === 'lead') {
-      // This is a lead
-      const leadData: any = {};
-      
-      if (validatedData.name) leadData.name = validatedData.name;
-      if (validatedData.email) leadData.email = validatedData.email;
-      if (validatedData.company) leadData.company = validatedData.company;
-      if (validatedData.jobTitle) leadData.jobTitle = validatedData.jobTitle;
-      if (validatedData.industry) leadData.industry = validatedData.industry;
-      if (validatedData.country) leadData.location = validatedData.country;
-      if (validatedData.phone) leadData.phone = validatedData.phone;
-      if (validatedData.status) leadData.leadStatus = validatedData.status;
-      if (validatedData.owner) leadData.leadOwner = validatedData.owner;
-      if (validatedData.contactSource) leadData.leadSource = validatedData.contactSource;
-      else if (validatedData.source) leadData.leadSource = validatedData.source;
-      
-      updatedContact = await storage.updateLead(actualId, leadData);
-      
-      // Transform back to unified format
-      updatedContact = {
-        id: `lead_${updatedContact.id}`,
-        name: updatedContact.name,
-        email: updatedContact.email,
-        jobTitle: updatedContact.jobTitle,
-        company: updatedContact.company,
-        industry: updatedContact.industry,
-        country: updatedContact.location,
-        lifecycleStage: 'lead',
-        owner: updatedContact.leadOwner,
-        source: updatedContact.leadSource,
-        phone: updatedContact.phone,
-        lastActivity: updatedContact.createdAt,
-      };
+      // Check if lifecycle stage is changing - if so, convert lead to customer
+      if (validatedData.lifecycleStage && validatedData.lifecycleStage !== 'lead') {
+        // Get the current lead data
+        const lead = await storage.getLead(actualId);
+        if (!lead) {
+          return res.status(404).json({ error: 'Lead not found' });
+        }
+        
+        // Check if customer already exists for this lead (by either old or new email)
+        const newEmail = validatedData.email;
+        const oldEmail = lead.email;
+        let existingCustomer;
+        
+        if (oldEmail || newEmail) {
+          const allCustomers = await storage.getCustomers(userId);
+          existingCustomer = allCustomers.find(c => 
+            c.email === oldEmail || c.email === newEmail
+          );
+        }
+        
+        const nameParts = (validatedData.name || lead.name).split(' ');
+        
+        if (existingCustomer) {
+          // Update existing customer
+          const updateData: any = {};
+          if (validatedData.email) updateData.email = validatedData.email;
+          if (validatedData.name) {
+            updateData.firstName = nameParts[0] || lead.name;
+            updateData.lastName = nameParts.slice(1).join(' ') || '';
+          }
+          if (validatedData.phone) updateData.phone = validatedData.phone;
+          if (validatedData.company) updateData.company = validatedData.company;
+          if (validatedData.jobTitle) updateData.jobTitle = validatedData.jobTitle;
+          if (validatedData.industry) updateData.industry = validatedData.industry;
+          if (validatedData.country) updateData.country = validatedData.country;
+          if (validatedData.lifecycleStage) updateData.lifecycleStage = validatedData.lifecycleStage;
+          if (validatedData.owner) updateData.contactOwner = validatedData.owner;
+          if (validatedData.contactSource || validatedData.source) {
+            updateData.contactSource = validatedData.contactSource || validatedData.source;
+          }
+          
+          const customer = await storage.updateCustomer(existingCustomer.id, updateData);
+          
+          // Soft delete the lead
+          await storage.updateLead(actualId, { leadStatus: 'converted' });
+          
+          updatedContact = {
+            id: `customer_${customer.id}`,
+            name: `${customer.firstName} ${customer.lastName}`.trim(),
+            email: customer.email,
+            jobTitle: customer.jobTitle,
+            company: customer.company,
+            industry: customer.industry,
+            country: customer.country,
+            lifecycleStage: customer.lifecycleStage,
+            owner: customer.contactOwner,
+            source: customer.contactSource,
+            phone: customer.phone,
+            lastActivity: customer.createdAt,
+          };
+        } else {
+          // Create new customer from lead data with updates
+          const customerData: any = {
+            email: newEmail || oldEmail || `lead-${actualId}@unknown.com`,
+            firstName: validatedData.firstName || nameParts[0] || lead.name,
+            lastName: validatedData.lastName || nameParts.slice(1).join(' ') || '',
+            phone: validatedData.phone || lead.phone,
+            company: validatedData.company || lead.company,
+            jobTitle: validatedData.jobTitle || lead.jobTitle,
+            industry: validatedData.industry || lead.industry,
+            country: validatedData.country || lead.location,
+            lifecycleStage: validatedData.lifecycleStage,
+            contactOwner: validatedData.owner || lead.leadOwner,
+            contactSource: validatedData.contactSource || validatedData.source || lead.leadSource,
+            status: 'active'
+          };
+          
+          const newCustomer = await storage.createCustomer(customerData);
+          
+          // Soft delete the lead
+          await storage.updateLead(actualId, { leadStatus: 'converted' });
+          
+          updatedContact = {
+            id: `customer_${newCustomer.id}`,
+            name: `${newCustomer.firstName} ${newCustomer.lastName}`.trim(),
+            email: newCustomer.email,
+            jobTitle: newCustomer.jobTitle,
+            company: newCustomer.company,
+            industry: newCustomer.industry,
+            country: newCustomer.country,
+            lifecycleStage: newCustomer.lifecycleStage,
+            owner: newCustomer.contactOwner,
+            source: newCustomer.contactSource,
+            phone: newCustomer.phone,
+            lastActivity: newCustomer.createdAt,
+          };
+        }
+      } else {
+        // Normal lead update (no lifecycle change)
+        const leadData: any = {};
+        
+        if (validatedData.name) leadData.name = validatedData.name;
+        if (validatedData.email) leadData.email = validatedData.email;
+        if (validatedData.company) leadData.company = validatedData.company;
+        if (validatedData.jobTitle) leadData.jobTitle = validatedData.jobTitle;
+        if (validatedData.industry) leadData.industry = validatedData.industry;
+        if (validatedData.country) leadData.location = validatedData.country;
+        if (validatedData.phone) leadData.phone = validatedData.phone;
+        if (validatedData.status) leadData.leadStatus = validatedData.status;
+        if (validatedData.owner) leadData.leadOwner = validatedData.owner;
+        if (validatedData.contactSource) leadData.leadSource = validatedData.contactSource;
+        else if (validatedData.source) leadData.leadSource = validatedData.source;
+        
+        updatedContact = await storage.updateLead(actualId, leadData);
+        
+        // Transform back to unified format
+        updatedContact = {
+          id: `lead_${updatedContact.id}`,
+          name: updatedContact.name,
+          email: updatedContact.email,
+          jobTitle: updatedContact.jobTitle,
+          company: updatedContact.company,
+          industry: updatedContact.industry,
+          country: updatedContact.location,
+          lifecycleStage: 'lead',
+          owner: updatedContact.leadOwner,
+          source: updatedContact.leadSource,
+          phone: updatedContact.phone,
+          lastActivity: updatedContact.createdAt,
+        };
+      }
     } else {
       // This is a customer
       const customerData: any = {};
