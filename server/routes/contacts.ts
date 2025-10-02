@@ -370,7 +370,8 @@ router.patch('/:id', async (req: Request, res: Response) => {
     if (validatedData.country !== undefined) updateData.country = validatedData.country;
     if (validatedData.lifecycleStage !== undefined) updateData.lifecycleStage = validatedData.lifecycleStage as any;
     if (validatedData.status !== undefined) updateData.status = validatedData.status as any;
-    if (validatedData.owner !== undefined) updateData.ownerId = validatedData.owner;
+    // Convert empty strings to null for UUID fields
+    if (validatedData.owner !== undefined) updateData.ownerId = validatedData.owner || null;
     if (validatedData.contactSource !== undefined) updateData.contactSource = validatedData.contactSource as any;
     else if (validatedData.source !== undefined) updateData.contactSource = validatedData.source as any;
 
