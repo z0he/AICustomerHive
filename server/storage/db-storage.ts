@@ -2019,73 +2019,51 @@ export class DbStorage implements IStorage {
 
   async getUnifiedContacts(userId?: number): Promise<Contact[]> {
     try {
-      // Get all active (non-deleted) leads and customers, convert them to unified Contact format
-      const [leadResults, customerResults] = await Promise.all([
-        db.select().from(leads)
-          .where(ne(leads.leadStatus, 'deleted'))
-          .orderBy(desc(leads.createdAt)),
-        db.select().from(customers)
-          .where(ne(customers.status, 'deleted'))
-          .orderBy(desc(customers.createdAt))
-      ]);
+      // Query the unified contacts table directly (status != 'deleted' doesn't exist, we just get active ones)
+      const contactResults = await db.select().from(contacts)
+        .orderBy(desc(contacts.createdAt));
       
-      const unifiedContacts: Contact[] = [];
-      
-      // Convert leads to unified Contact format
-      leadResults.forEach(lead => {
-        unifiedContacts.push({
-          id: `lead_${lead.id}`, // Prefix to avoid ID conflicts with customers
-          name: lead.name,
-          email: lead.email,
-          phone: lead.phone,
-          company: lead.company,
-          jobTitle: lead.jobTitle,
-          industry: lead.industry,
-          contactType: 'lead',
-          lifecycleStage: 'lead', // Map lead status to lifecycle stage for consistency
-          country: lead.location, // Map location to country for table display
-          leadSource: lead.leadSource,
-          leadStatus: lead.leadStatus,
-          leadOwner: lead.leadOwner,
-          score: lead.score,
-          engagementLevel: lead.engagementLevel,
-          conversionProbability: lead.conversionProbability,
-          tags: lead.tags,
-          notes: lead.notes,
-          location: lead.location,
-          initials: lead.initials,
-          createdAt: lead.createdAt,
-          currentJourneyStageId: lead.currentJourneyStageId,
-          journeyEntryDate: lead.journeyEntryDate
-        });
+      // Map to Contact format with proper field mapping
+      const unifiedContacts: Contact[] = contactResults.map(contact => {
+        const firstName = contact.firstName || '';
+        const lastName = contact.lastName || '';
+        const fullName = `${firstName} ${lastName}`.trim();
+        const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+        
+        return {
+          id: contact.id, // Use actual UUID, no prefix
+          name: fullName,
+          email: contact.email || '', // Contact interface expects string, not nullable
+          phone: contact.phone,
+          company: contact.company,
+          jobTitle: contact.jobTitle,
+          industry: contact.industry,
+          contactType: contact.lifecycleStage === 'customer' ? 'customer' : 'lead',
+          lifecycleStage: contact.lifecycleStage,
+          country: contact.country,
+          // Map unified fields to Contact interface expectations
+          source: contact.contactSource, // For frontend table display
+          leadSource: contact.contactSource, // Map contactSource to leadSource for backward compatibility
+          leadStatus: contact.leadStatus,
+          leadOwner: contact.ownerId || undefined,
+          contactOwner: contact.ownerId || undefined,
+          contactSource: contact.contactSource,
+          score: contact.score,
+          engagementLevel: contact.engagementLevel,
+          conversionProbability: contact.conversionProbability,
+          tags: (contact.tags as string[]) || [],
+          notes: undefined, // Notes are stored separately in contact_notes table
+          location: contact.country, // Use country as location
+          initials: initials,
+          createdAt: contact.createdAt,
+          currentJourneyStageId: undefined, // Not in contacts table
+          journeyEntryDate: undefined, // Not in contacts table
+          linkedinUrl: contact.linkedinUrl,
+          legalBasis: undefined // Not in contacts table
+        };
       });
       
-      // Convert customers to unified Contact format
-      customerResults.forEach(customer => {
-        unifiedContacts.push({
-          id: `customer_${customer.id}`, // Prefix to avoid ID conflicts with leads
-          name: `${customer.firstName} ${customer.lastName}`.trim(),
-          email: customer.email,
-          phone: customer.phone,
-          company: customer.company,
-          jobTitle: customer.jobTitle,
-          industry: customer.industry,
-          contactType: 'customer',
-          lifecycleStage: customer.lifecycleStage,
-          country: customer.country,
-          contactOwner: customer.contactOwner,
-          contactSource: customer.contactSource,
-          linkedinUrl: customer.linkedinUrl,
-          legalBasis: customer.legalBasis,
-          location: customer.location,
-          initials: customer.initials,
-          createdAt: customer.createdAt,
-          currentJourneyStageId: customer.currentJourneyStageId,
-          journeyEntryDate: customer.journeyEntryDate
-        });
-      });
-      
-      return unifiedContacts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return unifiedContacts;
     } catch (error) {
       console.error("Failed to get unified contacts:", error);
       return [];
