@@ -7,6 +7,7 @@ import {
   customers, type Customer, type InsertCustomer,
   customerActivities, type CustomerActivity,
   leads, type Lead, type InsertLead,
+  contacts, type Contact, type InsertContact,
   tasks, type Task, type InsertTask,
   messageVariants, type MessageVariant, type InsertMessageVariant,
   emailTemplates, type EmailTemplate, type InsertEmailTemplate,
@@ -24,7 +25,8 @@ import {
   journeyStages, type JourneyStage, type InsertJourneyStage,
   contactSegments, type ContactSegment, type InsertContactSegment,
   contactNotes, type SelectContactNote, type InsertContactNote,
-  type Contact, type ContactSegmentFilter
+  type SelectContact,
+  type ContactSegmentFilter
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {
@@ -2269,6 +2271,56 @@ export class DbStorage implements IStorage {
     } catch (error) {
       console.error(`Failed to get unified contact ID for legacy ${contactType} ${legacyId}:`, error);
       return null;
+    }
+  }
+
+  // ----- Unified Contact CRUD methods -----
+
+  async getContact(id: string): Promise<SelectContact | undefined> {
+    try {
+      const [contact] = await db
+        .select()
+        .from(contacts)
+        .where(eq(contacts.id, id))
+        .limit(1);
+      
+      return contact;
+    } catch (error) {
+      console.error(`Failed to get contact ${id}:`, error);
+      return undefined;
+    }
+  }
+
+  async updateContact(id: string, data: Partial<SelectContact>): Promise<SelectContact> {
+    try {
+      const result = await db
+        .update(contacts)
+        .set(data)
+        .where(eq(contacts.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error(`Contact with ID ${id} not found`);
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error(`Failed to update contact ${id}:`, error);
+      throw new Error(`Failed to update contact ${id}`);
+    }
+  }
+
+  async deleteContact(id: string): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(contacts)
+        .where(eq(contacts.id, id))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error(`Failed to delete contact ${id}:`, error);
+      return false;
     }
   }
 }

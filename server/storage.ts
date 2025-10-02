@@ -21,7 +21,7 @@ import {
   journeyStages, type JourneyStage, type InsertJourneyStage,
   contactSegments, type ContactSegment, type InsertContactSegment,
   contactNotes, type SelectContactNote, type InsertContactNote,
-  type Contact, type ContactSegmentFilter
+  type Contact, type SelectContact, type ContactSegmentFilter
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
 
@@ -118,6 +118,11 @@ export interface IStorage {
   getContactNotes(contactId: string): Promise<SelectContactNote[]>;
   addContactNote(contactNote: InsertContactNote): Promise<SelectContactNote>;
   getUnifiedContactByLegacyId(legacyId: number, contactType: 'lead' | 'customer'): Promise<string | null>; // Helper to map legacy IDs to unified contact UUIDs
+  
+  // Unified Contact methods (main contact CRUD)
+  getContact(id: string): Promise<SelectContact | undefined>;
+  updateContact(id: string, data: Partial<SelectContact>): Promise<SelectContact>;
+  deleteContact(id: string): Promise<boolean>;
   
   // Task methods
   getTasks(): Promise<Task[]>;
@@ -2269,6 +2274,34 @@ export class MemStorage implements IStorage {
 
   async deleteJourneyStage(id: number): Promise<void> {
     throw new Error("Journey Stages not implemented in MemStorage - use DbStorage");
+  }
+
+  // ----- Contact Notes methods (placeholder implementations) -----
+
+  async getContactNotes(contactId: string): Promise<SelectContactNote[]> {
+    throw new Error("Contact notes not implemented in MemStorage - use DbStorage");
+  }
+
+  async addContactNote(contactNote: InsertContactNote): Promise<SelectContactNote> {
+    throw new Error("Contact notes not implemented in MemStorage - use DbStorage");
+  }
+
+  async getUnifiedContactByLegacyId(legacyId: number, contactType: 'lead' | 'customer'): Promise<string | null> {
+    throw new Error("Legacy contact mapping not implemented in MemStorage - use DbStorage");
+  }
+
+  // ----- Unified Contact CRUD methods (placeholder implementations) -----
+
+  async getContact(id: string): Promise<SelectContact | undefined> {
+    throw new Error("Unified contacts not implemented in MemStorage - use DbStorage");
+  }
+
+  async updateContact(id: string, data: Partial<SelectContact>): Promise<SelectContact> {
+    throw new Error("Unified contacts not implemented in MemStorage - use DbStorage");
+  }
+
+  async deleteContact(id: string): Promise<boolean> {
+    throw new Error("Unified contacts not implemented in MemStorage - use DbStorage");
   }
 }
 
