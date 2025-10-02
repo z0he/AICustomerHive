@@ -385,7 +385,8 @@ router.patch('/:id', async (req: Request, res: Response) => {
       if (validatedData.phone) leadData.phone = validatedData.phone;
       if (validatedData.status) leadData.leadStatus = validatedData.status;
       if (validatedData.owner) leadData.leadOwner = validatedData.owner;
-      if (validatedData.source) leadData.leadSource = validatedData.source;
+      if (validatedData.contactSource) leadData.leadSource = validatedData.contactSource;
+      else if (validatedData.source) leadData.leadSource = validatedData.source;
       
       updatedContact = await storage.updateLead(actualId, leadData);
       
@@ -422,7 +423,8 @@ router.patch('/:id', async (req: Request, res: Response) => {
       if (validatedData.lifecycleStage) customerData.lifecycleStage = validatedData.lifecycleStage;
       if (validatedData.status) customerData.customerStatus = validatedData.status;
       if (validatedData.owner) customerData.contactOwner = validatedData.owner;
-      if (validatedData.source) customerData.contactSource = validatedData.source;
+      if (validatedData.contactSource) customerData.contactSource = validatedData.contactSource;
+      else if (validatedData.source) customerData.contactSource = validatedData.source;
       
       updatedContact = await storage.updateCustomer(actualId, customerData);
       
