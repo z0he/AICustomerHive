@@ -942,8 +942,20 @@ export const contacts = pgTable("contacts", {
   lifecycleStage: lifecycleStageEnum("lifecycle_stage").notNull().default("lead"),
   status: contactStatusEnum("status").notNull().default("active"),
   ownerId: uuid("owner_id"),
+  country: varchar("country", { length: 100 }),
+  linkedinUrl: varchar("linkedin_url", { length: 255 }),
+  // Lead scoring fields (from leads table)
+  score: integer("score").default(0), // 0-100
+  engagementLevel: integer("engagement_level").default(0), // 0-100
+  conversionProbability: integer("conversion_probability").default(0), // 0-100
+  // Additional fields for compatibility
+  leadStatus: varchar("lead_status", { length: 50 }), // new, contacted, qualified, converted
+  lastContactDate: timestamp("last_contact_date", { withTimezone: true }),
+  nextFollowUpDate: timestamp("next_follow_up_date", { withTimezone: true }),
+  // Flexible storage
   tags: jsonb("tags").$type<string[]>().default([]).notNull(),
   properties: jsonb("properties").$type<Record<string, unknown>>().default({}).notNull(),
+  customFields: jsonb("custom_fields"),
   // Tracking integration fields
   trackingCode: varchar("tracking_code", { length: 100 }), // UTM parameters, campaign codes
   referrerUrl: varchar("referrer_url", { length: 500 }), // Where they came from
@@ -970,8 +982,17 @@ export const insertContactSchema = createInsertSchema(contacts).pick({
   lifecycleStage: true,
   status: true,
   ownerId: true,
+  country: true,
+  linkedinUrl: true,
+  score: true,
+  engagementLevel: true,
+  conversionProbability: true,
+  leadStatus: true,
+  lastContactDate: true,
+  nextFollowUpDate: true,
   tags: true,
   properties: true,
+  customFields: true,
   trackingCode: true,
   referrerUrl: true,
   landingPageUrl: true,
