@@ -71,7 +71,7 @@ const CONTACT_SOURCES = [
 ] as const;
 
 interface Contact {
-  id: number;
+  id: string;
   name: string;
   firstName?: string;
   lastName?: string;

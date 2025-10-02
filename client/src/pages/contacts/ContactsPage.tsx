@@ -68,7 +68,7 @@ const LIFECYCLE_STAGES: { value: LifecycleStage; label: string; color: string }[
 ];
 
 interface Contact {
-  id: number;
+  id: string;
   name: string;
   email: string;
   jobTitle?: string;
@@ -94,7 +94,7 @@ export default function ContactsPage() {
   const [advancedFilters, setAdvancedFilters] = useState<ContactSegmentFilter[]>([]);
   
   // Bulk selection state
-  const [selectedContactIds, setSelectedContactIds] = useState<Set<number>>(new Set());
+  const [selectedContactIds, setSelectedContactIds] = useState<Set<string>>(new Set());
   const [isSelectAll, setIsSelectAll] = useState(false);
   
   // Delete confirmation state
@@ -141,7 +141,7 @@ export default function ContactsPage() {
 
   // Delete mutations
   const deleteMutation = useMutation({
-    mutationFn: async (contactId: number) => {
+    mutationFn: async (contactId: string) => {
       return await apiRequest(`/api/contacts/${contactId}`, 'DELETE');
     },
     onSuccess: (_, contactId) => {
@@ -166,7 +166,7 @@ export default function ContactsPage() {
   });
 
   const bulkDeleteMutation = useMutation({
-    mutationFn: async (contactIds: number[]) => {
+    mutationFn: async (contactIds: string[]) => {
       await Promise.all(
         contactIds.map(id => apiRequest(`/api/contacts/${id}`, 'DELETE'))
       );
@@ -199,7 +199,7 @@ export default function ContactsPage() {
     }
   };
 
-  const handleSelectContact = (contactId: number, checked: boolean) => {
+  const handleSelectContact = (contactId: string, checked: boolean) => {
     setSelectedContactIds(prev => {
       const newSet = new Set(prev);
       if (checked) {
