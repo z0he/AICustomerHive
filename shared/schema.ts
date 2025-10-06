@@ -301,47 +301,38 @@ export const insertCalendarEventSchema = createInsertSchema(calendarEvents).pick
 export type InsertCalendarEvent = z.infer<typeof insertCalendarEventSchema>;
 export type CalendarEvent = typeof calendarEvents.$inferSelect;
 
-// Unified Contact Interface - represents both leads and customers
+// Unified Contact Interface - based on the new unified contacts table
 export interface Contact {
-  id: string;
+  id: number;
   name: string;
   email: string;
   phone?: string | null;
   company?: string | null;
   jobTitle?: string | null;
   industry?: string | null;
-  contactType: 'lead' | 'customer';
-  // Lead-specific fields
-  leadSource?: string | null;
-  leadStatus?: string | null;
-  leadOwner?: string | null;
+  lifecycleStage: 'lead' | 'opportunity' | 'customer' | 'evangelist' | 'churned';
+  contactSource?: string | null;
   score?: number | null;
   engagementLevel?: number | null;
   conversionProbability?: number | null;
+  leadStatus?: string | null;
   tags?: string[] | null;
-  notes?: string | null;
-  // Customer-specific fields
-  lifecycleStage?: string | null;
   contactOwner?: string | null;
-  contactSource?: string | null;
   country?: string | null;
   linkedinUrl?: string | null;
-  legalBasis?: string | null;
-  // Common fields
   location?: string | null;
   initials: string;
   createdAt: Date;
-  // Journey mapping fields
   currentJourneyStageId?: number | null;
   journeyEntryDate?: Date | null;
 }
 
 // Unified Contact Segment Filter Interface
 export interface ContactSegmentFilter {
-  field: string; // Field to filter on (industry, leadStatus, score, etc.)
+  field: string; // Field to filter on (industry, leadStatus, score, lifecycleStage, etc.)
   operator: 'equals' | 'notEquals' | 'contains' | 'startsWith' | 'endsWith' | 'greaterThan' | 'lessThan' | 'greaterThanOrEqual' | 'lessThanOrEqual' | 'isEmpty' | 'isNotEmpty' | 'in';
   value: string | number | string[]; // Value to compare against
-  contactTypes?: ('lead' | 'customer')[]; // Specific contact types this filter applies to
+  lifecycleStages?: ('lead' | 'opportunity' | 'customer' | 'evangelist' | 'churned')[]; // Specific lifecycle stages this filter applies to
 }
 
 // Email templates table
@@ -885,7 +876,7 @@ export type ContactSegment = typeof contactSegments.$inferSelect;
 
 // Unified Contacts Table - New Schema
 export const lifecycleStageEnum = pgEnum("lifecycle_stage", [
-  "lead","mql","opportunity","customer","evangelist","churned"
+  "lead","opportunity","customer","evangelist","churned"
 ]);
 
 export const contactStatusEnum = pgEnum("contact_status", [
