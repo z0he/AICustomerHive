@@ -347,6 +347,10 @@ router.patch('/:id', async (req: Request, res: Response) => {
     }
 
     const validatedData = updateContactSchema.parse(req.body);
+    
+    // DEBUG: Log what data we received
+    console.log(`[PATCH /api/contacts/${contactId}] Request body:`, JSON.stringify(req.body, null, 2));
+    console.log(`[PATCH /api/contacts/${contactId}] Validated data:`, JSON.stringify(validatedData, null, 2));
 
     // Get the existing contact first
     const existingContact = await storage.getContact(contactId);
@@ -375,8 +379,14 @@ router.patch('/:id', async (req: Request, res: Response) => {
     if (validatedData.contactSource !== undefined) updateData.contactSource = validatedData.contactSource as any;
     else if (validatedData.source !== undefined) updateData.contactSource = validatedData.source as any;
 
+    // DEBUG: Log what we're about to save
+    console.log(`[PATCH /api/contacts/${contactId}] Update data to be saved:`, JSON.stringify(updateData, null, 2));
+
     // Update the contact in the unified contacts table
     const updatedContact = await storage.updateContact(contactId, updateData);
+    
+    // DEBUG: Log what came back from database
+    console.log(`[PATCH /api/contacts/${contactId}] Updated contact from DB:`, JSON.stringify(updatedContact, null, 2));
 
     // Return the unified contact format
     const response = {
