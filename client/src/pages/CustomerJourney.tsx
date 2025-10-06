@@ -19,7 +19,6 @@ import JourneyVisualization from "@/components/journey/JourneyVisualization";
 import TouchpointAnalytics from "@/components/journey/TouchpointAnalytics";
 import CustomerJourneyMap from "@/components/journey/CustomerJourneyMap";
 import JourneyStageManager from "@/components/journey/JourneyStageManager";
-import UnifiedJourneyView from "@/components/journey/UnifiedJourneyView";
 
 // Icons
 import { 
@@ -60,8 +59,8 @@ export default function CustomerJourney() {
     createdAt: new Date(c.createdAt),
     journeyEntryDate: c.journeyEntryDate ? new Date(c.journeyEntryDate) : null
   }));
-  const customers = contacts.filter(c => c.contactType === 'customer');
-  const leads = contacts.filter(c => c.contactType === 'lead');
+  const customers = contacts.filter(c => ['customer', 'evangelist', 'churned'].includes(c.lifecycleStage));
+  const leads = contacts.filter(c => ['lead', 'opportunity'].includes(c.lifecycleStage));
 
   // Fetch touchpoints data
   const { data: touchpoints = [], isLoading: isLoadingTouchpoints } = useQuery<CustomerTouchpoint[]>({
@@ -85,8 +84,8 @@ export default function CustomerJourney() {
     // Calculate average journey length for all contacts
     const contactJourneys = contacts.map(contact => {
       const contactTouchpoints = touchpoints.filter(t => 
-        (contact.contactType === 'customer' && t.customerId === contact.id) ||
-        (contact.contactType === 'lead' && t.leadId === contact.id)
+        (['customer', 'evangelist', 'churned'].includes(contact.lifecycleStage) && t.customerId === contact.id) ||
+        (['lead', 'opportunity'].includes(contact.lifecycleStage) && t.leadId === contact.id)
       );
       return contactTouchpoints.length;
     });
@@ -130,7 +129,7 @@ export default function CustomerJourney() {
   
   // Filter customers for legacy components that still need Customer[] type
   const filteredCustomers = useMemo(() => {
-    return filteredContacts.filter(c => c.contactType === 'customer').map(contact => ({
+    return filteredContacts.filter(c => ['customer', 'evangelist', 'churned'].includes(c.lifecycleStage)).map(contact => ({
       id: contact.id,
       name: contact.name,
       email: contact.email,
@@ -146,13 +145,13 @@ export default function CustomerJourney() {
       contactSource: contact.contactSource,
       leadScore: contact.score,
       tags: contact.tags,
-      notes: contact.notes,
+      notes: null,
       country: contact.country,
-      legalBasis: contact.legalBasis,
+      legalBasis: null,
       createdAt: contact.createdAt.toISOString(),
       industry: contact.industry,
       contactOwner: contact.contactOwner,
-      contactType: contact.contactType,
+      contactType: contact.lifecycleStage,
       location: contact.location,
       customFields: {},
       status: 'active',
@@ -194,10 +193,10 @@ export default function CustomerJourney() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900 flex items-center">
               <Route className="mr-3 h-7 w-7 text-primary" />
-              Contact Journey Mapping
+              Contact Journey Tracking
             </h1>
             <p className="text-slate-500 mt-1">
-              Visualize and analyze all contact touchpoints across their entire journey - leads and customers
+              Track individual touchpoints and engagement patterns for all contacts across their journey
             </p>
           </div>
           <div className="flex items-center space-x-3">
@@ -307,22 +306,14 @@ export default function CustomerJourney() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="overview" className="flex items-center">
                 <Map className="mr-2 h-4 w-4" />
                 Journey Map
               </TabsTrigger>
-              <TabsTrigger value="unified" className="flex items-center">
-                <Users className="mr-2 h-4 w-4" />
-                Unified View
-              </TabsTrigger>
               <TabsTrigger value="analytics" className="flex items-center">
                 <BarChart3 className="mr-2 h-4 w-4" />
-                Analytics
-              </TabsTrigger>
-              <TabsTrigger value="visualization" className="flex items-center">
-                <Route className="mr-2 h-4 w-4" />
-                Visualization
+                Analytics & Insights
               </TabsTrigger>
               <TabsTrigger value="settings" className="flex items-center">
                 <Settings className="mr-2 h-4 w-4" />
@@ -439,129 +430,21 @@ export default function CustomerJourney() {
               </div>
             </TabsContent>
 
-            <TabsContent value="unified" className="space-y-6">
-              {/* Unified Journey View for Both Leads and Customers */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Leads Journey View */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Target className="h-5 w-5" />
-                      <span>Lead Journeys</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Interactive journey mapping for leads using unified contact system
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {leads.slice(0, 3).map(lead => {
-                        const unifiedContact = {
-                          id: lead.id,
-                          name: lead.name,
-                          email: lead.email,
-                          phone: lead.phone,
-                          company: lead.company,
-                          jobTitle: lead.jobTitle,
-                          industry: lead.industry,
-                          contactType: 'lead' as const,
-                          leadSource: lead.leadSource,
-                          leadStatus: lead.leadStatus,
-                          leadOwner: lead.leadOwner,
-                          score: lead.score,
-                          engagementLevel: lead.engagementLevel,
-                          conversionProbability: lead.conversionProbability,
-                          tags: lead.tags,
-                          notes: lead.notes,
-                          location: lead.location,
-                          initials: lead.initials,
-                          createdAt: lead.createdAt,
-                          currentJourneyStageId: lead.currentJourneyStageId,
-                          journeyEntryDate: lead.journeyEntryDate
-                        };
-                        
-                        return (
-                          <UnifiedJourneyView
-                            key={lead.id}
-                            contact={unifiedContact}
-                            onActionClick={(action, contact) => {
-                              console.log('Recommended action:', action, 'for:', contact.name);
-                              // Handle recommended actions
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Customers Journey View */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Users className="h-5 w-5" />
-                      <span>Customer Journeys</span>
-                    </CardTitle>
-                    <CardDescription>
-                      Interactive journey mapping for customers using unified contact system
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {filteredCustomers.slice(0, 3).map(customer => {
-                        const unifiedContact = {
-                          id: customer.id,
-                          name: customer.name,
-                          email: customer.email,
-                          phone: customer.phone,
-                          company: customer.company,
-                          jobTitle: customer.jobTitle,
-                          industry: customer.industry || null,
-                          contactType: 'customer' as const,
-                          lifecycleStage: customer.lifecycleStage,
-                          contactOwner: customer.contactOwner || null,
-                          contactSource: customer.contactSource,
-                          country: customer.country,
-                          linkedinUrl: customer.linkedinUrl,
-                          location: customer.location || null,
-                          initials: customer.initials,
-                          createdAt: new Date(customer.createdAt),
-                          currentJourneyStageId: customer.currentJourneyStageId,
-                          journeyEntryDate: customer.journeyEntryDate ? new Date(customer.journeyEntryDate) : null
-                        };
-                        
-                        return (
-                          <UnifiedJourneyView
-                            key={customer.id}
-                            contact={unifiedContact}
-                            onActionClick={(action, contact) => {
-                              console.log('Recommended action:', action, 'for:', contact.name);
-                              // Handle recommended actions
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
             <TabsContent value="analytics" className="space-y-6">
-              <TouchpointAnalytics 
-                touchpoints={touchpoints}
-                customers={filteredCustomers}
-                timeRange={timeRange}
-              />
-            </TabsContent>
-
-            <TabsContent value="visualization" className="space-y-6">
-              <JourneyVisualization 
-                customers={filteredCustomers}
-                touchpoints={touchpoints}
-                journeyStages={journeyStages}
-                timeRange={timeRange}
-              />
+              {/* Merged Analytics and Visualization */}
+              <div className="space-y-6">
+                <TouchpointAnalytics 
+                  touchpoints={touchpoints}
+                  customers={filteredCustomers}
+                  timeRange={timeRange}
+                />
+                <JourneyVisualization 
+                  customers={filteredCustomers}
+                  touchpoints={touchpoints}
+                  journeyStages={journeyStages}
+                  timeRange={timeRange}
+                />
+              </div>
             </TabsContent>
 
             <TabsContent value="settings" className="space-y-6">
