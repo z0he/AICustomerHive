@@ -1744,112 +1744,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Campaign not found" });
       }
       
-      // Get leads based on campaign targeting
-      let targetLeads = [];
+      // Get unified contacts based on campaign filters
+      let targetContacts = [];
       try {
-        console.log('Campaign targeting check:', {
+        console.log('Campaign filtering check:', {
+          hasContactFilters: !!campaign.contactFilters,
+          contactFilters: campaign.contactFilters,
+          // Legacy fallback
           hasTargetAudience: !!campaign.targetAudience,
           targetAudience: campaign.targetAudience
         });
         
-        if (campaign.targetAudience && campaign.targetAudience !== "All leads") {
-          const targeting = JSON.parse(campaign.targetAudience);
-          console.log('Parsed targeting:', targeting);
-          
-          if (targeting.type === "Leads" && targeting.filters) {
-            // Filter leads based on campaign criteria
-            const allLeads = await storage.getLeads();
-            console.log('Total leads in database:', allLeads.length);
-            if (allLeads.length > 0) {
-              console.log('Sample lead properties:', Object.keys(allLeads[0]));
-              console.log('First lead data:', {
-                id: allLeads[0].id,
-                email: allLeads[0].email,
-                leadSource: allLeads[0].leadSource,
-                leadStatus: allLeads[0].leadStatus,
-                // source: allLeads[0].source, // Using leadSource instead
-                // status: allLeads[0].status  // Using leadStatus instead
-              });
-            }
+        // Use new contactFilters field if available
+        if (campaign.contactFilters && typeof campaign.contactFilters === 'object') {
+          const filters = campaign.contactFilters as any;
+          console.log('Using contactFilters:', filters);
+          targetContacts = await storage.filterContacts(filters);
+        }
+        // Legacy fallback: use targetAudience field
+        else if (campaign.targetAudience && campaign.targetAudience !== "All leads") {
+          try {
+            const targeting = JSON.parse(campaign.targetAudience);
+            console.log('Parsed legacy targeting:', targeting);
             
-            targetLeads = allLeads.filter(lead => {
+            if (targeting.type === "Leads" && targeting.filters) {
+              // Map legacy filters to new contact filter format
+              const legacyFilters: any = {};
               if (targeting.filters.source && targeting.filters.source !== "all_sources") {
-                if (lead.leadSource !== targeting.filters.source) return false;
+                legacyFilters.contactSource = targeting.filters.source;
               }
               if (targeting.filters.status && targeting.filters.status !== "all_statuses") {
-                if (lead.leadStatus !== targeting.filters.status) return false;
+                legacyFilters.leadStatus = targeting.filters.status;
               }
-              return true;
-            });
-          } else {
-            targetLeads = await storage.getLeads();
+              targetContacts = await storage.filterContacts(legacyFilters);
+            } else {
+              // Get all contacts with lead lifecycle stage
+              targetContacts = await storage.filterContacts({ lifecycleStage: 'lead' });
+            }
+          } catch (parseError) {
+            // Get all contacts if parsing fails
+            console.log('Legacy targeting parse failed, getting all lead-stage contacts');
+            targetContacts = await storage.filterContacts({ lifecycleStage: 'lead' });
           }
         } else {
-          targetLeads = await storage.getLeads();
+          // No filters specified, get all lead-stage contacts
+          targetContacts = await storage.filterContacts({ lifecycleStage: 'lead' });
         }
       } catch (e: unknown) {
-        // If targeting parsing fails, get all leads
-        console.log('Targeting parsing failed, getting all leads:', e instanceof Error ? e.message : 'Unknown error');
-        targetLeads = await storage.getLeads();
+        // If filtering fails, get all lead-stage contacts
+        console.log('Contact filtering failed, getting all lead-stage contacts:', e instanceof Error ? e.message : 'Unknown error');
+        targetContacts = await storage.filterContacts({ lifecycleStage: 'lead' });
       }
       
-      console.log('Final target leads count:', targetLeads.length);
-      console.log('Target leads emails:', targetLeads.map(l => l.email));
+      console.log('Final target contacts count:', targetContacts.length);
+      console.log('Target contacts emails:', targetContacts.map(c => c.email));
       
-      // Send emails to all target leads
+      // Send emails to all target contacts
       const emailResults = [];
-      for (const lead of targetLeads) {
+      for (const contact of targetContacts) {
         try {
-          console.log('Lead data for personalization:', {
-            name: lead.name,
-            email: lead.email,
-            company: lead.company,
-            firstName: lead.name?.split(' ')[0],
-            lastName: lead.name?.split(' ').slice(1).join(' ')
+          console.log('Contact data for personalization:', {
+            firstName: contact.firstName,
+            lastName: contact.lastName,
+            email: contact.email,
+            company: contact.company,
           });
           console.log('Original email content:', emailContent.substring(0, 200) + '...');
           
           // Personalize the email content using the same system as test emails
           let personalizedContent = emailContent;
           
-          // Contact tokens
-          personalizedContent = personalizedContent.replace(/\{\{contact\.firstName\}\}/g, lead.name?.split(' ')[0] || 'Valued Customer');
-          personalizedContent = personalizedContent.replace(/\{\{contact\.lastName\}\}/g, lead.name?.split(' ').slice(1).join(' ') || '');
-          personalizedContent = personalizedContent.replace(/\{\{contact\.email\}\}/g, lead.email || '');
-          personalizedContent = personalizedContent.replace(/\{\{contact\.company\}\}/g, lead.company || 'Your Company');
-          personalizedContent = personalizedContent.replace(/\{\{contact\.phone\}\}/g, lead.phone || '');
-          personalizedContent = personalizedContent.replace(/\{\{contact\.jobTitle\}\}/g, lead.jobTitle || '');
-          personalizedContent = personalizedContent.replace(/\{\{contact\.industry\}\}/g, lead.industry || '');
-          personalizedContent = personalizedContent.replace(/\{\{contact\.createdAt\}\}/g, lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : '');
+          // Contact tokens (unified contacts have separate firstName/lastName)
+          personalizedContent = personalizedContent.replace(/\{\{contact\.firstName\}\}/g, contact.firstName || 'Valued Customer');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.lastName\}\}/g, contact.lastName || '');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.email\}\}/g, contact.email || '');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.company\}\}/g, contact.company || 'Your Company');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.phone\}\}/g, contact.phone || '');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.jobTitle\}\}/g, contact.jobTitle || '');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.industry\}\}/g, contact.industry || '');
+          personalizedContent = personalizedContent.replace(/\{\{contact\.createdAt\}\}/g, contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : '');
           
-          // Lead tokens
-          personalizedContent = personalizedContent.replace(/\{\{lead\.status\}\}/g, lead.leadStatus || '');
-          personalizedContent = personalizedContent.replace(/\{\{lead\.score\}\}/g, lead.score?.toString() || '');
-          personalizedContent = personalizedContent.replace(/\{\{lead\.source\}\}/g, lead.leadSource || '');
-          personalizedContent = personalizedContent.replace(/\{\{lead\.value\}\}/g, lead.estimatedValue?.toString() || '');
-          personalizedContent = personalizedContent.replace(/\{\{lead\.priority\}\}/g, lead.priority || '');
-          personalizedContent = personalizedContent.replace(/\{\{lead\.assignedTo\}\}/g, lead.leadOwner || '');
+          // Lead tokens (for backward compatibility)
+          personalizedContent = personalizedContent.replace(/\{\{lead\.status\}\}/g, contact.leadStatus || contact.status || '');
+          personalizedContent = personalizedContent.replace(/\{\{lead\.score\}\}/g, contact.score?.toString() || '');
+          personalizedContent = personalizedContent.replace(/\{\{lead\.source\}\}/g, contact.contactSource || '');
+          personalizedContent = personalizedContent.replace(/\{\{lead\.value\}\}/g, ''); // Not in unified contacts
+          personalizedContent = personalizedContent.replace(/\{\{lead\.priority\}\}/g, ''); // Not in unified contacts
+          personalizedContent = personalizedContent.replace(/\{\{lead\.assignedTo\}\}/g, contact.ownerId || '');
           
           // Legacy simple tokens for backward compatibility
-          personalizedContent = personalizedContent.replace(/\{\{firstName\}\}/g, lead.name?.split(' ')[0] || 'Valued Customer');
-          personalizedContent = personalizedContent.replace(/\{\{lastName\}\}/g, lead.name?.split(' ').slice(1).join(' ') || '');
-          personalizedContent = personalizedContent.replace(/\{\{company\}\}/g, lead.company || 'Your Company');
-          personalizedContent = personalizedContent.replace(/\{\{email\}\}/g, lead.email || '');
+          personalizedContent = personalizedContent.replace(/\{\{firstName\}\}/g, contact.firstName || 'Valued Customer');
+          personalizedContent = personalizedContent.replace(/\{\{lastName\}\}/g, contact.lastName || '');
+          personalizedContent = personalizedContent.replace(/\{\{company\}\}/g, contact.company || 'Your Company');
+          personalizedContent = personalizedContent.replace(/\{\{email\}\}/g, contact.email || '');
           
           console.log('Personalized content sample:', personalizedContent.substring(0, 200) + '...');
           
-          console.log('Sending campaign email to', lead.email, 'with Mailgun config:', !!mailgunConfig);
+          console.log('Sending campaign email to', contact.email, 'with Mailgun config:', !!mailgunConfig);
           
           const emailLog = await storage.sendEmail(
             'noreply@mail.aicrm.co.uk',
-            lead.email || '',
+            contact.email || '',
             subject,
             personalizedContent,
             {
               userId: userId, // Track which user sent this email
               campaignId: campaignId,
-              relatedEntityType: 'lead',
-              relatedEntityId: lead.id,
+              relatedEntityType: 'contact',
+              relatedEntityId: contact.id, // UUID for unified contacts
               customMailgun: mailgunConfig
             }
           );
@@ -1860,21 +1862,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Create journey touchpoint for campaign email sent
           await journeyIntegration.createCampaignEmailSentTouchpoint(
             campaignId,
-            lead.email || '',
+            contact.email || '',
             userId
           );
           
           emailResults.push({
-            leadId: lead.id,
-            email: lead.email,
+            contactId: contact.id,
+            email: contact.email,
             status: 'sent',
             emailLogId: emailLog.id
           });
         } catch (error: unknown) {
-          console.error(`Failed to send email to ${lead.email}:`, error);
+          console.error(`Failed to send email to ${contact.email}:`, error);
           emailResults.push({
-            leadId: lead.id,
-            email: lead.email,
+            contactId: contact.id,
+            email: contact.email,
             status: 'failed',
             error: error instanceof Error ? error.message : 'Unknown error'
           });
@@ -1883,9 +1885,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       return res.json({
         success: true,
-        message: `Campaign email scheduled for ${targetLeads.length} recipients`,
+        message: `Campaign email scheduled for ${targetContacts.length} recipients`,
         campaignId,
-        targetCount: targetLeads.length,
+        targetCount: targetContacts.length,
         results: emailResults
       });
     } catch (error) {
