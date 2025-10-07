@@ -28,6 +28,16 @@ const campaignFormSchema = z.object({
   message: z.string().optional(),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
+  // Advanced contact filters for unified contacts
+  useAdvancedFilters: z.boolean().optional(),
+  filterIndustry: z.string().optional(),
+  filterContactSource: z.string().optional(),
+  filterLifecycleStage: z.string().optional(),
+  filterStatus: z.string().optional(),
+  filterLeadStatus: z.string().optional(),
+  filterTags: z.string().optional(), // Comma-separated tags
+  filterMinScore: z.string().optional().transform(val => val ? parseInt(val) : undefined),
+  filterMaxScore: z.string().optional().transform(val => val ? parseInt(val) : undefined),
 });
 
 type CampaignFormValues = z.infer<typeof campaignFormSchema>;
@@ -52,6 +62,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [showSeasonalSelector, setShowSeasonalSelector] = useState(false);
   const [showLeadFilters, setShowLeadFilters] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
   const form = useForm<CampaignFormValues>({
     resolver: zodResolver(campaignFormSchema),
@@ -67,6 +78,15 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       message: "",
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      useAdvancedFilters: false,
+      filterIndustry: "",
+      filterContactSource: "",
+      filterLifecycleStage: "",
+      filterStatus: "",
+      filterLeadStatus: "",
+      filterTags: "",
+      filterMinScore: undefined,
+      filterMaxScore: undefined,
     }
   });
 
@@ -355,7 +375,31 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
   }, [form.watch]);
   
   const onSubmit = (data: CampaignFormValues) => {
-    onCreateCampaign(data);
+    // Build contactFilters object if advanced filters are enabled
+    let enhancedData: any = { ...data };
+    
+    if (data.useAdvancedFilters) {
+      const contactFilters: any = {};
+      
+      if (data.filterIndustry) contactFilters.industry = data.filterIndustry;
+      if (data.filterContactSource) contactFilters.contactSource = data.filterContactSource;
+      if (data.filterLifecycleStage) contactFilters.lifecycleStage = data.filterLifecycleStage;
+      if (data.filterStatus) contactFilters.status = data.filterStatus;
+      if (data.filterLeadStatus) contactFilters.leadStatus = data.filterLeadStatus;
+      if (data.filterTags) {
+        // Convert comma-separated tags to array
+        contactFilters.tags = data.filterTags.split(',').map(t => t.trim()).filter(t => t);
+      }
+      if (data.filterMinScore !== undefined) contactFilters.minScore = data.filterMinScore;
+      if (data.filterMaxScore !== undefined) contactFilters.maxScore = data.filterMaxScore;
+      
+      // Only add contactFilters if at least one filter is set
+      if (Object.keys(contactFilters).length > 0) {
+        enhancedData.contactFilters = contactFilters;
+      }
+    }
+    
+    onCreateCampaign(enhancedData);
     form.reset();
     onClose();
   };
@@ -665,6 +709,234 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
               </div>
             )}
 
+            {/* Advanced Contact Filters Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Advanced Contact Filters (Optional)</Label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowAdvancedFilters(!showAdvancedFilters);
+                    form.setValue('useAdvancedFilters', !showAdvancedFilters);
+                  }}
+                  data-testid="button-toggle-advanced-filters"
+                >
+                  {showAdvancedFilters ? 'Hide Filters' : 'Show Filters'}
+                </Button>
+              </div>
+              
+              {showAdvancedFilters && (
+                <div className="space-y-4 p-4 border rounded-lg bg-slate-50">
+                  <p className="text-sm text-muted-foreground">
+                    Target specific contacts using detailed criteria. These filters will be used to select contacts from your unified contacts database.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Industry Filter */}
+                    <FormField
+                      control={form.control}
+                      name="filterIndustry"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Industry</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-filter-industry">
+                                <SelectValue placeholder="Any industry" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Any industry</SelectItem>
+                              <SelectItem value="Technology">Technology</SelectItem>
+                              <SelectItem value="Healthcare">Healthcare</SelectItem>
+                              <SelectItem value="Finance">Finance & Banking</SelectItem>
+                              <SelectItem value="Retail">Retail & E-commerce</SelectItem>
+                              <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                              <SelectItem value="Education">Education</SelectItem>
+                              <SelectItem value="Entertainment">Entertainment & Media</SelectItem>
+                              <SelectItem value="Hospitality">Hospitality & Travel</SelectItem>
+                              <SelectItem value="Real Estate">Real Estate</SelectItem>
+                              <SelectItem value="Professional Services">Professional Services</SelectItem>
+                              <SelectItem value="Non-profit">Non-profit & NGO</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Contact Source Filter */}
+                    <FormField
+                      control={form.control}
+                      name="filterContactSource"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Contact Source</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-filter-source">
+                                <SelectValue placeholder="Any source" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Any source</SelectItem>
+                              {LEAD_SOURCES.map((source) => (
+                                <SelectItem key={source.id} value={source.id}>
+                                  {source.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Lifecycle Stage Filter */}
+                    <FormField
+                      control={form.control}
+                      name="filterLifecycleStage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Lifecycle Stage</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-filter-lifecycle">
+                                <SelectValue placeholder="Any stage" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Any stage</SelectItem>
+                              <SelectItem value="lead">Lead</SelectItem>
+                              <SelectItem value="mql">Marketing Qualified Lead</SelectItem>
+                              <SelectItem value="sql">Sales Qualified Lead</SelectItem>
+                              <SelectItem value="opportunity">Opportunity</SelectItem>
+                              <SelectItem value="customer">Customer</SelectItem>
+                              <SelectItem value="evangelist">Evangelist</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Status Filter */}
+                    <FormField
+                      control={form.control}
+                      name="filterStatus"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-filter-status">
+                                <SelectValue placeholder="Any status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Any status</SelectItem>
+                              <SelectItem value="active">Active</SelectItem>
+                              <SelectItem value="inactive">Inactive</SelectItem>
+                              <SelectItem value="unsubscribed">Unsubscribed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Lead Status Filter */}
+                    <FormField
+                      control={form.control}
+                      name="filterLeadStatus"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Lead Status</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-filter-lead-status">
+                                <SelectValue placeholder="Any lead status" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Any lead status</SelectItem>
+                              {LEAD_STATUSES.map((status) => (
+                                <SelectItem key={status.id} value={status.id}>
+                                  {status.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Tags Filter */}
+                    <FormField
+                      control={form.control}
+                      name="filterTags"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Tags (comma-separated)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g., vip, premium, enterprise"
+                              {...field}
+                              data-testid="input-filter-tags"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Score Range Filters */}
+                    <FormField
+                      control={form.control}
+                      name="filterMinScore"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Min Score</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number"
+                              placeholder="0"
+                              {...field}
+                              value={field.value ?? ''}
+                              data-testid="input-filter-min-score"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="filterMaxScore"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Max Score</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number"
+                              placeholder="100"
+                              {...field}
+                              value={field.value ?? ''}
+                              data-testid="input-filter-max-score"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
             
             {form.watch('type') === 'email' ? (
               <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
