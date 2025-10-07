@@ -270,11 +270,18 @@ export async function interpretVoiceCommand(text: string, userId?: number): Prom
 
 /**
  * Generates campaign suggestions based on customer data and campaign goal
+ * Enhanced with business context for B2B/B2C aware messaging
  */
 export async function generateCampaignSuggestions(
   campaignGoal: string,
   targetAudience: string,
-  userId?: number
+  userId?: number,
+  businessContext?: {
+    businessType?: string; // "B2B", "B2C", "Both"
+    businessIndustry?: string;
+    companySize?: string;
+    primaryMarket?: string;
+  }
 ): Promise<string[]> {
   try {
     let openaiClient = globalOpenAI;
@@ -302,23 +309,75 @@ export async function generateCampaignSuggestions(
       }
     }
     
+    // Build business context string for the prompt
+    let businessContextStr = "";
+    if (businessContext) {
+      const contextParts = [];
+      if (businessContext.businessType) {
+        contextParts.push(`Business Type: ${businessContext.businessType}`);
+        
+        // Add specific guidance based on business type
+        if (businessContext.businessType === "B2B") {
+          contextParts.push("Focus on: ROI, efficiency gains, enterprise value, professional tone, decision-maker language");
+        } else if (businessContext.businessType === "B2C") {
+          contextParts.push("Focus on: Emotional benefits, personal value, lifestyle improvements, friendly tone, consumer language");
+        } else if (businessContext.businessType === "Both") {
+          contextParts.push("Balance: Professional but approachable, value for both businesses and individuals");
+        }
+      }
+      if (businessContext.businessIndustry) {
+        contextParts.push(`Industry: ${businessContext.businessIndustry}`);
+      }
+      if (businessContext.companySize) {
+        contextParts.push(`Company Size: ${businessContext.companySize}`);
+      }
+      if (businessContext.primaryMarket) {
+        contextParts.push(`Market: ${businessContext.primaryMarket}`);
+      }
+      businessContextStr = contextParts.length > 0 ? `\n\nBusiness Context:\n${contextParts.join('\n')}` : "";
+    }
+    
     // Check if we have a valid API key before making OpenAI call
     if (hasValidApiKey() || (userId && openaiClient !== globalOpenAI)) {
+      const systemPrompt = businessContext?.businessType
+        ? "You are a marketing expert assistant for a CRM system. Generate 5 campaign message suggestions " +
+          "based on the campaign goal, target audience, and business context provided. " +
+          `IMPORTANT: The business operates in ${businessContext.businessType} space - tailor your messaging accordingly:\n` +
+          (businessContext.businessType === "B2B" 
+            ? "- Use professional, results-oriented language\n" +
+              "- Focus on ROI, efficiency, productivity, and business outcomes\n" +
+              "- Address decision-makers and stakeholders\n" +
+              "- Emphasize data, case studies, and proven results\n" +
+              "- Use industry-specific terminology where appropriate\n"
+            : businessContext.businessType === "B2C"
+            ? "- Use friendly, emotional, and relatable language\n" +
+              "- Focus on personal benefits, lifestyle improvements, and experiences\n" +
+              "- Appeal to individual needs and desires\n" +
+              "- Create urgency and excitement\n" +
+              "- Use accessible, everyday language\n"
+            : "- Balance professional credibility with approachability\n" +
+              "- Address both business value and personal benefits\n" +
+              "- Use versatile language that works for both audiences\n") +
+          "Make sure suggestions are diverse in tone, approach, and call-to-action. " +
+          "Consider seasonal relevance, industry trends, and specific pain points or desires of the audience segment. " +
+          "Each message should be compelling, personalized, and include a clear value proposition. " +
+          "Return the results as JSON with the key 'suggestions' containing an array of strings."
+        : "You are a marketing expert assistant for a CRM system. Generate 5 campaign message suggestions " +
+          "based on the campaign goal and target audience. Make sure these are diverse in tone, approach, and call-to-action. " +
+          "Consider seasonal relevance, industry trends, and specific pain points or desires of the audience segment. " +
+          "Each message should be compelling, personalized, and include a clear value proposition. " +
+          "Return the results as JSON with the key 'suggestions' containing an array of strings.";
+      
       const response = await openaiClient.chat.completions.create({
         model: "gpt-4o",
         messages: [
           {
             role: "system",
-            content: 
-              "You are a marketing expert assistant for a CRM system. Generate 5 campaign message suggestions " +
-              "based on the campaign goal and target audience. Make sure these are diverse in tone, approach, and call-to-action. " +
-              "Consider seasonal relevance, industry trends, and specific pain points or desires of the audience segment. " +
-              "Each message should be compelling, personalized, and include a clear value proposition. " +
-              "Return the results as JSON with the key 'suggestions' containing an array of strings."
+            content: systemPrompt
           },
           {
             role: "user",
-            content: `Campaign goal: ${campaignGoal}\nTarget audience: ${targetAudience}`
+            content: `Campaign goal: ${campaignGoal}\nTarget audience: ${targetAudience}${businessContextStr}`
           }
         ],
         response_format: { type: "json_object" }
@@ -327,15 +386,36 @@ export async function generateCampaignSuggestions(
       const result = safeJsonParse(response.choices[0].message.content);
       return result?.suggestions || [];
     } else {
-      // Enhanced fallback suggestions for demo without API key
+      // Enhanced fallback suggestions for demo without API key - with B2B/B2C awareness
+      const isB2B = businessContext?.businessType === "B2B";
+      const isB2C = businessContext?.businessType === "B2C";
+      
       if (targetAudience.toLowerCase().includes("new")) {
-        return [
-          "Welcome to our community! Enjoy 15% off your first purchase and start your journey with us",
-          "New customer special: Sign up today and receive exclusive benefits plus a personalized onboarding consultation",
-          "As a new member, unlock premium features free for 30 days – no commitment required",
-          "First-time customer? We've prepared a special welcome package just for you with customized recommendations",
-          "Start your experience with a complimentary strategy session and 20% off your first order"
-        ];
+        if (isB2B) {
+          return [
+            "Welcome aboard. Schedule a personalized onboarding session to maximize ROI from day one",
+            "New partnership opportunity: Access our enterprise toolkit and industry best practices documentation",
+            "Start strong with complimentary implementation support and dedicated account management",
+            "Your success matters. Book a strategy consultation to align our solution with your business objectives",
+            "New client exclusive: 30-day pilot program with full access to premium features and expert guidance"
+          ];
+        } else if (isB2C) {
+          return [
+            "Welcome to our community! Enjoy 15% off your first purchase and start your journey with us",
+            "New customer special: Sign up today and receive exclusive benefits plus a personalized onboarding consultation",
+            "As a new member, unlock premium features free for 30 days – no commitment required",
+            "First-time customer? We've prepared a special welcome package just for you with customized recommendations",
+            "Start your experience with a complimentary strategy session and 20% off your first order"
+          ];
+        } else {
+          return [
+            "Welcome! Get started with a personalized consultation and special introductory benefits",
+            "New to our platform? Enjoy exclusive onboarding support and premium access for 30 days",
+            "Start your journey with us – complimentary setup assistance and introductory discount available",
+            "Join our community and unlock special benefits designed just for new members",
+            "First-time with us? Experience the difference with personalized guidance and exclusive offers"
+          ];
+        }
       } else if (targetAudience.toLowerCase().includes("inactive") || targetAudience.toLowerCase().includes("haven't purchased")) {
         return [
           "We miss you! Come back and enjoy a special 25% discount on your next purchase – valid for 7 days only",
@@ -345,13 +425,31 @@ export async function generateCampaignSuggestions(
           "Welcome back special: Reactivate your account and receive double rewards points on your next three purchases"
         ];
       } else if (targetAudience.toLowerCase().includes("loyal") || targetAudience.toLowerCase().includes("top") || targetAudience.toLowerCase().includes("vip")) {
-        return [
-          "As one of our most valued customers, enjoy early access to our upcoming premium collection and 30% off your selection",
-          "VIP exclusive: Thank you for your continued support! Here's a personalized offer based on your preferences",
-          "You're part of our inner circle! Join our invitation-only event this month with special guests and exclusive previews",
-          "We appreciate your loyalty! Enjoy complimentary premium upgrades on all services this month as our way of saying thanks",
-          "Elite customer appreciation: Unlock your custom rewards package with perks tailored specifically to your interests"
-        ];
+        if (isB2B) {
+          return [
+            "Valued partner: As a key account, you're eligible for our strategic partnership program with priority support",
+            "Thank you for your continued trust. Schedule your quarterly business review with our executive team",
+            "Elite client benefit: Early access to new features and beta programs with dedicated technical support",
+            "Your success drives ours. Access our premium resource library and industry benchmarking data",
+            "Strategic partnership tier unlocked: Custom SLA, dedicated account team, and executive escalation path"
+          ];
+        } else if (isB2C) {
+          return [
+            "As one of our most valued customers, enjoy early access to our upcoming premium collection and 30% off your selection",
+            "VIP exclusive: Thank you for your continued support! Here's a personalized offer based on your preferences",
+            "You're part of our inner circle! Join our invitation-only event this month with special guests and exclusive previews",
+            "We appreciate your loyalty! Enjoy complimentary premium upgrades on all services this month as our way of saying thanks",
+            "Elite customer appreciation: Unlock your custom rewards package with perks tailored specifically to your interests"
+          ];
+        } else {
+          return [
+            "Thank you for your continued partnership! Access exclusive benefits and priority support",
+            "Valued member: Early access to new offerings and special recognition perks",
+            "Your loyalty matters – enjoy premium benefits and personalized service upgrades",
+            "Top-tier status achieved: Unlock exclusive resources and dedicated support",
+            "Appreciation program: Special benefits curated for our most valued members"
+          ];
+        }
       } else if (targetAudience.toLowerCase().includes("seasonal") || targetAudience.toLowerCase().includes("holiday")) {
         return [
           "Celebrate the season with our limited-time collection – perfect for gifting or treating yourself",

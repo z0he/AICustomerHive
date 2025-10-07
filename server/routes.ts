@@ -894,12 +894,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/ai/campaign-suggestions", async (req: Request, res: Response) => {
     try {
       const { campaignGoal, targetAudience } = req.body;
+      const userId = (req as any).user?.id;
       
       if (!campaignGoal || !targetAudience) {
         return res.status(400).json({ message: "Campaign goal and target audience are required" });
       }
       
-      const suggestions = await generateCampaignSuggestions(campaignGoal, targetAudience);
+      // Get user's business profile for context
+      let businessContext;
+      if (userId) {
+        const user = await storage.getUser(userId);
+        if (user) {
+          businessContext = {
+            businessType: user.businessType || undefined,
+            businessIndustry: user.businessIndustry || undefined,
+            companySize: user.companySize || undefined,
+            primaryMarket: user.primaryMarket || undefined
+          };
+        }
+      }
+      
+      const suggestions = await generateCampaignSuggestions(campaignGoal, targetAudience, userId, businessContext);
       return res.json({ suggestions });
     } catch (error) {
       console.error("Generate campaign suggestions error:", error);
