@@ -14,7 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
-import { LEAD_SOURCES, LEAD_STATUSES } from "@shared/constants";
+import { LEAD_SOURCES, LEAD_STATUSES, INDUSTRIES, LIFECYCLE_STAGES } from "@shared/constants";
 
 const campaignFormSchema = z.object({
   name: z.string().min(1, "Campaign name is required"),
@@ -33,9 +33,7 @@ const campaignFormSchema = z.object({
   filterIndustry: z.string().optional(),
   filterContactSource: z.string().optional(),
   filterLifecycleStage: z.string().optional(),
-  filterStatus: z.string().optional(),
   filterLeadStatus: z.string().optional(),
-  filterTags: z.string().optional(), // Comma-separated tags
   filterMinScore: z.string().optional().transform(val => val ? parseInt(val) : undefined),
   filterMaxScore: z.string().optional().transform(val => val ? parseInt(val) : undefined),
 });
@@ -82,9 +80,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       filterIndustry: "",
       filterContactSource: "",
       filterLifecycleStage: "",
-      filterStatus: "",
       filterLeadStatus: "",
-      filterTags: "",
       filterMinScore: undefined,
       filterMaxScore: undefined,
     }
@@ -384,12 +380,7 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
       if (data.filterIndustry) contactFilters.industry = data.filterIndustry;
       if (data.filterContactSource) contactFilters.contactSource = data.filterContactSource;
       if (data.filterLifecycleStage) contactFilters.lifecycleStage = data.filterLifecycleStage;
-      if (data.filterStatus) contactFilters.status = data.filterStatus;
       if (data.filterLeadStatus) contactFilters.leadStatus = data.filterLeadStatus;
-      if (data.filterTags) {
-        // Convert comma-separated tags to array
-        contactFilters.tags = data.filterTags.split(',').map(t => t.trim()).filter(t => t);
-      }
       if (data.filterMinScore !== undefined) contactFilters.minScore = data.filterMinScore;
       if (data.filterMaxScore !== undefined) contactFilters.maxScore = data.filterMaxScore;
       
@@ -641,73 +632,6 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
               />
             )}
 
-            {showLeadFilters && (
-              <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
-                <h4 className="text-sm font-medium text-slate-700">Lead Filters</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="leadSource"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Lead Source (Optional)</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="All sources" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="all_sources">All sources</SelectItem>
-                            {LEAD_SOURCES.map((source) => (
-                              <SelectItem key={source.id} value={source.id}>
-                                {source.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="leadStatus"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Lead Status (Optional)</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="All statuses" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="all_statuses">All statuses</SelectItem>
-                            {LEAD_STATUSES.map((status) => (
-                              <SelectItem key={status.id} value={status.id}>
-                                {status.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Filter your leads by source and status. For example, select "Import" source and "New" status to target your recently imported leads.
-                </p>
-              </div>
-            )}
 
             {/* Advanced Contact Filters Section */}
             <div className="space-y-4">
@@ -748,17 +672,11 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="Technology">Technology</SelectItem>
-                              <SelectItem value="Healthcare">Healthcare</SelectItem>
-                              <SelectItem value="Finance">Finance & Banking</SelectItem>
-                              <SelectItem value="Retail">Retail & E-commerce</SelectItem>
-                              <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-                              <SelectItem value="Education">Education</SelectItem>
-                              <SelectItem value="Entertainment">Entertainment & Media</SelectItem>
-                              <SelectItem value="Hospitality">Hospitality & Travel</SelectItem>
-                              <SelectItem value="Real Estate">Real Estate</SelectItem>
-                              <SelectItem value="Professional Services">Professional Services</SelectItem>
-                              <SelectItem value="Non-profit">Non-profit & NGO</SelectItem>
+                              {INDUSTRIES.map((industry) => (
+                                <SelectItem key={industry.id} value={industry.id}>
+                                  {industry.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -806,36 +724,11 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="lead">Lead</SelectItem>
-                              <SelectItem value="mql">Marketing Qualified Lead</SelectItem>
-                              <SelectItem value="sql">Sales Qualified Lead</SelectItem>
-                              <SelectItem value="opportunity">Opportunity</SelectItem>
-                              <SelectItem value="customer">Customer</SelectItem>
-                              <SelectItem value="evangelist">Evangelist</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Status Filter */}
-                    <FormField
-                      control={form.control}
-                      name="filterStatus"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Status</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-filter-status">
-                                <SelectValue placeholder="Any status" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="inactive">Inactive</SelectItem>
-                              <SelectItem value="unsubscribed">Unsubscribed</SelectItem>
+                              {LIFECYCLE_STAGES.map((stage) => (
+                                <SelectItem key={stage.id} value={stage.id}>
+                                  {stage.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -864,25 +757,6 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                               ))}
                             </SelectContent>
                           </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {/* Tags Filter */}
-                    <FormField
-                      control={form.control}
-                      name="filterTags"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Tags (comma-separated)</FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="e.g., vip, premium, enterprise"
-                              {...field}
-                              data-testid="input-filter-tags"
-                            />
-                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
