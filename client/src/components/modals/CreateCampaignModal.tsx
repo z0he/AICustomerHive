@@ -748,7 +748,6 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Any industry</SelectItem>
                               <SelectItem value="Technology">Technology</SelectItem>
                               <SelectItem value="Healthcare">Healthcare</SelectItem>
                               <SelectItem value="Finance">Finance & Banking</SelectItem>
@@ -781,7 +780,6 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Any source</SelectItem>
                               {LEAD_SOURCES.map((source) => (
                                 <SelectItem key={source.id} value={source.id}>
                                   {source.name}
@@ -808,7 +806,6 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Any stage</SelectItem>
                               <SelectItem value="lead">Lead</SelectItem>
                               <SelectItem value="mql">Marketing Qualified Lead</SelectItem>
                               <SelectItem value="sql">Sales Qualified Lead</SelectItem>
@@ -836,7 +833,6 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Any status</SelectItem>
                               <SelectItem value="active">Active</SelectItem>
                               <SelectItem value="inactive">Inactive</SelectItem>
                               <SelectItem value="unsubscribed">Unsubscribed</SelectItem>
@@ -861,7 +857,6 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Any lead status</SelectItem>
                               {LEAD_STATUSES.map((status) => (
                                 <SelectItem key={status.id} value={status.id}>
                                   {status.name}
