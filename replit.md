@@ -26,6 +26,18 @@ The frontend uses React 18 with TypeScript, styled with Tailwind CSS for custom 
 ### System Design Choices
 The system uses a modular architecture for both frontend and backend to ensure scalability and maintainability. Authentication is handled via JWT and sessions. Data import/export supports CSV/JSON with field mapping. A dual-table approach for contacts maintains backward compatibility while transitioning to a unified contact system.
 
+### Recent Changes (October 2025)
+**Filter Standardization & Consolidation (Oct 7, 2025)**:
+- Centralized all dropdown constants in `shared/constants.ts` as single source of truth
+- Updated `LEAD_SOURCES` to 18 options with lowercase IDs for backward compatibility (includes "import", "manual", "all_sources" for voice commands)
+- Updated `LEAD_STATUSES` to 8 options (includes "all_statuses" sentinel for voice commands)
+- Updated `LIFECYCLE_STAGES` to 5 valid options (lead, opportunity, customer, evangelist, churned)
+- Expanded `INDUSTRIES` to 141 LinkedIn-style options
+- **EditContactModal**: Added Lead Status field, updated all dropdowns to use shared constants with {id, name} format
+- **CreateCampaignModal**: Removed duplicate "Lead Filters" section, standardized Advanced Contact Filters (removed Tags and Status fields per user request), fixed lifecycle stages, added 141 industry options
+- **Backward Compatibility**: Maintained lowercase slug IDs for lead sources to support existing campaign data and voice command integration
+- **Bug Fix**: Resolved undefined message field handling in campaign modal to prevent runtime errors
+
 ## External Dependencies
 
 ### AI Services

@@ -4,21 +4,24 @@
  */
 
 export const LEAD_SOURCES = [
-  { id: "Website", name: "Website" },
-  { id: "Referral", name: "Referral" },
-  { id: "Social Media", name: "Social Media" },
-  { id: "Email Campaign", name: "Email Campaign" },
-  { id: "Event", name: "Event" },
-  { id: "Paid Search", name: "Paid Search" },
-  { id: "Organic Search", name: "Organic Search" },
-  { id: "Direct", name: "Direct" },
-  { id: "Trade Show", name: "Trade Show" },
-  { id: "Webinar", name: "Webinar" },
-  { id: "Cold Call", name: "Cold Call" },
-  { id: "Partner", name: "Partner" },
-  { id: "Advertisement", name: "Advertisement" },
-  { id: "Content Marketing", name: "Content Marketing" },
-  { id: "Other", name: "Other" },
+  { id: "website", name: "Website" },
+  { id: "referral", name: "Referral" },
+  { id: "social_media", name: "Social Media" },
+  { id: "email_campaign", name: "Email Campaign" },
+  { id: "event", name: "Event" },
+  { id: "paid_search", name: "Paid Search" },
+  { id: "organic_search", name: "Organic Search" },
+  { id: "direct", name: "Direct" },
+  { id: "trade_show", name: "Trade Show" },
+  { id: "webinar", name: "Webinar" },
+  { id: "cold_call", name: "Cold Call" },
+  { id: "partner", name: "Partner" },
+  { id: "advertisement", name: "Advertisement" },
+  { id: "content_marketing", name: "Content Marketing" },
+  { id: "other", name: "Other" },
+  { id: "import", name: "Import" },
+  { id: "manual", name: "Manual Entry" },
+  { id: "all_sources", name: "All Sources" },
 ] as const;
 
 export const LEAD_STATUSES = [
@@ -29,6 +32,7 @@ export const LEAD_STATUSES = [
   { id: "negotiation", name: "Negotiation" },
   { id: "won", name: "Won" },
   { id: "lost", name: "Lost" },
+  { id: "all_statuses", name: "All Statuses" },
 ] as const;
 
 export const CONTACT_TYPES = [

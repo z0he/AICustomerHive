@@ -398,25 +398,25 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
   // Effect to update message placeholders when location, industry, or season is selected
   useEffect(() => {
     const targetAudience = form.getValues().targetAudience;
-    const message = form.getValues().message;
+    const message = form.getValues().message || '';
     
     if (targetAudience === "Specific Location Customers") {
       const location = form.getValues().location;
-      if (location && message.includes("your region")) {
+      if (location && message && message.includes("your region")) {
         const updatedMessage = message.replace("your region", location);
         form.setValue('message', updatedMessage, { shouldValidate: true });
       }
     } 
     else if (targetAudience === "Industry-Specific Customers") {
       const industry = form.getValues().industry;
-      if (industry && message.includes("your industry")) {
+      if (industry && message && message.includes("your industry")) {
         const updatedMessage = message.replace("your industry", industry);
         form.setValue('message', updatedMessage, { shouldValidate: true });
       }
     }
     else if (targetAudience === "Seasonal Campaign") {
       const season = form.getValues().season;
-      if (season && message.includes("the season")) {
+      if (season && message && message.includes("the season")) {
         const updatedMessage = message.replace("the season", season);
         form.setValue('message', updatedMessage, { shouldValidate: true });
       }
