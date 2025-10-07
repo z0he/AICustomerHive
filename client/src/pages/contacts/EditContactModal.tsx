@@ -4,6 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { INDUSTRIES, LEAD_SOURCES, LIFECYCLE_STAGES, LEAD_STATUSES } from '@shared/constants';
 
 // UI Components
 import {
@@ -34,42 +35,6 @@ import {
 } from '@/components/ui/form';
 import { Plus, Edit3 } from 'lucide-react';
 
-// Industry and Contact Source options
-const INDUSTRIES = [
-  "Accounting","Airlines/Aviation","Alternative Dispute Resolution","Alternative Medicine","Animation",
-  "Apparel & Fashion","Architecture & Planning","Arts and Crafts","Automotive","Aviation & Aerospace",
-  "Banking","Biotechnology","Broadcast Media","Building Materials","Business Supplies and Equipment",
-  "Capital Markets","Chemicals","Civic & Social Organization","Civil Engineering","Commercial Real Estate",
-  "Computer & Network Security","Computer Games","Computer Hardware","Computer Networking","Computer Software",
-  "Internet","Construction","Consumer Electronics","Consumer Goods","Consumer Services","Cosmetics","Dairy",
-  "Defense & Space","Design","Education Management","E-Learning","Electrical/Electronic Manufacturing",
-  "Entertainment","Environmental Services","Events Services","Executive Office","Facilities Services",
-  "Farming","Financial Services","Fine Art","Fishery","Food & Beverages","Food Production","Fund-Raising",
-  "Furniture","Gambling & Casinos","Glass, Ceramics & Concrete","Government Administration","Government Relations",
-  "Graphic Design","Health, Wellness and Fitness","Higher Education","Hospital & Health Care","Hospitality",
-  "Human Resources","Import and Export","Individual & Family Services","Industrial Automation","Information Services",
-  "Information Technology and Services","Insurance","International Affairs","International Trade and Development",
-  "Investment Banking","Investment Management","Judiciary","Law Enforcement","Law Practice","Legal Services",
-  "Legislative Office","Leisure, Travel & Tourism","Libraries","Logistics and Supply Chain","Luxury Goods & Jewelry",
-  "Machinery","Management Consulting","Maritime","Market Research","Marketing and Advertising",
-  "Mechanical or Industrial Engineering","Media Production","Medical Devices","Medical Practice","Mental Health Care",
-  "Military","Mining & Metals","Motion Pictures and Film","Museums and Institutions","Music","Nanotechnology",
-  "Newspapers","Non-Profit Organization Management","Oil & Energy","Online Media","Outsourcing/Offshoring",
-  "Package/Freight Delivery","Packaging and Containers","Paper & Forest Products","Performing Arts","Pharmaceuticals",
-  "Philanthropy","Photography","Plastics","Political Organization","Primary/Secondary Education","Printing",
-  "Professional Training & Coaching","Program Development","Public Policy","Public Relations and Communications",
-  "Public Safety","Publishing","Railroad Manufacture","Ranching","Real Estate","Recreational Facilities and Services",
-  "Religious Institutions","Renewables & Environment","Research","Restaurants","Retail","Security and Investigations",
-  "Semiconductors","Shipbuilding","Sporting Goods","Sports","Staffing and Recruiting","Supermarkets",
-  "Telecommunications","Textiles","Think Tanks","Tobacco","Translation and Localization","Transportation/Trucking/Railroad",
-  "Utilities","Venture Capital & Private Equity","Veterinary","Warehousing","Wholesale","Wine and Spirits","Wireless","Writing and Editing"
-] as const;
-
-const CONTACT_SOURCES = [
-  "Website","Referral","Social Media","Email Campaign","Event","Paid Search","Organic Search",
-  "Direct","Trade Show","Webinar","Cold Call","Partner","Advertisement","Content Marketing","Other"
-] as const;
-
 interface Contact {
   id: string;
   name: string;
@@ -84,6 +49,7 @@ interface Contact {
   lifecycleStage?: string;
   source?: string;
   contactSource?: string;
+  leadStatus?: string;
   owner?: string;
   consent?: {
     gdpr?: boolean;
@@ -110,10 +76,11 @@ const contactSchema = z.object({
   phone: z.string().optional(),
   jobTitle: z.string().optional(),
   company: z.string().optional(),
-  industry: z.preprocess(v => v === '' ? undefined : v, z.enum(INDUSTRIES).optional()),
+  industry: z.preprocess(v => v === '' ? undefined : v, z.enum(INDUSTRIES.map(i => i.id as string) as [string, ...string[]]).optional()),
   country: z.string().optional(),
-  lifecycleStage: z.enum(['lead', 'opportunity', 'customer', 'evangelist', 'churned']).default('lead'),
-  contactSource: z.preprocess(v => v === '' ? undefined : v, z.enum(CONTACT_SOURCES).optional()),
+  lifecycleStage: z.enum(LIFECYCLE_STAGES.map(s => s.id as string) as [string, ...string[]]).default('lead'),
+  contactSource: z.preprocess(v => v === '' ? undefined : v, z.enum(LEAD_SOURCES.map(s => s.id as string) as [string, ...string[]]).optional()),
+  leadStatus: z.enum(LEAD_STATUSES.map(s => s.id as string) as [string, ...string[]]).optional(),
   source: z.string().optional(), // Legacy field for backward compatibility
   owner: z.string().optional(),
 }).refine((data) => {
@@ -144,6 +111,7 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
       country: contact?.country || '',
       lifecycleStage: (contact?.lifecycleStage as any) || 'lead',
       contactSource: contact?.contactSource as any || '',
+      leadStatus: contact?.leadStatus as any || undefined,
       source: contact?.source || '',
       owner: contact?.owner || '',
     },
@@ -164,6 +132,7 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
         country: contact?.country || '',
         lifecycleStage: (contact?.lifecycleStage as any) || 'lead',
         contactSource: contact?.contactSource as any || '',
+        leadStatus: contact?.leadStatus as any || undefined,
         source: contact?.source || '',
         owner: contact?.owner || '',
       });
@@ -408,8 +377,8 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
                       </FormControl>
                       <SelectContent className="max-h-[200px]">
                         {INDUSTRIES.map((industry) => (
-                          <SelectItem key={industry} value={industry}>
-                            {industry}
+                          <SelectItem key={industry.id} value={industry.id}>
+                            {industry.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -440,11 +409,11 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="lead">Lead</SelectItem>
-                          <SelectItem value="opportunity">Opportunity</SelectItem>
-                          <SelectItem value="customer">Customer</SelectItem>
-                          <SelectItem value="evangelist">Evangelist</SelectItem>
-                          <SelectItem value="churned">Churned</SelectItem>
+                          {LIFECYCLE_STAGES.map((stage) => (
+                            <SelectItem key={stage.id} value={stage.id}>
+                              {stage.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -465,9 +434,9 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {CONTACT_SOURCES.map((source) => (
-                            <SelectItem key={source} value={source}>
-                              {source}
+                          {LEAD_SOURCES.map((source) => (
+                            <SelectItem key={source.id} value={source.id}>
+                              {source.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -478,19 +447,46 @@ export default function EditContactModal({ contact, isOpen, onClose, mode }: Edi
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="owner"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Owner</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Contact owner" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="leadStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Lead Status</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-leadStatus">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {LEAD_STATUSES.map((status) => (
+                            <SelectItem key={status.id} value={status.id}>
+                              {status.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="owner"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Owner</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Contact owner" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
           </form>
         </Form>
