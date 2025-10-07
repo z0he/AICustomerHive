@@ -907,7 +907,7 @@ export const industryEnum = pgEnum("industry", [
   "Human Resources","Import and Export","Individual & Family Services","Industrial Automation","Information Services",
   "Information Technology and Services","Insurance","International Affairs","International Trade and Development",
   "Investment Banking","Investment Management","Judiciary","Law Enforcement","Law Practice","Legal Services",
-  "Legislative Office","Leisure, Travel & Tourism","Libraries","Logistics and Supply Chain","Luxury Goods & Jewelry",
+  "Legislative Office","Leisure, Travel & Tourism","Libraries","Life Sciences","Logistics and Supply Chain","Luxury Goods & Jewelry",
   "Machinery","Management Consulting","Maritime","Market Research","Marketing and Advertising",
   "Mechanical or Industrial Engineering","Media Production","Medical Devices","Medical Practice","Mental Health Care",
   "Military","Mining & Metals","Motion Pictures and Film","Museums and Institutions","Music","Nanotechnology",

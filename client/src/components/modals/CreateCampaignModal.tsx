@@ -141,13 +141,13 @@ const CreateCampaignModal: FC<CreateCampaignModalProps> = ({
         
         // Set lead source based on command
         if (command.includes("website")) {
-          form.setValue("leadSource", "website");
+          form.setValue("leadSource", "Website");
         } else if (command.includes("referral")) {
-          form.setValue("leadSource", "referral");
-        } else if (command.includes("import")) {
-          form.setValue("leadSource", "import");
-        } else if (command.includes("manual")) {
-          form.setValue("leadSource", "manual");
+          form.setValue("leadSource", "Referral");
+        } else if (command.includes("social")) {
+          form.setValue("leadSource", "Social Media");
+        } else if (command.includes("paid") && command.includes("search")) {
+          form.setValue("leadSource", "Paid Search");
         } else {
           form.setValue("leadSource", "all_sources");
         }
