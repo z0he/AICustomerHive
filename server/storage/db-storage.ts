@@ -384,6 +384,34 @@ export class DbStorage implements IStorage {
     
     return result[0];
   }
+
+  async updateUserBusinessProfile(userId: number, profile: { businessType?: string; businessIndustry?: string; companySize?: string; primaryMarket?: string }): Promise<User> {
+    const updateData: any = {};
+    
+    if (profile.businessType !== undefined) {
+      updateData.businessType = profile.businessType;
+    }
+    if (profile.businessIndustry !== undefined) {
+      updateData.businessIndustry = profile.businessIndustry;
+    }
+    if (profile.companySize !== undefined) {
+      updateData.companySize = profile.companySize;
+    }
+    if (profile.primaryMarket !== undefined) {
+      updateData.primaryMarket = profile.primaryMarket;
+    }
+    
+    const result = await db.update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (result.length === 0) {
+      throw new Error('User not found');
+    }
+    
+    return result[0];
+  }
   
   // ----- Campaign methods -----
   

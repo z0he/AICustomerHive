@@ -414,7 +414,11 @@ export function setupAuth(app: Express) {
             username: req.user!.username,
             name: req.user!.name,
             initials: req.user!.initials,
-            isAdmin: req.user!.isAdmin || false
+            isAdmin: req.user!.isAdmin || false,
+            businessType: req.user!.businessType,
+            businessIndustry: req.user!.businessIndustry,
+            companySize: req.user!.companySize,
+            primaryMarket: req.user!.primaryMarket
           }
         });
       }
@@ -434,9 +438,48 @@ export function setupAuth(app: Express) {
           username: req.user.username,
           name: req.user.name,
           initials: req.user.initials,
-          isAdmin: req.user.isAdmin || false
+          isAdmin: req.user.isAdmin || false,
+          businessType: req.user.businessType,
+          businessIndustry: req.user.businessIndustry,
+          companySize: req.user.companySize,
+          primaryMarket: req.user.primaryMarket
         }
       });
+    }
+  );
+
+  // Update business profile endpoint
+  app.patch("/api/auth/user/business-profile",
+    (req: Request, res: Response, next: NextFunction) => {
+      // Try session auth first
+      if (req.isAuthenticated()) {
+        return next();
+      }
+      
+      // If no session, try JWT auth
+      passport.authenticate('jwt', { session: false })(req, res, next);
+    },
+    async (req: Request, res: Response) => {
+      try {
+        if (!req.user) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const { businessType, businessIndustry, companySize, primaryMarket } = req.body;
+        
+        // Update user business profile in database
+        await storage.updateUserBusinessProfile(req.user.id, {
+          businessType,
+          businessIndustry,
+          companySize,
+          primaryMarket
+        });
+
+        return res.json({ success: true, message: "Business profile updated successfully" });
+      } catch (error) {
+        console.error("Business profile update error:", error);
+        return res.status(500).json({ message: "Failed to update business profile" });
+      }
     }
   );
   

@@ -34,6 +34,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserPersonalKeys(userId: number, keys: { openaiKey?: string; mailgunKey?: string; mailgunDomain?: string }): Promise<User>;
+  updateUserBusinessProfile(userId: number, profile: { businessType?: string; businessIndustry?: string; companySize?: string; primaryMarket?: string }): Promise<User>;
   
   // Customer methods
   getCustomers(): Promise<Customer[]>;
@@ -690,6 +691,24 @@ export class MemStorage implements IStorage {
       personalOpenAIKey: keys.openaiKey || user.personalOpenAIKey,
       personalMailgunKey: keys.mailgunKey || user.personalMailgunKey,
       personalMailgunDomain: keys.mailgunDomain || user.personalMailgunDomain
+    };
+    
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+
+  async updateUserBusinessProfile(userId: number, profile: { businessType?: string; businessIndustry?: string; companySize?: string; primaryMarket?: string }): Promise<User> {
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    const updatedUser = {
+      ...user,
+      businessType: profile.businessType !== undefined ? profile.businessType : user.businessType,
+      businessIndustry: profile.businessIndustry !== undefined ? profile.businessIndustry : user.businessIndustry,
+      companySize: profile.companySize !== undefined ? profile.companySize : user.companySize,
+      primaryMarket: profile.primaryMarket !== undefined ? profile.primaryMarket : user.primaryMarket
     };
     
     this.users.set(userId, updatedUser);

@@ -17,6 +17,13 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Form,
   FormControl,
   FormDescription,
@@ -100,6 +107,13 @@ const notificationSettingsSchema = z.object({
   securityAlerts: z.boolean(),
 });
 
+const businessProfileSchema = z.object({
+  businessType: z.string().optional(),
+  businessIndustry: z.string().optional(),
+  companySize: z.string().optional(),
+  primaryMarket: z.string().optional(),
+});
+
 // Define types for tracking installations
 interface TrackingInstallation {
   id: number;
@@ -118,6 +132,7 @@ type MailgunConfigFormData = z.infer<typeof mailgunConfigSchema>;
 type ProfileSettingsFormData = z.infer<typeof profileSettingsSchema>;
 type NotificationSettingsFormData = z.infer<typeof notificationSettingsSchema>;
 type PersonalAPIKeysFormData = z.infer<typeof personalAPIKeysSchema>;
+type BusinessProfileFormData = z.infer<typeof businessProfileSchema>;
 
 const SettingsPage: React.FC = () => {
   // Get URL parameters to check for 'tab' parameter
@@ -298,6 +313,16 @@ const SettingsPage: React.FC = () => {
     }
   });
 
+  const businessProfileForm = useForm<BusinessProfileFormData>({
+    resolver: zodResolver(businessProfileSchema),
+    defaultValues: {
+      businessType: '',
+      businessIndustry: '',
+      companySize: '',
+      primaryMarket: '',
+    }
+  });
+
   // Set default form values when user data is loaded
   useEffect(() => {
     if (userData?.user) {
@@ -308,8 +333,15 @@ const SettingsPage: React.FC = () => {
         newPassword: '',
         confirmPassword: '',
       });
+      
+      businessProfileForm.reset({
+        businessType: userData.user.businessType || '',
+        businessIndustry: userData.user.businessIndustry || '',
+        companySize: userData.user.companySize || '',
+        primaryMarket: userData.user.primaryMarket || '',
+      });
     }
-  }, [userData, profileForm]);
+  }, [userData, profileForm, businessProfileForm]);
 
   // Set default notification form values when notification data is loaded
   useEffect(() => {
@@ -440,6 +472,26 @@ const SettingsPage: React.FC = () => {
     },
   });
 
+  const updateBusinessProfileMutation = useMutation({
+    mutationFn: async (data: BusinessProfileFormData) => {
+      return await apiRequest('/api/auth/user/business-profile', 'PATCH', data);
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Business Profile Updated',
+        description: 'Your business profile has been successfully updated. AI campaign messages will now be tailored to your business type.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Update Failed',
+        description: error.message || 'Failed to update business profile',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Form submissions
   const onOpenAISubmit = (data: OpenAIConfigFormData) => {
     configureOpenAIMutation.mutate(data);
@@ -455,6 +507,10 @@ const SettingsPage: React.FC = () => {
 
   const onNotificationSubmit = (data: NotificationSettingsFormData) => {
     updateNotificationsMutation.mutate(data);
+  };
+
+  const onBusinessProfileSubmit = (data: BusinessProfileFormData) => {
+    updateBusinessProfileMutation.mutate(data);
   };
 
   // Handle generation of tracking code
@@ -664,6 +720,124 @@ const SettingsPage: React.FC = () => {
                         >
                           {updateProfileMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                           Save Changes
+                        </Button>
+                      </form>
+                    </Form>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Business Profile
+                    </CardTitle>
+                    <CardDescription>
+                      Tell us about your business to get AI campaign messages tailored to your audience (B2B vs B2C)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Form {...businessProfileForm}>
+                      <form onSubmit={businessProfileForm.handleSubmit(onBusinessProfileSubmit)} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <FormField
+                            control={businessProfileForm.control}
+                            name="businessType"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Business Type</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-business-type">
+                                      <SelectValue placeholder="Select business type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="B2B">B2B (Business to Business)</SelectItem>
+                                    <SelectItem value="B2C">B2C (Business to Consumer)</SelectItem>
+                                    <SelectItem value="Both">Both B2B and B2C</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormDescription>
+                                  This helps AI generate appropriate campaign messages for your target audience
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={businessProfileForm.control}
+                            name="companySize"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Company Size (Optional)</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-company-size">
+                                      <SelectValue placeholder="Select company size" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="1-10">1-10 employees</SelectItem>
+                                    <SelectItem value="11-50">11-50 employees</SelectItem>
+                                    <SelectItem value="51-200">51-200 employees</SelectItem>
+                                    <SelectItem value="201-1000">201-1000 employees</SelectItem>
+                                    <SelectItem value="1000+">1000+ employees</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={businessProfileForm.control}
+                            name="businessIndustry"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Industry (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., Technology, Retail, Healthcare" {...field} data-testid="input-business-industry" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <FormField
+                            control={businessProfileForm.control}
+                            name="primaryMarket"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Primary Market (Optional)</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-primary-market">
+                                      <SelectValue placeholder="Select primary market" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="local">Local</SelectItem>
+                                    <SelectItem value="regional">Regional</SelectItem>
+                                    <SelectItem value="national">National</SelectItem>
+                                    <SelectItem value="international">International</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <Button 
+                          type="submit" 
+                          className="mt-4" 
+                          disabled={updateBusinessProfileMutation.isPending}
+                          data-testid="button-save-business-profile"
+                        >
+                          {updateBusinessProfileMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Save Business Profile
                         </Button>
                       </form>
                     </Form>
