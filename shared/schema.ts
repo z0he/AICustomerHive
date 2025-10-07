@@ -27,6 +27,11 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status").default("trial"), // trial, active, canceled, past_due
   trialEndsAt: timestamp("trial_ends_at"),
   isPaid: boolean("is_paid").default(false), // For future Stripe integration
+  // Business Profile (not required at registration, added to profile later)
+  businessType: text("business_type"), // "B2B" | "B2C" | "Both" | null
+  businessIndustry: text("business_industry"),
+  companySize: text("company_size"), // "1-10" | "11-50" | "51-200" | "201-1000" | "1000+" | null
+  primaryMarket: text("primary_market"), // "local" | "regional" | "national" | "international" | null
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -55,6 +60,9 @@ export const campaigns = pgTable("campaigns", {
   conversions: integer("conversions").default(0),
   percentage: integer("percentage").default(0),
   isABTestActive: boolean("is_ab_test_active").default(false),
+  // New fields for unified contacts integration
+  contactFilters: jsonb("contact_filters"), // Dynamic filter criteria for targeting contacts
+  targetSegmentId: integer("target_segment_id"), // Reference to contactSegments table if using saved segment
 });
 
 // Message Variants for A/B testing
