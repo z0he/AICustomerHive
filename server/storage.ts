@@ -124,6 +124,16 @@ export interface IStorage {
   getContact(id: string): Promise<SelectContact | undefined>;
   updateContact(id: string, data: Partial<SelectContact>): Promise<SelectContact>;
   deleteContact(id: string): Promise<boolean>;
+  filterContacts(filters: {
+    industry?: string;
+    contactSource?: string;
+    lifecycleStage?: string;
+    status?: string;
+    tags?: string[];
+    leadStatus?: string;
+    minScore?: number;
+    maxScore?: number;
+  }): Promise<SelectContact[]>;
   
   // Task methods
   getTasks(): Promise<Task[]>;
@@ -2321,6 +2331,19 @@ export class MemStorage implements IStorage {
 
   async deleteContact(id: string): Promise<boolean> {
     throw new Error("Unified contacts not implemented in MemStorage - use DbStorage");
+  }
+
+  async filterContacts(filters: {
+    industry?: string;
+    contactSource?: string;
+    lifecycleStage?: string;
+    status?: string;
+    tags?: string[];
+    leadStatus?: string;
+    minScore?: number;
+    maxScore?: number;
+  }): Promise<SelectContact[]> {
+    throw new Error("Contact filtering not implemented in MemStorage - use DbStorage");
   }
 }
 

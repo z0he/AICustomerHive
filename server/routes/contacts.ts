@@ -590,4 +590,32 @@ router.post('/:id/notes', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/contacts/filter
+ * Filter contacts for campaign targeting
+ */
+router.post('/filter', async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const filters = req.body;
+    
+    // Use storage layer to filter contacts
+    const contacts = await storage.filterContacts(filters);
+    
+    res.json({
+      contacts,
+      count: contacts.length
+    });
+
+  } catch (error) {
+    console.error('Error filtering contacts:', error);
+    res.status(500).json({ error: 'Failed to filter contacts' });
+  }
+});
+
 export default router;

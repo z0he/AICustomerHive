@@ -2329,4 +2329,62 @@ export class DbStorage implements IStorage {
       return false;
     }
   }
+
+  async filterContacts(filters: {
+    industry?: string;
+    contactSource?: string;
+    lifecycleStage?: string;
+    status?: string;
+    tags?: string[];
+    leadStatus?: string;
+    minScore?: number;
+    maxScore?: number;
+  }): Promise<SelectContact[]> {
+    try {
+      const conditions: any[] = [];
+      
+      if (filters.industry) {
+        conditions.push(eq(contacts.industry, filters.industry as any));
+      }
+      if (filters.contactSource) {
+        conditions.push(eq(contacts.contactSource, filters.contactSource as any));
+      }
+      if (filters.lifecycleStage) {
+        conditions.push(eq(contacts.lifecycleStage, filters.lifecycleStage as any));
+      }
+      if (filters.status) {
+        conditions.push(eq(contacts.status, filters.status as any));
+      }
+      if (filters.leadStatus) {
+        conditions.push(eq(contacts.leadStatus, filters.leadStatus));
+      }
+      if (filters.minScore !== undefined) {
+        conditions.push(gte(contacts.score, filters.minScore));
+      }
+      if (filters.maxScore !== undefined) {
+        conditions.push(lte(contacts.score, filters.maxScore));
+      }
+      
+      let query = db.select().from(contacts);
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+      
+      const results = await query;
+      
+      // Filter by tags in memory if specified (JSONB array filtering)
+      if (filters.tags && filters.tags.length > 0) {
+        return results.filter(contact => {
+          const contactTags = contact.tags as string[] || [];
+          return filters.tags!.some(tag => contactTags.includes(tag));
+        });
+      }
+      
+      return results;
+    } catch (error) {
+      console.error('Failed to filter contacts:', error);
+      return [];
+    }
+  }
 }
