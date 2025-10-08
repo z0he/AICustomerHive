@@ -9,6 +9,7 @@ import CustomerJourney from "@/pages/CustomerJourney";  // serves /journeys
 import UnifiedSegments from "@/pages/UnifiedSegments";  // serves /segments
 import Campaigns from "@/pages/Campaigns";
 import CampaignDetail from "@/pages/CampaignDetail";
+import AutomationPage from "@/pages/AutomationPage";  // serves /automation
 import EmailManagement from "@/pages/EmailManagement";  // serves /email
 import EmailDeliveryStatus from "@/pages/EmailDeliveryStatus";  // serves /email-delivery
 import MarketingForms from "@/pages/MarketingForms";  // serves /marketing-forms
@@ -33,17 +34,6 @@ import FeedbackList from "@/pages/FeedbackList";
 import SimpleFeedback from "@/pages/SimpleFeedback";
 import ScheduledEmails from "@/pages/ScheduledEmails";
 
-// Placeholder for automation (since component doesn't exist)
-const AutomationPlaceholder = () => (
-  <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
-    <h1 className="text-3xl font-bold text-slate-800 mb-4">Automation Workflows</h1>
-    <p className="text-slate-600 mb-8">This page is under development.</p>
-    <a href="/dashboard" className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition">
-      Back to Dashboard
-    </a>
-  </div>
-);
-
 export function AppRoutes({ user }: { user: any }) {
   return (
     <Switch>
@@ -67,7 +57,7 @@ export function AppRoutes({ user }: { user: any }) {
             <ProtectedRoute path="/journeys" component={CustomerJourney} />
             <ProtectedRoute path="/segments" component={UnifiedSegments} />
             <ProtectedRoute path="/campaigns" component={Campaigns} />
-            <ProtectedRoute path="/automation" component={AutomationPlaceholder} />
+            <ProtectedRoute path="/automation" component={AutomationPage} />
             <ProtectedRoute path="/email" component={EmailManagement} />
             <ProtectedRoute path="/email-delivery" component={EmailDeliveryStatus} />
             <ProtectedRoute path="/marketing-forms" component={MarketingForms} />
