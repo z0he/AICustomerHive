@@ -28,12 +28,7 @@ const NAV: { label: string; items: NavItem[] }[] = [
     items: [
       { icon: Megaphone, label: 'Campaigns', href: '/campaigns' },
       { icon: Zap, label: 'Automation', href: '/automation' },
-      {
-        icon: Mail, label: 'Email', href: '/email',
-        children: [
-          { label: 'Deliverability', href: '/email-delivery' },
-        ],
-      },
+      { icon: Mail, label: 'Email', href: '/email' },
       { icon: FileText, label: 'Forms', href: '/marketing-forms' },
     ],
   },

@@ -11,7 +11,6 @@ import Campaigns from "@/pages/Campaigns";
 import CampaignDetail from "@/pages/CampaignDetail";
 import AutomationPage from "@/pages/AutomationPage";  // serves /automation
 import EmailManagement from "@/pages/EmailManagement";  // serves /email
-import EmailDeliveryStatus from "@/pages/EmailDeliveryStatus";  // serves /email-delivery
 import MarketingForms from "@/pages/MarketingForms";  // serves /marketing-forms
 import CalendarManagement from "@/pages/CalendarManagement";  // serves /calendar
 import CustomerData from "@/pages/CustomerData";  // serves /customer-data
@@ -59,7 +58,6 @@ export function AppRoutes({ user }: { user: any }) {
             <ProtectedRoute path="/campaigns" component={Campaigns} />
             <ProtectedRoute path="/automation" component={AutomationPage} />
             <ProtectedRoute path="/email" component={EmailManagement} />
-            <ProtectedRoute path="/email-delivery" component={EmailDeliveryStatus} />
             <ProtectedRoute path="/marketing-forms" component={MarketingForms} />
             <ProtectedRoute path="/calendar" component={CalendarManagement} />
             <ProtectedRoute path="/customer-data" component={CustomerData} />
