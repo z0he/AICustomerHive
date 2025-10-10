@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { queryClient } from '@/lib/queryClient';
-import { FormFieldEditor } from './FormFieldEditor';
+import { FormFieldEditor, type FormField as FormFieldType } from './FormFieldEditor';
 import { Switch } from '@/components/ui/switch';
 
 // Define the form schema
@@ -53,7 +53,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 // Define initial form field structure
-const initialFormFields = [
+const initialFormFields: FormFieldType[] = [
   {
     id: '1',
     type: 'text',
@@ -89,7 +89,7 @@ interface CreateFormDialogProps {
 }
 
 export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) {
-  const [formFields, setFormFields] = useState(initialFormFields);
+  const [formFields, setFormFields] = useState<FormFieldType[]>(initialFormFields);
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();

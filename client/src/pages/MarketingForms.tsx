@@ -29,6 +29,18 @@ import { CreateFormDialog } from '@/components/marketing/CreateFormDialog';
 import { FormPreviewDialog } from '@/components/marketing/FormPreviewDialog';
 import { MarketingFormStats } from '@/components/marketing/MarketingFormStats';
 
+interface MarketingForm {
+  id: number;
+  name: string;
+  folder: string;
+  formType: string;
+  status: string;
+  views: number;
+  submissions: number;
+  conversionRate: number;
+  embedCode: string;
+}
+
 const MarketingForms = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
@@ -42,7 +54,7 @@ const MarketingForms = () => {
     data: forms = [], 
     isLoading: isFormsLoading,
     error: formsError 
-  } = useQuery({
+  } = useQuery<MarketingForm[]>({
     queryKey: ['/api/marketing/forms'],
     staleTime: 60000, // 1 minute
   });
