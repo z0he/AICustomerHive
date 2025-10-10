@@ -83,9 +83,7 @@ const emailTemplateSchema = z.object({
   bodyHtml: z.string().min(1, "HTML content is required"),
   bodyText: z.string().min(1, "Text content is required"),
   category: z.string().optional(),
-  variables: z.string().transform(val => 
-    val ? val.split(',').map(v => v.trim()) : []
-  ),
+  variables: z.string().optional(),
 });
 
 const sendEmailSchema = z.object({
@@ -99,6 +97,30 @@ type ConfigureApiKeyFormData = z.infer<typeof configureApiKeySchema>;
 type EmailTemplateFormData = z.infer<typeof emailTemplateSchema>;
 type SendEmailFormData = z.infer<typeof sendEmailSchema>;
 
+interface EmailLog {
+  id: number;
+  from?: string;
+  to?: string;
+  recipient?: string;
+  subject?: string;
+  status: string;
+  sentAt?: string;
+  type?: string;
+  metadata?: {
+    testEmail?: boolean;
+    mailgunId?: string;
+    originalSubject?: string;
+    personalizationApplied?: boolean;
+    error?: string;
+  };
+}
+
+interface MailgunConfig {
+  configured: boolean;
+  domain?: string;
+  isSandbox?: boolean;
+}
+
 const EmailManagement: React.FC = () => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('configuration');
@@ -108,7 +130,7 @@ const EmailManagement: React.FC = () => {
   const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
 
   // API status query
-  const { data: apiStatus, isLoading: isStatusLoading, refetch: refetchStatus } = useQuery({
+  const { data: apiStatus, isLoading: isStatusLoading, refetch: refetchStatus } = useQuery<MailgunConfig>({
     queryKey: ['/api/config/mailgun/status'],
     refetchOnWindowFocus: false,
   });
@@ -119,7 +141,7 @@ const EmailManagement: React.FC = () => {
     isLoading: isTemplatesLoading, 
     error: templatesError,
     refetch: refetchTemplates
-  } = useQuery({
+  } = useQuery<any[]>({
     queryKey: ['/api/email/templates'],
     enabled: activeTab === 'templates',
   });
@@ -130,7 +152,7 @@ const EmailManagement: React.FC = () => {
     isLoading: isLogsLoading, 
     error: logsError,
     refetch: refetchLogs
-  } = useQuery({
+  } = useQuery<EmailLog[]>({
     queryKey: ['/api/email/logs'],
     enabled: activeTab === 'logs',
     refetchInterval: autoRefresh ? 30000 : false, // Auto-refresh every 30 seconds if enabled
@@ -295,7 +317,12 @@ const EmailManagement: React.FC = () => {
   };
 
   const onTemplateSubmit: SubmitHandler<EmailTemplateFormData> = (data) => {
-    createTemplateMutation.mutate(data);
+    // Transform variables string to array before sending
+    const templateData = {
+      ...data,
+      variables: data.variables ? data.variables.split(',').map(v => v.trim()) : []
+    };
+    createTemplateMutation.mutate(templateData as any);
   };
 
   const onSendEmailSubmit: SubmitHandler<SendEmailFormData> = (data) => {
@@ -341,9 +368,9 @@ const EmailManagement: React.FC = () => {
   };
 
   // Calculate email statistics
-  const totalSent = emailLogs?.filter((e: any) => e.status === 'sent').length || 0;
-  const totalFailed = emailLogs?.filter((e: any) => e.status === 'failed').length || 0;
-  const successRate = emailLogs?.length ? Math.round((totalSent / emailLogs.length) * 100) : 0;
+  const totalSent = emailLogs.filter((e) => e.status === 'sent').length || 0;
+  const totalFailed = emailLogs.filter((e) => e.status === 'failed').length || 0;
+  const successRate = emailLogs.length ? Math.round((totalSent / emailLogs.length) * 100) : 0;
 
   // Handle logout
   const handleLogout = () => {
