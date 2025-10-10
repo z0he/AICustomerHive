@@ -1950,13 +1950,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/config/mailgun/status", async (req: Request, res: Response) => {
     try {
+      const userId = (req as any).user?.id;
       const isConfigured = isMailgunConfigured();
-      const currentDomain = process.env.MAILGUN_DOMAIN;
+      
+      // Always return the enforced domain (PRIMARY_EMAIL_DOMAIN)
+      const { PRIMARY_EMAIL_DOMAIN } = await import('./lib/email-domain-service');
+      
+      // Check if user has personal Mailgun keys configured
+      let usingPersonalKeys = false;
+      let emailsUsed = 0;
+      let emailsLimit = 50;
+      
+      if (userId) {
+        const user = await storage.getUserById(userId);
+        usingPersonalKeys = !!(user?.personalMailgunKey && user?.personalMailgunDomain);
+        emailsUsed = user?.emailsSent || 0;
+        
+        // If using personal keys, they have unlimited emails
+        if (usingPersonalKeys) {
+          emailsLimit = -1; // unlimited
+        }
+      }
       
       return res.json({ 
         configured: isConfigured,
-        domain: currentDomain,
-        isProduction: !currentDomain?.includes('sandbox')
+        domain: PRIMARY_EMAIL_DOMAIN, // Always show the enforced domain
+        isProduction: true, // PRIMARY_EMAIL_DOMAIN is always production
+        usingPersonalKeys,
+        emailsUsed,
+        emailsLimit
       });
     } catch (error) {
       console.error("Mailgun status check error:", error);
