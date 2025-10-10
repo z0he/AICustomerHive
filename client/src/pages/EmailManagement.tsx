@@ -21,12 +21,19 @@ import {
   Send,
   RefreshCw,
   UserPlus,
-  History
+  History,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import EmailTemplateCard from '@/components/email/EmailTemplateCard';
 import EmailCampaignIntegration from '@/components/email/EmailCampaignIntegration';
+import { formatDistanceToNow } from 'date-fns';
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -97,6 +104,8 @@ const EmailManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState('configuration');
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [expandedLogId, setExpandedLogId] = useState<number | null>(null);
 
   // API status query
   const { data: apiStatus, isLoading: isStatusLoading, refetch: refetchStatus } = useQuery({
@@ -124,6 +133,7 @@ const EmailManagement: React.FC = () => {
   } = useQuery({
     queryKey: ['/api/email/logs'],
     enabled: activeTab === 'logs',
+    refetchInterval: autoRefresh ? 30000 : false, // Auto-refresh every 30 seconds if enabled
   });
 
   // Get user data for the header
@@ -307,15 +317,33 @@ const EmailManagement: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'sent':
-        return <Badge variant="success">Sent</Badge>;
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Sent</Badge>;
       case 'failed':
         return <Badge variant="destructive">Failed</Badge>;
       case 'pending':
-        return <Badge variant="outline">Pending</Badge>;
+        return <Badge variant="secondary">Pending</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'sent':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      default:
+        return <Mail className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  // Calculate email statistics
+  const totalSent = emailLogs?.filter((e: any) => e.status === 'sent').length || 0;
+  const totalFailed = emailLogs?.filter((e: any) => e.status === 'failed').length || 0;
+  const successRate = emailLogs?.length ? Math.round((totalSent / emailLogs.length) * 100) : 0;
 
   // Handle logout
   const handleLogout = () => {
@@ -824,16 +852,77 @@ const EmailManagement: React.FC = () => {
               </TabsContent>
               
               {/* Email Logs Tab */}
-              <TabsContent value="logs" className="mt-4">
+              <TabsContent value="logs" className="mt-4 space-y-6">
+                {/* Mailgun Configuration Alert */}
+                {apiStatus?.configured && apiStatus.domain?.includes('sandbox') && (
+                  <Alert className="border-yellow-200 bg-yellow-50">
+                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                    <AlertDescription className="text-yellow-800">
+                      <strong>Sandbox Domain Detected:</strong> You're using a Mailgun sandbox domain ({apiStatus.domain}). 
+                      Emails are sent to Mailgun but only delivered to authorized recipients. To send to any email address, 
+                      you need to either add recipients to your authorized list in Mailgun or upgrade to a paid account.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {/* Statistics Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Emails Sent</CardTitle>
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{totalSent}</div>
+                      <p className="text-xs text-muted-foreground">Successfully sent to Mailgun</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Failed Emails</CardTitle>
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{totalFailed}</div>
+                      <p className="text-xs text-muted-foreground">Failed to send</p>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold">{successRate}%</div>
+                      <p className="text-xs text-muted-foreground">Of all attempted emails</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Email Logs Card */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <History className="mr-2" size={20} />
-                      Email Logs
-                    </CardTitle>
-                    <CardDescription>
-                      View all sent emails and their delivery status
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center">
+                          <History className="mr-2" size={20} />
+                          Email Logs
+                        </CardTitle>
+                        <CardDescription>
+                          View all sent emails and their delivery status
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="auto-refresh" className="text-sm">Auto-refresh</Label>
+                        <Switch
+                          id="auto-refresh"
+                          checked={autoRefresh}
+                          onCheckedChange={setAutoRefresh}
+                        />
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {isLogsLoading ? (
@@ -857,39 +946,112 @@ const EmailManagement: React.FC = () => {
                         </p>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Recipient</TableHead>
-                              <TableHead>Subject</TableHead>
-                              <TableHead>Sent At</TableHead>
-                              <TableHead>Type</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {emailLogs.map((log: any, index: number) => (
-                              <TableRow key={log.id || index}>
-                                <TableCell>
-                                  {getStatusBadge(log.status)}
-                                </TableCell>
-                                <TableCell className="font-medium">
-                                  {log.recipient || 'N/A'}
-                                </TableCell>
-                                <TableCell>{log.subject || 'N/A'}</TableCell>
-                                <TableCell>
-                                  {log.sentAt ? formatDate(log.sentAt) : 'N/A'}
-                                </TableCell>
-                                <TableCell>
-                                  <Badge variant="outline">{log.type || 'direct'}</Badge>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
+                      <div className="space-y-4">
+                        {emailLogs.map((log: any) => (
+                          <div key={log.id} className="border rounded-lg">
+                            <div 
+                              className="flex items-center justify-between p-4 cursor-pointer hover:bg-slate-50"
+                              onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
+                              data-testid={`email-log-${log.id}`}
+                            >
+                              <div className="flex items-start space-x-3 flex-1">
+                                {getStatusIcon(log.status)}
+                                <div className="space-y-1 flex-1">
+                                  <div className="font-medium">{log.subject || 'No subject'}</div>
+                                  <div className="text-sm text-muted-foreground">
+                                    To: {log.to || log.recipient || 'N/A'} • From: {log.from || 'N/A'}
+                                  </div>
+                                  {log.metadata?.error && expandedLogId !== log.id && (
+                                    <div className="text-sm text-red-600">
+                                      Error: {log.metadata.error.substring(0, 50)}...
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-3">
+                                {getStatusBadge(log.status)}
+                                <div className="text-sm text-muted-foreground min-w-[100px] text-right">
+                                  {log.sentAt ? formatDistanceToNow(new Date(log.sentAt), { addSuffix: true }) : 'N/A'}
+                                </div>
+                                {expandedLogId === log.id ? (
+                                  <ChevronUp className="h-4 w-4" />
+                                ) : (
+                                  <ChevronDown className="h-4 w-4" />
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Expanded Details */}
+                            {expandedLogId === log.id && (
+                              <div className="px-4 pb-4 border-t bg-slate-50 space-y-3">
+                                <div className="grid grid-cols-2 gap-4 pt-3">
+                                  <div>
+                                    <div className="text-xs font-medium text-muted-foreground">Type</div>
+                                    <div className="text-sm">{log.type || 'direct'}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs font-medium text-muted-foreground">Sent At</div>
+                                    <div className="text-sm">{log.sentAt ? formatDate(log.sentAt) : 'N/A'}</div>
+                                  </div>
+                                  {log.metadata?.mailgunId && (
+                                    <div className="col-span-2">
+                                      <div className="text-xs font-medium text-muted-foreground">Mailgun ID</div>
+                                      <div className="text-sm font-mono text-xs">{log.metadata.mailgunId}</div>
+                                    </div>
+                                  )}
+                                  {log.metadata?.personalizationApplied && (
+                                    <div>
+                                      <div className="text-xs font-medium text-muted-foreground">Personalization</div>
+                                      <div className="text-sm">Applied</div>
+                                    </div>
+                                  )}
+                                </div>
+                                {log.metadata?.error && (
+                                  <div className="bg-red-50 border border-red-200 rounded p-3">
+                                    <div className="text-xs font-medium text-red-800 mb-1">Error Details</div>
+                                    <div className="text-sm text-red-600">{log.metadata.error}</div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+
+                {/* Help Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Need Help with Email Delivery?</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">If emails aren't reaching your inbox:</h4>
+                      <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                        <li>Check your spam/junk folder</li>
+                        <li>Verify the recipient email is added to your Mailgun authorized recipients</li>
+                        <li>Consider upgrading from a sandbox to a verified Mailgun domain</li>
+                        <li>Check Mailgun logs in your Mailgun dashboard for delivery details</li>
+                      </ul>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Mailgun Domain Status:</h4>
+                      <div className="text-sm">
+                        {apiStatus?.domain ? (
+                          <span className="font-mono bg-gray-100 px-2 py-1 rounded">
+                            {apiStatus.domain}
+                            {apiStatus.domain.includes('sandbox') && (
+                              <Badge variant="outline" className="ml-2 text-xs">Sandbox</Badge>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-red-600">Not configured</span>
+                        )}
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
