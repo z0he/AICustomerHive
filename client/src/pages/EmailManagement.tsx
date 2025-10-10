@@ -26,7 +26,8 @@ import {
   Clock,
   AlertTriangle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Info
 } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
@@ -118,7 +119,10 @@ interface EmailLog {
 interface MailgunConfig {
   configured: boolean;
   domain?: string;
-  isSandbox?: boolean;
+  isProduction?: boolean;
+  usingPersonalKeys?: boolean;
+  emailsUsed?: number;
+  emailsLimit?: number;
 }
 
 const EmailManagement: React.FC = () => {
@@ -880,14 +884,26 @@ const EmailManagement: React.FC = () => {
               
               {/* Email Logs Tab */}
               <TabsContent value="logs" className="mt-4 space-y-6">
-                {/* Mailgun Configuration Alert */}
-                {apiStatus?.configured && apiStatus.domain?.includes('sandbox') && (
-                  <Alert className="border-yellow-200 bg-yellow-50">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                    <AlertDescription className="text-yellow-800">
-                      <strong>Sandbox Domain Detected:</strong> You're using a Mailgun sandbox domain ({apiStatus.domain}). 
-                      Emails are sent to Mailgun but only delivered to authorized recipients. To send to any email address, 
-                      you need to either add recipients to your authorized list in Mailgun or upgrade to a paid account.
+                {/* Email System Status Alert */}
+                {apiStatus?.configured && (
+                  <Alert className={apiStatus.usingPersonalKeys ? "border-green-200 bg-green-50" : "border-blue-200 bg-blue-50"}>
+                    {apiStatus.usingPersonalKeys ? (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <Info className="h-4 w-4 text-blue-600" />
+                    )}
+                    <AlertDescription className={apiStatus.usingPersonalKeys ? "text-green-800" : "text-blue-800"}>
+                      {apiStatus.usingPersonalKeys ? (
+                        <>
+                          <strong>Using Personal Mailgun API:</strong> You're using your personal Mailgun account with unlimited email sending. 
+                          All emails are sent from <strong>{apiStatus.domain}</strong>.
+                        </>
+                      ) : (
+                        <>
+                          <strong>Using Shared Email Service:</strong> You're using the shared Mailgun API keys (free tier - {apiStatus.emailsUsed || 0}/{apiStatus.emailsLimit || 50} emails used). 
+                          All emails are sent from <strong>{apiStatus.domain}</strong>. To get unlimited sending, configure your personal Mailgun API key in <strong>Settings → Integrations</strong>.
+                        </>
+                      )}
                     </AlertDescription>
                   </Alert>
                 )}
