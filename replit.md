@@ -27,6 +27,14 @@ The frontend uses React 18 with TypeScript, styled with Tailwind CSS for custom 
 The system uses a modular architecture for both frontend and backend to ensure scalability and maintainability. Authentication is handled via JWT and sessions. Data import/export supports CSV/JSON with field mapping. A dual-table approach for contacts maintains backward compatibility while transitioning to a unified contact system.
 
 ### Recent Changes (October 2025)
+**Email System UX Enhancement (Oct 10, 2025)**:
+- **Fixed Misleading Sandbox Warning**: Updated `/api/config/mailgun/status` endpoint to return enforced PRIMARY_EMAIL_DOMAIN (mail.aicrm.co.uk) instead of env var value
+- **Enhanced Email Logs UI**: Replaced confusing sandbox alert with clear status messaging based on key type:
+  - Blue alert for shared keys: Shows usage (X/50 emails) and enforced domain
+  - Green alert for personal keys: Shows unlimited sending capability
+- **Email Log Security Confirmed**: Non-admin users only see their own email logs (filtered by userId); admin users see all logs
+- **Multi-tenant Isolation**: All email logs are properly scoped to prevent data leakage between users
+
 **Filter Standardization & Schema Alignment (Oct 7, 2025)**:
 - **Database Schema Sync**: Fixed LEAD_SOURCES and INDUSTRIES constants to match database enum values exactly (e.g., "Paid Search" not "paid_search")
 - **Industry Update**: Added "Life Sciences" to industry enum in database schema and constants (142 total industries)
