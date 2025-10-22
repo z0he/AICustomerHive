@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
@@ -388,7 +389,7 @@ export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) 
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <FormLabel>Submit Button Text</FormLabel>
+                <Label>Submit Button Text</Label>
                 <Input 
                   placeholder="Submit"
                   value={form.getValues().submitButtonText}
@@ -397,7 +398,7 @@ export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) 
               </div>
               
               <div>
-                <FormLabel>Success Message</FormLabel>
+                <Label>Success Message</Label>
                 <Input 
                   placeholder="Thank you for your submission!"
                   value={form.getValues().successMessage}
@@ -407,7 +408,7 @@ export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) 
             </div>
             
             <div>
-              <FormLabel>Redirect URL (Optional)</FormLabel>
+              <Label>Redirect URL (Optional)</Label>
               <Input 
                 placeholder="https://example.com/thank-you"
                 value={form.getValues().redirectUrl || ''}
