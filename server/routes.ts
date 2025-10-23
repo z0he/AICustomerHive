@@ -2,6 +2,9 @@ import express, { Request, Response, NextFunction } from "express";
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import type { IStorage } from "./storage";
+import { createOrganizationScopedStorage } from "./storage/scoped-storage";
+import { organizationMiddleware } from "./middleware/organization";
 import { interpretVoiceCommand, generateCampaignSuggestions, analyzeCustomerData, hasValidApiKey, getCrmAssistantResponse } from "./lib/openai";
 import { usageService } from "./lib/usage-service";
 import { sendEmail, sendTemplateEmail, isMailgunConfigured, reinitializeMailgunClient } from "./lib/mailgun";
@@ -43,9 +46,20 @@ import trackRoutes from "./routes/track.js";
 import dataQualityRoutes from "./routes/data-quality.js";
 import contactsRoutes from "./routes/contacts.js";
 
+// Helper function to get organization-scoped storage from request
+function getScopedStorage(req: Request): IStorage {
+  if (req.organization?.organizationId) {
+    return createOrganizationScopedStorage(storage, req.organization.organizationId);
+  }
+  throw new Error("Organization context required but not found");
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
+  
+  // Apply organization middleware to all API routes
+  app.use("/api", organizationMiddleware);
   
   // Mount marketing routes
   app.use("/api/marketing", marketingRoutes);
@@ -76,6 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Feature flags endpoint
   app.get("/api/flags", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { getFeatureFlags } = await import('./services/feature-flags.js');
       
@@ -100,6 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get available personalization tokens
   app.get("/api/personalization/tokens", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { personalizationEngine } = await import('./lib/personalization');
       const tokens = personalizationEngine.getAvailableTokens();
@@ -112,6 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Preview personalized content
   app.post("/api/personalization/preview", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { content, sampleEmail } = req.body;
       
@@ -131,6 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Send personalized test email
   app.post("/api/email/send-personalized-test", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { to, subject, content } = req.body;
       const userId = (req as any).user?.id;
@@ -171,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Log the email
       const fromEmail = process.env.DEFAULT_FROM_EMAIL || 'noreply@mail.aicrm.co.uk';
-      const emailLog = await storage.createEmailLog({
+      const emailLog = await scopedStorage.createEmailLog({
         userId,
         from: fromEmail,
         to,
@@ -202,6 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Voice command routes
   app.post("/api/voice/interpret", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { transcript } = req.body;
       
@@ -219,6 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Personal OpenAI API Configuration endpoint
   app.post("/api/config/openai", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { apiKey } = req.body;
       const userId = (req as any).user?.id;
@@ -232,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Store personal API key in database
-      await storage.updateUserPersonalKeys(userId, { openaiKey: apiKey });
+      await scopedStorage.updateUserPersonalKeys(userId, { openaiKey: apiKey });
       
       console.log("OpenAI API key configuration requested");
       return res.json({ success: true, message: "OpenAI API key has been configured" });
@@ -244,6 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Check OpenAI API key status
   app.get("/api/config/openai/status", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       // Use the hasValidApiKey function from our openai.ts
       const isConfigured = hasValidApiKey();
@@ -256,9 +277,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Campaign routes
   app.get("/api/campaigns", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const period = req.query.period as string || '30d';
-      const campaigns = await storage.getCampaigns(period);
+      const campaigns = await scopedStorage.getCampaigns(period);
       return res.json(campaigns);
     } catch (error) {
       console.error("Get campaigns error:", error);
@@ -267,9 +289,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/campaigns", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const validatedData = insertCampaignSchema.parse(req.body);
-      const campaign = await storage.createCampaign(validatedData);
+      const campaign = await scopedStorage.createCampaign(validatedData);
       return res.status(201).json(campaign);
     } catch (error) {
       console.error("Create campaign error:", error);
@@ -278,8 +301,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/campaigns/recent", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
-      const recentCampaigns = await storage.getRecentCampaigns();
+      const recentCampaigns = await scopedStorage.getRecentCampaigns();
       return res.json(recentCampaigns.map(c => ({
         id: c.id,
         name: c.name,
@@ -292,9 +316,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/campaigns/emails", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       // Get email logs from the database
-      const emailLogs = await storage.getEmailLogs();
+      const emailLogs = await scopedStorage.getEmailLogs();
       
       // If no email logs exist, return empty array instead of error
       if (!emailLogs || emailLogs.length === 0) {
@@ -305,8 +330,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Email logs found:', emailLogs.length);
       
       // Get campaigns and templates for supplementary info
-      const campaigns = await storage.getCampaigns();
-      const templates = await storage.getEmailTemplates();
+      const campaigns = await scopedStorage.getCampaigns();
+      const templates = await scopedStorage.getEmailTemplates();
       
       // Transform email logs into campaign emails format with added error handling
       const campaignEmails = emailLogs.map(log => {
@@ -361,13 +386,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/campaigns/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const campaignId = parseInt(req.params.id);
       if (isNaN(campaignId)) {
         return res.status(400).json({ message: "Invalid campaign ID" });
       }
       
-      const campaign = await storage.getCampaign(campaignId);
+      const campaign = await scopedStorage.getCampaign(campaignId);
       if (!campaign) {
         return res.status(404).json({ message: "Campaign not found" });
       }
@@ -381,13 +407,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Message Variant routes (for A/B testing)
   app.get("/api/campaigns/:id/variants", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const campaignId = parseInt(req.params.id);
       if (isNaN(campaignId)) {
         return res.status(400).json({ message: "Invalid campaign ID" });
       }
       
-      const variants = await storage.getMessageVariants(campaignId);
+      const variants = await scopedStorage.getMessageVariants(campaignId);
       return res.json(variants);
     } catch (error) {
       console.error("Get message variants error:", error);
@@ -396,6 +423,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/campaigns/:id/variants", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const campaignId = parseInt(req.params.id);
       if (isNaN(campaignId)) {
@@ -412,7 +440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         campaignId
       });
       
-      const variant = await storage.createMessageVariant(validatedData);
+      const variant = await scopedStorage.createMessageVariant(validatedData);
       return res.status(201).json(variant);
     } catch (error) {
       console.error("Create message variant error:", error);
@@ -421,6 +449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/variants/:id/stats", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const variantId = parseInt(req.params.id);
       if (isNaN(variantId)) {
@@ -434,7 +463,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "At least one of impressions or conversions must be provided" });
       }
       
-      const variant = await storage.updateMessageVariantStats(variantId, impressions, conversions);
+      const variant = await scopedStorage.updateMessageVariantStats(variantId, impressions, conversions);
       return res.json(variant);
     } catch (error) {
       console.error("Update variant stats error:", error);
@@ -444,8 +473,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Customer routes
   app.get("/api/customers", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
-      const customers = await storage.getCustomers();
+      const customers = await scopedStorage.getCustomers();
       return res.json(customers);
     } catch (error) {
       console.error("Get customers error:", error);
@@ -455,8 +485,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Customer trend data endpoint
   app.get("/api/customers/trend", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
-      const customers = await storage.getCustomers();
+      const customers = await scopedStorage.getCustomers();
       
       // Get the creation dates and sort them
       const dates = customers.map(c => new Date(c.createdAt).getTime()).sort();
@@ -506,9 +537,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/customers", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const validatedData = insertCustomerSchema.parse(req.body);
-      const customer = await storage.createCustomer(validatedData);
+      const customer = await scopedStorage.createCustomer(validatedData);
       return res.status(201).json(customer);
     } catch (error) {
       console.error("Create customer error:", error);
@@ -517,9 +549,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/customers/activity", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
-      const activities = await storage.getCustomerActivities();
-      const customers = await storage.getCustomers();
+      const activities = await scopedStorage.getCustomerActivities();
+      const customers = await scopedStorage.getCustomers();
       
       // Map customer data to activities
       const activitiesWithCustomers = activities.map(activity => {
@@ -544,6 +577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Lead routes
   app.get("/api/leads", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       // Handle filtering options
       const source = req.query.source as string;
@@ -554,20 +588,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Apply filters based on query parameters
       if (source) {
-        const leads = await storage.getLeadsBySource(source);
+        const leads = await scopedStorage.getLeadsBySource(source);
         return res.json(leads);
       } else if (status) {
-        const leads = await storage.getLeadsByStatus(status);
+        const leads = await scopedStorage.getLeadsByStatus(status);
         return res.json(leads);
       } else if (minScore !== undefined && maxScore !== undefined) {
-        const leads = await storage.getLeadsByScoreRange(minScore, maxScore);
+        const leads = await scopedStorage.getLeadsByScoreRange(minScore, maxScore);
         return res.json(leads);
       } else if (requiresFollowUp) {
-        const leads = await storage.getLeadsRequiringFollowUp();
+        const leads = await scopedStorage.getLeadsRequiringFollowUp();
         return res.json(leads);
       } else {
         // Default: return all leads
-        const leads = await storage.getLeads();
+        const leads = await scopedStorage.getLeads();
         return res.json(leads);
       }
     } catch (error) {
@@ -577,9 +611,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/leads/top", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-      const leads = await storage.getTopLeads(limit);
+      const leads = await scopedStorage.getTopLeads(limit);
       return res.json(leads);
     } catch (error) {
       console.error("Get top leads error:", error);
@@ -588,10 +623,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/leads", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id || 1;
       const validatedData = insertLeadSchema.parse(req.body);
-      const lead = await storage.createLead(validatedData);
+      const lead = await scopedStorage.createLead(validatedData);
       
       // Create journey touchpoint for lead creation
       await journeyIntegration.createLeadCreationTouchpoint(lead, userId);
@@ -604,13 +640,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/leads/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid lead ID" });
       }
       
-      const lead = await storage.getLead(id);
+      const lead = await scopedStorage.getLead(id);
       if (!lead) {
         return res.status(404).json({ message: "Lead not found" });
       }
@@ -623,6 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.patch("/api/leads/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -632,10 +670,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req as any).user?.id || 1;
       
       // Get the current lead to track status changes
-      const currentLead = await storage.getLead(id);
+      const currentLead = await scopedStorage.getLead(id);
       const oldStatus = currentLead?.leadStatus || 'new';
       
-      const lead = await storage.updateLead(id, req.body);
+      const lead = await scopedStorage.updateLead(id, req.body);
       
       // Create journey touchpoint if status changed
       if (req.body.leadStatus && req.body.leadStatus !== oldStatus) {
@@ -655,6 +693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/leads/:id/score", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -662,7 +701,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const scoringData = req.body;
-      const lead = await storage.updateLeadScore(id, scoringData);
+      const lead = await scopedStorage.updateLeadScore(id, scoringData);
       return res.json(lead);
     } catch (error) {
       console.error("Update lead score error:", error);
@@ -671,6 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/leads/:id/owner", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -682,7 +722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Owner name is required" });
       }
       
-      const lead = await storage.assignLeadOwner(id, ownerName);
+      const lead = await scopedStorage.assignLeadOwner(id, ownerName);
       return res.json(lead);
     } catch (error) {
       console.error("Assign lead owner error:", error);
@@ -691,6 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/leads/:id/tags", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -702,7 +743,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Tags array is required" });
       }
       
-      const lead = await storage.addLeadTags(id, tags);
+      const lead = await scopedStorage.addLeadTags(id, tags);
       return res.json(lead);
     } catch (error) {
       console.error("Add lead tags error:", error);
@@ -711,6 +752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/leads/:id/notes", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -722,7 +764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Note content is required" });
       }
       
-      const lead = await storage.addLeadNote(id, note);
+      const lead = await scopedStorage.addLeadNote(id, note);
       return res.json(lead);
     } catch (error) {
       console.error("Add lead note error:", error);
@@ -732,8 +774,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Task routes
   app.get("/api/tasks", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
-      const tasks = await storage.getTasks();
+      const tasks = await scopedStorage.getTasks();
       return res.json(tasks);
     } catch (error) {
       console.error("Get tasks error:", error);
@@ -742,9 +785,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/tasks", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const validatedData = insertTaskSchema.parse(req.body);
-      const task = await storage.createTask(validatedData);
+      const task = await scopedStorage.createTask(validatedData);
       return res.status(201).json(task);
     } catch (error) {
       console.error("Create task error:", error);
@@ -753,13 +797,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.patch("/api/tasks/:id/toggle", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid task ID" });
       }
       
-      const task = await storage.toggleTaskCompletion(id);
+      const task = await scopedStorage.toggleTaskCompletion(id);
       return res.json(task);
     } catch (error) {
       console.error("Toggle task error:", error);
@@ -769,11 +814,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Conversion funnel data endpoint - now uses actual Customer Journey data
   app.get("/api/customers/funnel", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
-      const customers = await storage.getCustomers();
-      const leads = await storage.getLeads();
-      const touchpoints = await storage.getCustomerTouchpoints();
-      const journeyStages = await storage.getJourneyStages();
+      const customers = await scopedStorage.getCustomers();
+      const leads = await scopedStorage.getLeads();
+      const touchpoints = await scopedStorage.getCustomerTouchpoints();
+      const journeyStages = await scopedStorage.getJourneyStages();
       
       // Get actual journey stage progression from touchpoints
       const stageProgression = {
@@ -844,8 +890,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Metrics route
   app.get("/api/metrics", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
-      const metrics = await storage.getDashboardMetrics();
+      const metrics = await scopedStorage.getDashboardMetrics();
       return res.json(metrics);
     } catch (error) {
       console.error("Get metrics error:", error);
@@ -855,6 +902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Notifications route
   app.get("/api/notifications", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       // In a real app, fetch user-specific notifications
       // For demo, return mock notifications
@@ -871,11 +919,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // AI insights endpoint
   app.get("/api/ai/insights", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const period = req.query.period as string || '30d';
       
       // Get customer data to analyze
-      const customers = await storage.getCustomers();
+      const customers = await scopedStorage.getCustomers();
       
       // Call the OpenAI function to analyze customer data
       const insights = await analyzeCustomerData(customers);
@@ -892,6 +941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI Campaign suggestions
   app.post("/api/ai/campaign-suggestions", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { campaignGoal, targetAudience } = req.body;
       const userId = (req as any).user?.id;
@@ -903,7 +953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get user's business profile for context
       let businessContext;
       if (userId) {
-        const user = await storage.getUser(userId);
+        const user = await scopedStorage.getUser(userId);
         if (user) {
           businessContext = {
             businessType: user.businessType || undefined,
@@ -924,6 +974,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // CRM AI Assistant endpoints
   app.post("/api/ai/assistant/chat", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { message, conversationId, crmContext } = req.body;
       const userId = req.user?.id;
@@ -938,13 +989,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (conversationId) {
         // Get existing conversation
-        conversation = await storage.getChatConversationById(conversationId);
+        conversation = await scopedStorage.getChatConversationById(conversationId);
         if (!conversation) {
           return res.status(404).json({ message: "Conversation not found" });
         }
         
         // Get conversation history
-        const messages = await storage.getChatMessagesByConversationId(conversationId);
+        const messages = await scopedStorage.getChatMessagesByConversationId(conversationId);
         conversationHistory = messages.map(msg => ({
           role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
           content: msg.content
@@ -959,7 +1010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           createdAt: new Date(),
         };
         
-        conversation = await storage.createChatConversation(newConversation);
+        conversation = await scopedStorage.createChatConversation(newConversation);
       }
       
       // Save user message
@@ -969,7 +1020,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: "user",
         createdAt: new Date()
       };
-      await storage.createChatMessage(userMessage);
+      await scopedStorage.createChatMessage(userMessage);
       
       // Add the current message to the history for the AI
       conversationHistory.push({
@@ -988,7 +1039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: new Date(),
         metadata: { suggestedActions: assistantResponse.suggestedActions }
       };
-      await storage.createChatMessage(assistantMessage);
+      await scopedStorage.createChatMessage(assistantMessage);
       
       return res.json({
         ...assistantResponse,
@@ -1001,6 +1052,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/ai/assistant/conversations", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = req.user?.id;
       
@@ -1008,7 +1060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
       
-      const conversations = await storage.getChatConversationsByUserId(userId);
+      const conversations = await scopedStorage.getChatConversationsByUserId(userId);
       return res.json(conversations);
     } catch (error) {
       console.error("Get conversations error:", error);
@@ -1017,6 +1069,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/ai/assistant/conversations/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { id } = req.params;
       const userId = req.user?.id;
@@ -1025,13 +1078,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Authentication required" });
       }
       
-      const conversation = await storage.getChatConversationById(parseInt(id));
+      const conversation = await scopedStorage.getChatConversationById(parseInt(id));
       
       if (!conversation || conversation.userId !== userId) {
         return res.status(404).json({ message: "Conversation not found" });
       }
       
-      const messages = await storage.getChatMessagesByConversationId(parseInt(id));
+      const messages = await scopedStorage.getChatMessagesByConversationId(parseInt(id));
       
       return res.json({
         conversation,
@@ -1045,15 +1098,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Performance metrics for interactive charts
   app.get("/api/metrics/performance", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const period = req.query.period as string || '30d';
       
       // Get all campaigns for conversion data
-      const campaigns = await storage.getCampaigns(period);
+      const campaigns = await scopedStorage.getCampaigns(period);
       // Get leads data
-      const leads = await storage.getLeads();
+      const leads = await scopedStorage.getLeads();
       // Get customers data for sales metrics
-      const customers = await storage.getCustomers();
+      const customers = await scopedStorage.getCustomers();
       
       // Generate daily data points for the last 30 days (or based on period)
       const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
@@ -1101,9 +1155,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== CUSTOMER EXPORT/IMPORT ROUTES =====
   
   app.get("/api/customers/export", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const format = (req.query.format || 'json') as string;
-      const exportData = await storage.exportCustomers();
+      const exportData = await scopedStorage.exportCustomers();
       
       if (format.toLowerCase() === 'csv') {
         // Convert to CSV
@@ -1133,6 +1188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/customers/import", async (req: RequestWithFiles, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const contentType = req.headers['content-type'] || '';
       let data;
@@ -1168,7 +1224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data = jsonData;
       }
       
-      const result = await storage.importCustomers(data);
+      const result = await scopedStorage.importCustomers(data);
       return res.json(result);
     } catch (error) {
       console.error("Import customers error:", error);
@@ -1177,6 +1233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/leads/import", async (req: RequestWithFiles, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const contentType = req.headers['content-type'] || '';
       let data;
@@ -1246,7 +1303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       for (const record of validRecords) {
         try {
-          await storage.insertLead(record);
+          await scopedStorage.insertLead(record);
           importedCount++;
         } catch (error) {
           errors.push({
@@ -1273,11 +1330,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== CALENDAR/SCHEDULING ROUTES =====
   
   app.get("/api/calendar/events", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
       
-      const events = await storage.getCalendarEvents(startDate, endDate);
+      const events = await scopedStorage.getCalendarEvents(startDate, endDate);
       return res.json(events);
     } catch (error) {
       console.error("Get calendar events error:", error);
@@ -1286,6 +1344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/calendar/events/owner/:ownerId", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const ownerId = parseInt(req.params.ownerId);
       if (isNaN(ownerId)) {
@@ -1295,7 +1354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
       
-      const events = await storage.getCalendarEventsByOwner(ownerId, startDate, endDate);
+      const events = await scopedStorage.getCalendarEventsByOwner(ownerId, startDate, endDate);
       return res.json(events);
     } catch (error) {
       console.error("Get calendar events by owner error:", error);
@@ -1304,6 +1363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/calendar/events/entity/:type/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const entityType = req.params.type;
       const entityId = parseInt(req.params.id);
@@ -1312,7 +1372,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid entity type or ID" });
       }
       
-      const events = await storage.getCalendarEventsByEntity(entityType, entityId);
+      const events = await scopedStorage.getCalendarEventsByEntity(entityType, entityId);
       return res.json(events);
     } catch (error) {
       console.error("Get calendar events by entity error:", error);
@@ -1321,13 +1381,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/calendar/events/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid event ID" });
       }
       
-      const event = await storage.getCalendarEvent(id);
+      const event = await scopedStorage.getCalendarEvent(id);
       if (!event) {
         return res.status(404).json({ message: "Calendar event not found" });
       }
@@ -1340,9 +1401,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/calendar/events", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const validatedData = insertCalendarEventSchema.parse(req.body);
-      const event = await storage.createCalendarEvent(validatedData);
+      const event = await scopedStorage.createCalendarEvent(validatedData);
       return res.status(201).json(event);
     } catch (error) {
       console.error("Create calendar event error:", error);
@@ -1351,13 +1413,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.patch("/api/calendar/events/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid event ID" });
       }
       
-      const event = await storage.updateCalendarEvent(id, req.body);
+      const event = await scopedStorage.updateCalendarEvent(id, req.body);
       return res.json(event);
     } catch (error) {
       console.error("Update calendar event error:", error);
@@ -1366,13 +1429,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.delete("/api/calendar/events/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid event ID" });
       }
       
-      const success = await storage.deleteCalendarEvent(id);
+      const success = await scopedStorage.deleteCalendarEvent(id);
       return res.json({ success });
     } catch (error) {
       console.error("Delete calendar event error:", error);
@@ -1383,9 +1447,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== EMAIL TEMPLATES ROUTES =====
   
   app.get("/api/email/templates", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const category = req.query.category as string;
-      const templates = await storage.getEmailTemplates(category);
+      const templates = await scopedStorage.getEmailTemplates(category);
       return res.json(templates);
     } catch (error) {
       console.error("Get email templates error:", error);
@@ -1394,13 +1459,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/email/templates/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid template ID" });
       }
       
-      const template = await storage.getEmailTemplate(id);
+      const template = await scopedStorage.getEmailTemplate(id);
       if (!template) {
         return res.status(404).json({ message: "Email template not found" });
       }
@@ -1413,9 +1479,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/email/templates", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const validatedData = insertEmailTemplateSchema.parse(req.body);
-      const template = await storage.createEmailTemplate(validatedData);
+      const template = await scopedStorage.createEmailTemplate(validatedData);
       return res.status(201).json(template);
     } catch (error) {
       console.error("Create email template error:", error);
@@ -1424,13 +1491,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.patch("/api/email/templates/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid template ID" });
       }
       
-      const template = await storage.updateEmailTemplate(id, req.body);
+      const template = await scopedStorage.updateEmailTemplate(id, req.body);
       return res.json(template);
     } catch (error) {
       console.error("Update email template error:", error);
@@ -1439,13 +1507,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.delete("/api/email/templates/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid template ID" });
       }
       
-      const success = await storage.deleteEmailTemplate(id);
+      const success = await scopedStorage.deleteEmailTemplate(id);
       return res.json({ success });
     } catch (error) {
       console.error("Delete email template error:", error);
@@ -1456,9 +1525,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== SCHEDULED EMAILS ROUTES =====
   
   app.get("/api/email/scheduled", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const status = req.query.status as string;
-      const scheduledEmails = await storage.getScheduledEmails(status);
+      const scheduledEmails = await scopedStorage.getScheduledEmails(status);
       return res.json(scheduledEmails);
     } catch (error) {
       console.error("Get scheduled emails error:", error);
@@ -1467,13 +1537,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/email/scheduled/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid scheduled email ID" });
       }
       
-      const scheduledEmail = await storage.getScheduledEmail(id);
+      const scheduledEmail = await scopedStorage.getScheduledEmail(id);
       if (!scheduledEmail) {
         return res.status(404).json({ message: "Scheduled email not found" });
       }
@@ -1486,6 +1557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/email/schedule", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { templateId, campaignId, scheduledFor, targetAudience, subject, htmlContent, textContent, fromAddress } = req.body;
       
@@ -1500,7 +1572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Scheduled time must be in the future" });
       }
       
-      const scheduledEmail = await storage.createScheduledEmail({
+      const scheduledEmail = await scopedStorage.createScheduledEmail({
         templateId,
         campaignId,
         scheduledFor: scheduledDate,
@@ -1525,13 +1597,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.patch("/api/email/scheduled/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid scheduled email ID" });
       }
       
-      const updatedEmail = await storage.updateScheduledEmail(id, req.body);
+      const updatedEmail = await scopedStorage.updateScheduledEmail(id, req.body);
       return res.json(updatedEmail);
     } catch (error) {
       console.error("Update scheduled email error:", error);
@@ -1540,6 +1613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.delete("/api/email/scheduled/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -1547,7 +1621,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Update status to cancelled instead of deleting
-      await storage.updateScheduledEmail(id, { status: 'cancelled' });
+      await scopedStorage.updateScheduledEmail(id, { status: 'cancelled' });
       return res.json({ success: true });
     } catch (error) {
       console.error("Cancel scheduled email error:", error);
@@ -1556,6 +1630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/email/scheduled/:id/send-now", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -1563,7 +1638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Update the scheduled time to now and let the scheduler pick it up
-      await storage.updateScheduledEmail(id, { 
+      await scopedStorage.updateScheduledEmail(id, { 
         scheduledFor: new Date(),
         status: 'pending'
       });
@@ -1578,6 +1653,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== EMAIL SENDING & LOGS ROUTES =====
   
   app.get("/api/email/logs", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       const isAdmin = (req as any).user?.isAdmin;
@@ -1590,7 +1666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const entityId = req.query.entityId ? parseInt(req.query.entityId as string) : undefined;
       
       // Get all logs first
-      let logs = await storage.getEmailLogs(entityType, entityId);
+      let logs = await scopedStorage.getEmailLogs(entityType, entityId);
       
       // Filter logs based on user permissions
       if (!isAdmin) {
@@ -1606,6 +1682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/email/send", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -1630,7 +1707,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add userId to options for tracking
       const emailOptions = { ...options, userId };
-      const emailLog = await storage.sendEmail(from, to, subject, body, emailOptions);
+      const emailLog = await scopedStorage.sendEmail(from, to, subject, body, emailOptions);
       
       // Track email usage for the user
       await usageService.incrementEmailUsage(userId);
@@ -1660,6 +1737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.post("/api/email/send-template", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -1681,7 +1759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add userId to options for tracking
       const emailOptions = { ...options, userId };
-      const emailLog = await storage.sendEmailWithTemplate(templateIdNumber, to, data, emailOptions);
+      const emailLog = await scopedStorage.sendEmailWithTemplate(templateIdNumber, to, data, emailOptions);
       
       // Track email usage for the user
       await usageService.incrementEmailUsage(userId);
@@ -1704,6 +1782,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mailgun configuration status endpoint
   app.get("/api/email/mailgun-config", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { isMailgunConfigured } = await import('./lib/mailgun');
       const configured = isMailgunConfigured();
@@ -1730,6 +1809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== CAMPAIGN EMAIL ROUTES =====
   
   app.post("/api/email/send-campaign", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -1754,7 +1834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get campaign details
-      const campaign = await storage.getCampaign(campaignId);
+      const campaign = await scopedStorage.getCampaign(campaignId);
       if (!campaign) {
         return res.status(404).json({ message: "Campaign not found" });
       }
@@ -1774,7 +1854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (campaign.contactFilters && typeof campaign.contactFilters === 'object') {
           const filters = campaign.contactFilters as any;
           console.log('Using contactFilters:', filters);
-          targetContacts = await storage.filterContacts(filters);
+          targetContacts = await scopedStorage.filterContacts(filters);
         }
         // Legacy fallback: use targetAudience field
         else if (campaign.targetAudience && campaign.targetAudience !== "All leads") {
@@ -1791,24 +1871,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (targeting.filters.status && targeting.filters.status !== "all_statuses") {
                 legacyFilters.leadStatus = targeting.filters.status;
               }
-              targetContacts = await storage.filterContacts(legacyFilters);
+              targetContacts = await scopedStorage.filterContacts(legacyFilters);
             } else {
               // Get all contacts with lead lifecycle stage
-              targetContacts = await storage.filterContacts({ lifecycleStage: 'lead' });
+              targetContacts = await scopedStorage.filterContacts({ lifecycleStage: 'lead' });
             }
           } catch (parseError) {
             // Get all contacts if parsing fails
             console.log('Legacy targeting parse failed, getting all lead-stage contacts');
-            targetContacts = await storage.filterContacts({ lifecycleStage: 'lead' });
+            targetContacts = await scopedStorage.filterContacts({ lifecycleStage: 'lead' });
           }
         } else {
           // No filters specified, get all lead-stage contacts
-          targetContacts = await storage.filterContacts({ lifecycleStage: 'lead' });
+          targetContacts = await scopedStorage.filterContacts({ lifecycleStage: 'lead' });
         }
       } catch (e: unknown) {
         // If filtering fails, get all lead-stage contacts
         console.log('Contact filtering failed, getting all lead-stage contacts:', e instanceof Error ? e.message : 'Unknown error');
-        targetContacts = await storage.filterContacts({ lifecycleStage: 'lead' });
+        targetContacts = await scopedStorage.filterContacts({ lifecycleStage: 'lead' });
       }
       
       console.log('Final target contacts count:', targetContacts.length);
@@ -1857,7 +1937,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log('Sending campaign email to', contact.email, 'with Mailgun config:', !!mailgunConfig);
           
-          const emailLog = await storage.sendEmail(
+          const emailLog = await scopedStorage.sendEmail(
             'noreply@mail.aicrm.co.uk',
             contact.email || '',
             subject,
@@ -1914,6 +1994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== MAILGUN CONFIGURATION ROUTE =====
   
   app.post("/api/config/mailgun", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { apiKey, domain } = req.body;
       const userId = (req as any).user?.id;
@@ -1931,7 +2012,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Store personal API key in database
-      await storage.updateUserPersonalKeys(userId, { mailgunKey: apiKey, mailgunDomain: domain });
+      await scopedStorage.updateUserPersonalKeys(userId, { mailgunKey: apiKey, mailgunDomain: domain });
       
       // Set environment variables for immediate use (for backward compatibility)
       process.env.MAILGUN_API_KEY = apiKey;
@@ -1949,6 +2030,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   app.get("/api/config/mailgun/status", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       const isConfigured = isMailgunConfigured();
@@ -1962,7 +2044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let emailsLimit = 50;
       
       if (userId) {
-        const user = await storage.getUserById(userId);
+        const user = await scopedStorage.getUserById(userId);
         usingPersonalKeys = !!(user?.personalMailgunKey && user?.personalMailgunDomain);
         emailsUsed = user?.emailsSent || 0;
         
@@ -1988,6 +2070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Enhanced Mailgun configuration with domain validation
   app.post("/api/config/mailgun", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { apiKey, domain } = req.body;
       const userId = (req as any).user?.id;
@@ -2015,7 +2098,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Store personal Mailgun credentials in database
-      await storage.updateUserPersonalKeys(userId, { 
+      await scopedStorage.updateUserPersonalKeys(userId, { 
         mailgunKey: apiKey, 
         mailgunDomain: domain 
       });
@@ -2034,6 +2117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== EMAIL SEQUENCES ROUTES =====
   
   app.get("/api/email/sequences", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       // In a real implementation, this would fetch from the database
       const sequences = [
@@ -2078,6 +2162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/email/sequences/steps/:sequenceId", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const sequenceId = parseInt(req.params.sequenceId);
       
@@ -2134,6 +2219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // For getting all steps (used in the sequence step creation form)
   app.get("/api/email/sequences/steps", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       // Return an empty array as this is just for initializing the form
       return res.json([]);
@@ -2145,6 +2231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Route for handling sequence status toggling
   app.patch("/api/email/sequences/:id/status", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const sequenceId = parseInt(req.params.id);
       
@@ -2163,6 +2250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Route for creating/updating sequence steps
   app.post("/api/email/sequences/steps", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { sequenceId, name, subject, bodyHtml, bodyText, delayDays, delayHours, condition } = req.body;
       
@@ -2196,6 +2284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Route for updating sequence steps
   app.put("/api/email/sequences/steps/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const stepId = parseInt(req.params.id);
       
@@ -2255,6 +2344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== EMAIL ANALYTICS ROUTES =====
   
   app.get("/api/email/analytics", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const timeRange = req.query.timeRange || 'last30';
 
@@ -2338,6 +2428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/customers/segments", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       // In a real implementation, this would fetch from the database
       const segments = [
@@ -2375,6 +2466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Get user's current usage statistics
   app.get("/api/usage", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2391,6 +2483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Store user's personal API keys
   app.post("/api/settings/api-keys", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2429,6 +2522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get user's personal API key status (without revealing the keys)
   app.get("/api/settings/api-keys/status", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2450,6 +2544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Validate API keys before saving
   app.post("/api/settings/api-keys/validate", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2493,6 +2588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Health check for user's stored API keys
   app.get("/api/settings/api-keys/health", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2520,6 +2616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update voice command to pass userId for usage tracking
   app.post("/api/voice-command", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const { text } = req.body;
       const userId = (req as any).user?.id;
@@ -2548,13 +2645,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get all customer touchpoints
   app.get("/api/customer-touchpoints", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const touchpoints = await storage.getCustomerTouchpoints();
+      const touchpoints = await scopedStorage.getCustomerTouchpoints();
       return res.json(touchpoints);
     } catch (error) {
       console.error("Get customer touchpoints error:", error);
@@ -2564,6 +2662,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create a new customer touchpoint
   app.post("/api/customer-touchpoints", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2571,7 +2670,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const touchpointData = insertCustomerTouchpointSchema.parse(req.body);
-      const touchpoint = await storage.createCustomerTouchpoint(touchpointData);
+      const touchpoint = await scopedStorage.createCustomerTouchpoint(touchpointData);
       return res.status(201).json(touchpoint);
     } catch (error) {
       console.error("Create customer touchpoint error:", error);
@@ -2584,6 +2683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update customer touchpoint
   app.patch("/api/customer-touchpoints/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2596,7 +2696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updateData = req.body;
-      const touchpoint = await storage.updateCustomerTouchpoint(id, updateData);
+      const touchpoint = await scopedStorage.updateCustomerTouchpoint(id, updateData);
       return res.json(touchpoint);
     } catch (error) {
       console.error("Update customer touchpoint error:", error);
@@ -2606,6 +2706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Delete customer touchpoint
   app.delete("/api/customer-touchpoints/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2617,7 +2718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid touchpoint ID" });
       }
 
-      await storage.deleteCustomerTouchpoint(id);
+      await scopedStorage.deleteCustomerTouchpoint(id);
       return res.json({ message: "Customer touchpoint deleted successfully" });
     } catch (error) {
       console.error("Delete customer touchpoint error:", error);
@@ -2627,13 +2728,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Get all journey stages
   app.get("/api/journey-stages", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const stages = await storage.getJourneyStages();
+      const stages = await scopedStorage.getJourneyStages();
       return res.json(stages);
     } catch (error) {
       console.error("Get journey stages error:", error);
@@ -2643,6 +2745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Create a new journey stage
   app.post("/api/journey-stages", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2650,7 +2753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const stageData = insertJourneyStageSchema.parse(req.body);
-      const stage = await storage.createJourneyStage(stageData);
+      const stage = await scopedStorage.createJourneyStage(stageData);
       return res.status(201).json(stage);
     } catch (error) {
       console.error("Create journey stage error:", error);
@@ -2663,6 +2766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Update journey stage
   app.patch("/api/journey-stages/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2675,7 +2779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updateData = req.body;
-      const stage = await storage.updateJourneyStage(id, updateData);
+      const stage = await scopedStorage.updateJourneyStage(id, updateData);
       return res.json(stage);
     } catch (error) {
       console.error("Update journey stage error:", error);
@@ -2685,6 +2789,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Delete journey stage
   app.delete("/api/journey-stages/:id", async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
     try {
       const userId = (req as any).user?.id;
       if (!userId) {
@@ -2696,7 +2801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid stage ID" });
       }
 
-      await storage.deleteJourneyStage(id);
+      await scopedStorage.deleteJourneyStage(id);
       return res.json({ message: "Journey stage deleted successfully" });
     } catch (error) {
       console.error("Delete journey stage error:", error);

@@ -1,9 +1,12 @@
 import { Request, Response } from "express";
 import { storage } from "../storage.js";
+import type { IStorage } from '../storage';
+import { createOrganizationScopedStorage } from '../storage/scoped-storage';
 
 // ===== ADVANCED LEAD SCORING ROUTES =====
 
 export const updateLeadScoringConfig = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const { weights, rules } = req.body;
     const userId = (req as any).user?.id;
@@ -27,6 +30,7 @@ export const updateLeadScoringConfig = async (req: Request, res: Response) => {
 };
 
 export const recalculateLeadScores = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     
@@ -35,7 +39,7 @@ export const recalculateLeadScores = async (req: Request, res: Response) => {
     }
 
     // Get all leads and recalculate their scores
-    const leads = await storage.getLeads();
+    const leads = await scopedStorage.getLeads();
     
     // Mock recalculation - in real implementation, apply the actual algorithm
     const updatedLeads = leads.map(lead => ({
@@ -60,6 +64,7 @@ export const recalculateLeadScores = async (req: Request, res: Response) => {
 // ===== CUSTOMER SEGMENTATION ROUTES =====
 
 export const getCustomerSegments = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     
@@ -132,6 +137,7 @@ export const getCustomerSegments = async (req: Request, res: Response) => {
 
 // GET /api/contact-segments - Get unified contact segments
 export const getUnifiedContactSegments = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     
@@ -139,7 +145,7 @@ export const getUnifiedContactSegments = async (req: Request, res: Response) => 
       return res.status(401).json({ message: "Authentication required" });
     }
 
-    const segments = await storage.getContactSegments(userId);
+    const segments = await scopedStorage.getContactSegments(userId);
     return res.json(segments);
   } catch (error) {
     console.error("Get unified contact segments error:", error);
@@ -149,6 +155,7 @@ export const getUnifiedContactSegments = async (req: Request, res: Response) => 
 
 // POST /api/contact-segments - Create new unified contact segment
 export const createUnifiedContactSegment = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     
@@ -161,7 +168,7 @@ export const createUnifiedContactSegment = async (req: Request, res: Response) =
       createdBy: userId
     };
 
-    const newSegment = await storage.createContactSegment(segmentData);
+    const newSegment = await scopedStorage.createContactSegment(segmentData);
     return res.status(201).json(newSegment);
   } catch (error) {
     console.error("Create unified contact segment error:", error);
@@ -171,9 +178,10 @@ export const createUnifiedContactSegment = async (req: Request, res: Response) =
 
 // GET /api/contact-segments/:id - Get specific unified contact segment
 export const getUnifiedContactSegment = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const segmentId = parseInt(req.params.id);
-    const segment = await storage.getContactSegment(segmentId);
+    const segment = await scopedStorage.getContactSegment(segmentId);
     
     if (!segment) {
       return res.status(404).json({ message: "Contact segment not found" });
@@ -188,9 +196,10 @@ export const getUnifiedContactSegment = async (req: Request, res: Response) => {
 
 // PUT /api/contact-segments/:id - Update unified contact segment
 export const updateUnifiedContactSegment = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const segmentId = parseInt(req.params.id);
-    const updatedSegment = await storage.updateContactSegment(segmentId, req.body);
+    const updatedSegment = await scopedStorage.updateContactSegment(segmentId, req.body);
     
     return res.json(updatedSegment);
   } catch (error) {
@@ -201,9 +210,10 @@ export const updateUnifiedContactSegment = async (req: Request, res: Response) =
 
 // DELETE /api/contact-segments/:id - Delete unified contact segment
 export const deleteUnifiedContactSegment = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const segmentId = parseInt(req.params.id);
-    await storage.deleteContactSegment(segmentId);
+    await scopedStorage.deleteContactSegment(segmentId);
     
     return res.status(204).send();
   } catch (error) {
@@ -214,9 +224,10 @@ export const deleteUnifiedContactSegment = async (req: Request, res: Response) =
 
 // GET /api/contact-segments/:id/contacts - Get contacts for a specific segment
 export const getContactsForSegment = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const segmentId = parseInt(req.params.id);
-    const contacts = await storage.getContactsBySegment(segmentId);
+    const contacts = await scopedStorage.getContactsBySegment(segmentId);
     
     return res.json(contacts);
   } catch (error) {
@@ -227,9 +238,10 @@ export const getContactsForSegment = async (req: Request, res: Response) => {
 
 // GET /api/unified-contacts - Get all contacts in unified format
 export const getUnifiedContacts = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
-    const contacts = await storage.getUnifiedContacts(userId);
+    const contacts = await scopedStorage.getUnifiedContacts(userId);
     
     return res.json(contacts);
   } catch (error) {
@@ -239,6 +251,7 @@ export const getUnifiedContacts = async (req: Request, res: Response) => {
 };
 
 export const createCustomerSegment = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const { name, description, criteria } = req.body;
     const userId = (req as any).user?.id;
@@ -274,6 +287,7 @@ export const createCustomerSegment = async (req: Request, res: Response) => {
 };
 
 export const exportSegmentData = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const segmentId = parseInt(req.params.id);
     const userId = (req as any).user?.id;
@@ -309,6 +323,7 @@ export const exportSegmentData = async (req: Request, res: Response) => {
 // ===== WORKFLOW AUTOMATION ROUTES =====
 
 export const getWorkflows = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     
@@ -408,6 +423,7 @@ export const getWorkflows = async (req: Request, res: Response) => {
 };
 
 export const createWorkflow = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const { name, description, isActive, trigger, actions } = req.body;
     const userId = (req as any).user?.id;
@@ -446,6 +462,7 @@ export const createWorkflow = async (req: Request, res: Response) => {
 };
 
 export const toggleWorkflow = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const workflowId = parseInt(req.params.id);
     const { isActive } = req.body;
@@ -473,6 +490,7 @@ export const toggleWorkflow = async (req: Request, res: Response) => {
 };
 
 export const testWorkflow = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const workflowId = parseInt(req.params.id);
     const userId = (req as any).user?.id;
@@ -486,7 +504,7 @@ export const testWorkflow = async (req: Request, res: Response) => {
     }
 
     // Mock workflow test - in real implementation, evaluate trigger conditions
-    const leads = await storage.getLeads();
+    const leads = await scopedStorage.getLeads();
     const mockMatchedLeads = Math.floor(Math.random() * leads.length / 2);
 
     console.log(`Testing workflow ${workflowId}, would affect ${mockMatchedLeads} leads`);
@@ -504,6 +522,7 @@ export const testWorkflow = async (req: Request, res: Response) => {
 };
 
 export const getWorkflowLogs = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     
@@ -558,6 +577,7 @@ export const getWorkflowLogs = async (req: Request, res: Response) => {
 // ===== ENHANCED LEAD MANAGEMENT ROUTES =====
 
 export const updateLeadScore = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const leadId = parseInt(req.params.id);
     const { scoringData } = req.body;
@@ -591,6 +611,7 @@ export const updateLeadScore = async (req: Request, res: Response) => {
 };
 
 export const addLeadNote = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const leadId = parseInt(req.params.id);
     const { note } = req.body;
@@ -621,6 +642,7 @@ export const addLeadNote = async (req: Request, res: Response) => {
 };
 
 export const assignLeadOwner = async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const leadId = parseInt(req.params.id);
     const { ownerName } = req.body;

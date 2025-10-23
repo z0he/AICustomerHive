@@ -2,9 +2,19 @@ import { Router } from "express";
 import { z } from "zod";
 import { unifiedJourneyService } from "../services/unified-journey-service.js";
 import { storage } from "../storage.js";
+import type { IStorage } from '../storage';
+import { createOrganizationScopedStorage } from '../storage/scoped-storage';
 import { Contact } from "@shared/schema";
 
 const router = Router();
+
+// Helper function to get organization-scoped storage
+function getScopedStorage(req: Request): IStorage {
+  if (req.organization?.organizationId) {
+    return createOrganizationScopedStorage(storage, req.organization.organizationId);
+  }
+  throw new Error("Organization context required but not found");
+}
 
 /**
  * GET /api/contacts/:id/journey-analytics
@@ -70,7 +80,7 @@ router.get('/contacts/:id/touchpoints', async (req, res) => {
       return res.status(400).json({ error: 'contactType query parameter is required (lead or customer)' });
     }
 
-    const allTouchpoints = await storage.getCustomerTouchpoints();
+    const allTouchpoints = await scopedStorage.getCustomerTouchpoints();
     const contactTouchpoints = allTouchpoints.filter(t => {
       if (contactType === 'lead') {
         return t.leadId === contactId;
@@ -112,7 +122,7 @@ router.post('/contacts/:id/touchpoints', async (req, res) => {
     // Get the contact data
     let contact: Contact | null = null;
     if (contactType === 'lead') {
-      const lead = await storage.getLead(contactId);
+      const lead = await scopedStorage.getLead(contactId);
       if (lead) {
         contact = {
           ...lead,
@@ -121,7 +131,7 @@ router.post('/contacts/:id/touchpoints', async (req, res) => {
         } as Contact;
       }
     } else {
-      const customer = await storage.getCustomer(contactId);
+      const customer = await scopedStorage.getCustomer(contactId);
       if (customer) {
         contact = {
           id: customer.id,
@@ -181,7 +191,7 @@ router.post('/leads/:id/convert', async (req, res) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const lead = await storage.getLead(leadId);
+    const lead = await scopedStorage.getLead(leadId);
     if (!lead) {
       return res.status(404).json({ error: 'Lead not found' });
     }
@@ -204,7 +214,7 @@ router.post('/leads/:id/convert', async (req, res) => {
       journeyEntryDate: lead.journeyEntryDate || new Date()
     };
 
-    const customer = await storage.createCustomer(customerData);
+    const customer = await scopedStorage.createCustomer(customerData);
 
     // Create conversion touchpoint
     const conversionTouchpoint = await unifiedJourneyService.createLeadConversionTouchpoint(
@@ -214,7 +224,7 @@ router.post('/leads/:id/convert', async (req, res) => {
     );
 
     // Update lead status to 'won'
-    await storage.updateLead(leadId, { leadStatus: 'won' });
+    await scopedStorage.updateLead(leadId, { leadStatus: 'won' });
 
     res.json({
       customer,
@@ -240,7 +250,7 @@ router.get('/unified-journey/overview', async (req, res) => {
     }
 
     // Get all touchpoints
-    const allTouchpoints = await storage.getCustomerTouchpoints();
+    const allTouchpoints = await scopedStorage.getCustomerTouchpoints();
     const userTouchpoints = allTouchpoints.filter(t => t.userId === userId);
 
     // Analyze journey stage distribution

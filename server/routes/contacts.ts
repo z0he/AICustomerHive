@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { Request, Response } from "express";
 import { storage } from "../storage.js";
+import type { IStorage } from '../storage';
+import { createOrganizationScopedStorage } from '../storage/scoped-storage';
 import { z } from "zod";
 import { insertCustomerSchema, insertLeadSchema, industryEnum, contactSourceEnum, type SelectContact } from "../../shared/schema.js";
 import { 
@@ -10,6 +12,14 @@ import {
 } from "../services/contact-tracking-integration.js";
 
 const router = Router();
+
+// Helper function to get organization-scoped storage
+function getScopedStorage(req: Request): IStorage {
+  if (req.organization?.organizationId) {
+    return createOrganizationScopedStorage(storage, req.organization.organizationId);
+  }
+  throw new Error("Organization context required but not found");
+}
 
 // Industry values for validation
 const INDUSTRY_VALUES = [
@@ -160,6 +170,7 @@ function evaluateFilter(contact: any, filter: any): boolean {
  * Main unified contacts endpoint - replaces the frontend's need to call /api/unified-contacts
  */
 router.get('/', async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     
@@ -174,7 +185,7 @@ router.get('/', async (req: Request, res: Response) => {
     if (stage === 'opportunities') mappedStage = 'opportunity';
     
     // Get all contacts from the unified service
-    const allContacts = await storage.getUnifiedContacts(userId);
+    const allContacts = await scopedStorage.getUnifiedContacts(userId);
     
     let filteredContacts = allContacts;
 
@@ -262,6 +273,7 @@ router.get('/', async (req: Request, res: Response) => {
  * Create a new contact
  */
 router.post('/', async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     
@@ -338,6 +350,7 @@ router.post('/', async (req: Request, res: Response) => {
  * Update an existing contact in the unified contacts table
  */
 router.patch('/:id', async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     const contactId = req.params.id;
@@ -349,7 +362,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
     const validatedData = updateContactSchema.parse(req.body);
 
     // Get the existing contact first
-    const existingContact = await storage.getContact(contactId);
+    const existingContact = await scopedStorage.getContact(contactId);
     if (!existingContact) {
       return res.status(404).json({ error: 'Contact not found' });
     }
@@ -376,7 +389,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
     else if (validatedData.source !== undefined) updateData.contactSource = validatedData.source as any;
 
     // Update the contact in the unified contacts table
-    const updatedContact = await storage.updateContact(contactId, updateData);
+    const updatedContact = await scopedStorage.updateContact(contactId, updateData);
 
     // Return the unified contact format
     const response = {
@@ -411,6 +424,7 @@ router.patch('/:id', async (req: Request, res: Response) => {
  * Soft delete a contact
  */
 router.delete('/:id', async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     const rawContactId = req.params.id;
@@ -450,10 +464,10 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
     if (isLead) {
       // This is a lead - soft delete by updating status
-      await storage.updateLead(actualId, { leadStatus: 'deleted' });
+      await scopedStorage.updateLead(actualId, { leadStatus: 'deleted' });
     } else {
       // This is a customer - soft delete by updating status
-      await storage.updateCustomer(actualId, { status: 'deleted' });
+      await scopedStorage.updateCustomer(actualId, { status: 'deleted' });
     }
 
     res.json({ success: true, message: 'Contact deleted successfully' });
@@ -469,6 +483,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
  * Get notes for a contact
  */
 router.get('/:id/notes', async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const rawContactId = req.params.id;
     
@@ -498,14 +513,14 @@ router.get('/:id/notes', async (req: Request, res: Response) => {
     }
     
     // Get unified contact ID
-    const unifiedContactId = await storage.getUnifiedContactByLegacyId(actualId, contactType);
+    const unifiedContactId = await scopedStorage.getUnifiedContactByLegacyId(actualId, contactType);
     
     if (!unifiedContactId) {
       return res.status(404).json({ error: 'Contact not found' });
     }
 
     // Fetch real notes from database
-    const notes = await storage.getContactNotes(unifiedContactId);
+    const notes = await scopedStorage.getContactNotes(unifiedContactId);
     
     // Format response to match expected structure
     const formattedNotes = notes.map(note => ({
@@ -527,6 +542,7 @@ router.get('/:id/notes', async (req: Request, res: Response) => {
  * Add a note to a contact
  */
 router.post('/:id/notes', async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const rawContactId = req.params.id;
     const { content } = req.body;
@@ -562,14 +578,14 @@ router.post('/:id/notes', async (req: Request, res: Response) => {
     }
     
     // Get unified contact ID
-    const unifiedContactId = await storage.getUnifiedContactByLegacyId(actualId, contactType);
+    const unifiedContactId = await scopedStorage.getUnifiedContactByLegacyId(actualId, contactType);
     
     if (!unifiedContactId) {
       return res.status(404).json({ error: 'Contact not found' });
     }
 
     // Save real note to database
-    const newNote = await storage.addContactNote({
+    const newNote = await scopedStorage.addContactNote({
       contactId: unifiedContactId,
       content: content.trim(),
       createdBy: userId || null
@@ -595,6 +611,7 @@ router.post('/:id/notes', async (req: Request, res: Response) => {
  * Filter contacts for campaign targeting
  */
 router.post('/filter', async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const userId = (req as any).user?.id;
     
@@ -605,7 +622,7 @@ router.post('/filter', async (req: Request, res: Response) => {
     const filters = req.body;
     
     // Use storage layer to filter contacts
-    const contacts = await storage.filterContacts(filters);
+    const contacts = await scopedStorage.filterContacts(filters);
     
     res.json({
       contacts,

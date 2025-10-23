@@ -1,5 +1,7 @@
 import { Request, Response, Router } from 'express';
 import { storage } from '../storage';
+import type { IStorage } from '../storage';
+import { createOrganizationScopedStorage } from '../storage/scoped-storage';
 import { checkAuth } from '../middleware/auth';
 import { z } from 'zod';
 import { journeyIntegration } from '../services/journey-integration-simple.js';
@@ -19,12 +21,22 @@ import {
 
 const router = Router();
 
+// Helper function to get organization-scoped storage
+function getScopedStorage(req: Request): IStorage {
+  if (req.organization?.organizationId) {
+    return createOrganizationScopedStorage(storage, req.organization.organizationId);
+  }
+  throw new Error("Organization context required but not found");
+}
+
 // ===== MARKETING FORMS ROUTES =====
 
 // Get all forms
 router.get('/forms', checkAuth, async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
-    const forms = await storage.getMarketingForms();
+    const scopedStorage = getScopedStorage(req);
+    const forms = await scopedStorage.getMarketingForms();
     return res.json(forms);
   } catch (error) {
     console.error('Error fetching marketing forms:', error);
@@ -62,9 +74,11 @@ router.get('/forms/analytics', checkAuth, (req: Request, res: Response) => {
 
 // Get a single form
 router.get('/forms/:id', checkAuth, async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
+    const scopedStorage = getScopedStorage(req);
     const id = parseInt(req.params.id);
-    const form = await storage.getMarketingForm(id);
+    const form = await scopedStorage.getMarketingForm(id);
     
     if (!form) {
       return res.status(404).json({ message: 'Form not found' });
@@ -79,7 +93,9 @@ router.get('/forms/:id', checkAuth, async (req: Request, res: Response) => {
 
 // Create a new form
 router.post('/forms', checkAuth, async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
+    const scopedStorage = getScopedStorage(req);
     // Validate basic form data
     const formData = insertMarketingFormSchema.parse({
       name: req.body.name,
@@ -101,13 +117,13 @@ router.post('/forms', checkAuth, async (req: Request, res: Response) => {
     });
     
     // Create the form
-    const form = await storage.createMarketingForm({
+    const form = await scopedStorage.createMarketingForm({
       ...formData,
       formFields: req.body.formFields, // Pass form fields as JSON
     });
     
     // Generate embed code after form is created
-    const embedCode = await storage.generateFormEmbedCode(form.id);
+    const embedCode = await scopedStorage.generateFormEmbedCode(form.id);
     
     return res.status(201).json({ ...form, embedCode });
   } catch (error) {
@@ -121,18 +137,19 @@ router.post('/forms', checkAuth, async (req: Request, res: Response) => {
 
 // Update a form
 router.patch('/forms/:id', checkAuth, async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const id = parseInt(req.params.id);
     const formData = req.body;
     
     // Check if form exists
-    const existingForm = await storage.getMarketingForm(id);
+    const existingForm = await scopedStorage.getMarketingForm(id);
     if (!existingForm) {
       return res.status(404).json({ message: 'Form not found' });
     }
     
     // Update the form
-    const updatedForm = await storage.updateMarketingForm(id, formData);
+    const updatedForm = await scopedStorage.updateMarketingForm(id, formData);
     return res.json(updatedForm);
   } catch (error) {
     console.error('Error updating marketing form:', error);
@@ -142,17 +159,18 @@ router.patch('/forms/:id', checkAuth, async (req: Request, res: Response) => {
 
 // Delete a form
 router.delete('/forms/:id', checkAuth, async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const id = parseInt(req.params.id);
     
     // Check if form exists
-    const existingForm = await storage.getMarketingForm(id);
+    const existingForm = await scopedStorage.getMarketingForm(id);
     if (!existingForm) {
       return res.status(404).json({ message: 'Form not found' });
     }
     
     // Delete the form
-    const result = await storage.deleteMarketingForm(id);
+    const result = await scopedStorage.deleteMarketingForm(id);
     return res.json({ success: result });
   } catch (error) {
     console.error('Error deleting marketing form:', error);
@@ -163,9 +181,10 @@ router.delete('/forms/:id', checkAuth, async (req: Request, res: Response) => {
 
 // Get form submissions
 router.get('/forms/:id/submissions', checkAuth, async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const formId = parseInt(req.params.id);
-    const submissions = await storage.getFormSubmissions(formId);
+    const submissions = await scopedStorage.getFormSubmissions(formId);
     return res.json(submissions);
   } catch (error) {
     console.error('Error fetching form submissions:', error);
@@ -177,16 +196,17 @@ router.get('/forms/:id/submissions', checkAuth, async (req: Request, res: Respon
 
 // Serve a form's JavaScript embed code
 router.get('/forms/embed/:id.js', async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const id = parseInt(req.params.id);
-    const form = await storage.getMarketingForm(id);
+    const form = await scopedStorage.getMarketingForm(id);
     
     if (!form) {
       return res.status(404).send('Form not found');
     }
     
     // Track form view
-    await storage.incrementFormViews(id);
+    await scopedStorage.incrementFormViews(id);
     
     // Set CORS headers to allow embedding on external websites
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -205,6 +225,7 @@ router.get('/forms/embed/:id.js', async (req: Request, res: Response) => {
 
 // Submit a form (public endpoint - no auth required)
 router.post('/forms/:id/submit', async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     // Set CORS headers to allow form submissions from external websites
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -217,7 +238,7 @@ router.post('/forms/:id/submit', async (req: Request, res: Response) => {
     }
     
     const formId = parseInt(req.params.id);
-    const form = await storage.getMarketingForm(formId);
+    const form = await scopedStorage.getMarketingForm(formId);
     
     if (!form) {
       return res.status(404).json({ message: 'Form not found' });
@@ -250,10 +271,10 @@ router.post('/forms/:id/submit', async (req: Request, res: Response) => {
     };
     
     // Create the submission
-    const submission = await storage.createFormSubmission(submissionData);
+    const submission = await scopedStorage.createFormSubmission(submissionData);
     
     // Increment form submissions counter
-    await storage.incrementFormSubmissions(formId);
+    await scopedStorage.incrementFormSubmissions(formId);
     
     // Return success response
     return res.status(201).json({
@@ -275,15 +296,16 @@ router.post('/forms/:id/submit', async (req: Request, res: Response) => {
 
 // Track page view
 router.post('/track/pageview', async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const { visitorId, pageUrl, pageTitle, referrer, utmParams } = req.body;
     
     // Look up visitor or create new one
-    let visitor = await storage.getWebVisitorByVisitorId(visitorId);
+    let visitor = await scopedStorage.getWebVisitorByVisitorId(visitorId);
     
     if (!visitor) {
       // Create new visitor with required schema fields
-      visitor = await storage.createWebVisitor({
+      visitor = await scopedStorage.createWebVisitor({
         visitorId,
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'] as string,
@@ -303,7 +325,7 @@ router.post('/track/pageview', async (req: Request, res: Response) => {
       });
     } else {
       // Update existing visitor
-      await storage.updateWebVisitor(visitorId, {
+      await scopedStorage.updateWebVisitor(visitorId, {
         totalVisits: (visitor.totalVisits || 0) + 1,
         totalPageviews: (visitor.totalPageviews || 0) + 1,
         latestReferrer: referrer,
@@ -312,7 +334,7 @@ router.post('/track/pageview', async (req: Request, res: Response) => {
     }
     
     // Record page view with required schema fields
-    const pageView = await storage.createPageView({
+    const pageView = await scopedStorage.createPageView({
       visitorId,
       pageUrl,
       pageTitle,
@@ -364,6 +386,7 @@ router.post('/track/pageview', async (req: Request, res: Response) => {
 
 // Get tracking code (GET method for existing installs)
 router.get('/tracking/code', checkAuth, async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const websiteUrl = req.query.websiteUrl as string;
     
@@ -376,7 +399,7 @@ router.get('/tracking/code', checkAuth, async (req: Request, res: Response) => {
     const ownerId = req.user?.id || 1;
     
     // Generate or retrieve tracking code
-    const trackingCode = await storage.generateTrackingCode(websiteUrl, {
+    const trackingCode = await scopedStorage.generateTrackingCode(websiteUrl, {
       owner: ownerId
     });
     
@@ -389,6 +412,7 @@ router.get('/tracking/code', checkAuth, async (req: Request, res: Response) => {
 
 // Generate tracking code (POST method for new installs)
 router.post('/tracking/code', checkAuth, async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const { websiteUrl } = req.body;
     
@@ -400,7 +424,7 @@ router.post('/tracking/code', checkAuth, async (req: Request, res: Response) => 
     // If req.user.id is undefined, we'll provide a default value of 1
     const ownerId = req.user?.id || 1;
     
-    const trackingCode = await storage.generateTrackingCode(websiteUrl, {
+    const trackingCode = await scopedStorage.generateTrackingCode(websiteUrl, {
       owner: ownerId
     });
     
@@ -413,8 +437,9 @@ router.post('/tracking/code', checkAuth, async (req: Request, res: Response) => 
 
 // Get all tracking installations
 router.get('/tracking/installations', checkAuth, async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
-    const installations = await storage.getTrackingInstallations();
+    const installations = await scopedStorage.getTrackingInstallations();
     
     // If user.id is available, filter installations by owner
     if (req.user?.id) {
@@ -433,11 +458,12 @@ router.get('/tracking/installations', checkAuth, async (req: Request, res: Respo
 
 // Update tracking installation
 router.patch('/tracking/installations/:id', checkAuth, async (req: Request, res: Response) => {
+    const scopedStorage = getScopedStorage(req);
   try {
     const id = parseInt(req.params.id);
     const { status, settings, notes } = req.body;
     
-    const updated = await storage.updateTrackingInstallation(id, {
+    const updated = await scopedStorage.updateTrackingInstallation(id, {
       status,
       settings,
       notes
