@@ -53,7 +53,7 @@ export type Organization = typeof organizations.$inferSelect;
 // Organization Members table - many-to-many relationship between users and organizations
 export const organizationMembers = pgTable("organization_members", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
+  organizationId: integer("organization_id"),
   userId: integer("user_id").notNull(),
   role: text("role").default("member"), // owner, admin, member, viewer
   joinedAt: timestamp("joined_at").defaultNow(),
@@ -119,7 +119,7 @@ export type SelectUser = typeof users.$inferSelect;
 // Campaigns table
 export const campaigns = pgTable("campaigns", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   name: text("name").notNull(),
   type: text("type").notNull(),
   targetAudience: text("target_audience").notNull(),
@@ -190,7 +190,7 @@ export type Campaign = typeof campaigns.$inferSelect;
 // Customers table
 export const customers = pgTable("customers", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   email: text("email").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
@@ -252,7 +252,7 @@ export type CustomerActivity = typeof customerActivities.$inferSelect;
 // Leads table
 export const leads = pgTable("leads", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   name: text("name").notNull(),
   initials: text("initials").notNull(),
   industry: text("industry").notNull(),
@@ -307,7 +307,7 @@ export type Lead = typeof leads.$inferSelect;
 // Tasks table
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   title: text("title").notNull(),
   dueDate: text("due_date").notNull(),
   completed: boolean("completed").default(false),
@@ -325,7 +325,7 @@ export type Task = typeof tasks.$inferSelect;
 // Calendar events table (for scheduling follow-ups)
 export const calendarEvents = pgTable("calendar_events", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   title: text("title").notNull(),
   description: text("description"),
   startDate: timestamp("start_date").notNull(),
@@ -420,7 +420,7 @@ export interface ContactSegmentFilter {
 // Email templates table
 export const emailTemplates = pgTable("email_templates", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   name: text("name").notNull(),
   subject: text("subject").notNull(),
   bodyHtml: text("body_html").notNull(),
@@ -450,7 +450,7 @@ export type EmailTemplate = typeof emailTemplates.$inferSelect;
 // Email log (sent emails)
 export const emailLogs = pgTable("email_logs", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   userId: integer("user_id").notNull(), // Track which user sent the email
   from: text("from_address").notNull(),
   to: text("to_address").notNull(),
@@ -485,7 +485,7 @@ export type EmailLog = typeof emailLogs.$inferSelect;
 // Scheduled Emails table
 export const scheduledEmails = pgTable("scheduled_emails", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   campaignId: integer("campaign_id"),
   templateId: integer("template_id"),
   subject: text("subject").notNull(),
@@ -524,7 +524,7 @@ export type ScheduledEmail = typeof scheduledEmails.$inferSelect;
 // Marketing Forms table
 export const marketingForms = pgTable("marketing_forms", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   name: text("name").notNull(),
   title: text("title").notNull(),
   description: text("description"),
@@ -576,7 +576,7 @@ export type MarketingForm = typeof marketingForms.$inferSelect;
 // Form Submissions table
 export const formSubmissions = pgTable("form_submissions", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   formId: integer("form_id").notNull(),
   data: jsonb("data").notNull(), // The form submission data
   ipAddress: text("ip_address"),
@@ -624,7 +624,7 @@ export type FormSubmission = typeof formSubmissions.$inferSelect;
 // Web Visitor table for tracking website visitors
 export const webVisitors = pgTable("web_visitors", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   visitorId: text("visitor_id").notNull(), // Anonymous cookie ID
   firstVisitAt: timestamp("first_visit_at").notNull(),
   lastVisitAt: timestamp("last_visit_at").notNull(),
@@ -674,7 +674,7 @@ export type WebVisitor = typeof webVisitors.$inferSelect;
 // Page Views table to track individual page visits
 export const pageViews = pgTable("page_views", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   visitorId: text("visitor_id").notNull(), // References webVisitors.visitorId
   contactId: integer("contact_id"), // Link to customer or lead if identified
   pageUrl: text("page_url").notNull(),
@@ -727,7 +727,7 @@ export type PageView = typeof pageViews.$inferSelect;
 // Tracking Code Installations table
 export const trackingInstallations = pgTable("tracking_installations", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   websiteUrl: text("website_url").notNull(),
   installationDate: timestamp("installation_date").notNull(),
   status: text("status").default("active"), // active, inactive, pending
@@ -752,7 +752,7 @@ export type TrackingInstallation = typeof trackingInstallations.$inferSelect;
 // Chat conversations table for the AI Assistant
 export const chatConversations = pgTable("chat_conversations", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   userId: integer("user_id").notNull(), // The user who started the conversation
   title: text("title").notNull(), // Generated title for the conversation
   createdAt: timestamp("created_at").notNull(),
@@ -825,7 +825,7 @@ export type SystemNotification = typeof systemNotifications.$inferSelect;
 // Customer Journey Touchpoints table for tracking customer interactions
 export const customerTouchpoints = pgTable("customer_touchpoints", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   customerId: integer("customer_id").notNull(),
   leadId: integer("lead_id"), // Optional - touchpoint could be before lead creation
   touchpointType: text("touchpoint_type").notNull(), // website_visit, email_open, email_click, form_submit, phone_call, meeting, demo, trial_signup, purchase, support_ticket, etc.
@@ -907,7 +907,7 @@ export type CustomerTouchpoint = typeof customerTouchpoints.$inferSelect;
 // Customer Journey Stages table for defining journey stages
 export const journeyStages = pgTable("journey_stages", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   name: text("name").notNull(), // e.g., "Awareness", "Consideration", "Decision", "Onboarding", "Retention"
   description: text("description"),
   order: integer("order").notNull(), // Order in the journey (1, 2, 3, etc.)
@@ -939,7 +939,7 @@ export type JourneyStage = typeof journeyStages.$inferSelect;
 // Unified Contact Segments table - for segmenting both leads and customers
 export const contactSegments = pgTable("contact_segments", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   name: text("name").notNull(),
   description: text("description"),
   contactTypes: text("contact_types").array().notNull().default(["lead", "customer"]), // Which contact types to include
@@ -1016,7 +1016,7 @@ export const contactSourceEnum = pgEnum("contact_source", [
 
 export const contacts = pgTable("contacts", {
   id: uuid("id").defaultRandom().primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   firstName: varchar("first_name", { length: 120 }),
   lastName: varchar("last_name", { length: 120 }),
   email: varchar("email", { length: 320 }), // nullable, unique constraint removed for multi-tenancy
@@ -1095,7 +1095,7 @@ export type SelectContact = typeof contacts.$inferSelect;
 // Contact Notes table
 export const contactNotes = pgTable("contact_notes", {
   id: uuid("id").defaultRandom().primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   contactId: uuid("contact_id").notNull(), // FK -> contacts.id
   content: text("content").notNull(),
   createdBy: integer("created_by"), // nullable - FK to users.id
@@ -1121,7 +1121,7 @@ export const touchpointTypeEnum = pgEnum("touchpoint_type", [
 // Touchpoints table
 export const touchpoints = pgTable("touchpoints", {
   id: uuid("id").defaultRandom().primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   contactId: uuid("contact_id"), // nullable to support anonymous tracking
   type: touchpointTypeEnum("type").notNull(),
   subtype: varchar("subtype", { length: 100 }), // optional - e.g. 'page_view', 'click', 'submit'
@@ -1132,7 +1132,7 @@ export const touchpoints = pgTable("touchpoints", {
 // Journey scores table
 export const journeyScores = pgTable("journey_scores", {
   contactId: uuid("contact_id").primaryKey().notNull(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   score: integer("score").default(0).notNull(),
   stageDays: integer("stage_days").default(0).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -1166,7 +1166,7 @@ export type SelectJourneyScore = typeof journeyScores.$inferSelect;
 // Segments table
 export const segments = pgTable("segments", {
   id: uuid("id").defaultRandom().primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   name: varchar("name", { length: 160 }).notNull(),
   description: varchar("description", { length: 480 }), // optional
   definition: jsonb("definition").$type<Record<string, unknown>>().notNull(), // filter DSL JSON
@@ -1177,7 +1177,7 @@ export const segments = pgTable("segments", {
 
 // Segment members table with composite primary key
 export const segmentMembers = pgTable("segment_members", {
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   segmentId: uuid("segment_id").notNull(), // FK -> segments.id
   contactId: uuid("contact_id").notNull(), // FK -> contacts.id
   joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
@@ -1211,7 +1211,7 @@ export type SelectSegmentMember = typeof segmentMembers.$inferSelect;
 // Workflows table
 export const workflows = pgTable("workflows", {
   id: uuid("id").defaultRandom().primaryKey(),
-  organizationId: integer("organization_id").notNull(), // Multi-tenant isolation
+  organizationId: integer("organization_id"), // Multi-tenant isolation
   name: varchar("name", { length: 160 }).notNull(),
   description: varchar("description", { length: 480 }), // optional
   isActive: boolean("is_active").default(false).notNull(),
