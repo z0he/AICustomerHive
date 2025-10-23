@@ -150,7 +150,7 @@ export class OrganizationScopedStorage implements IStorage {
   async generateFormEmbedCode(formId: number): Promise<string> {
     const form = await this.getMarketingForm(formId);
     if (!form) throw new Error('Form not found in this organization');
-    return this.baseStorage.generateFormEmbedCode(formId);
+    return this.baseStorage.generateFormEmbedCode(formId, this.organizationId);
   }
 
   async getTasks(): Promise<Task[]> {

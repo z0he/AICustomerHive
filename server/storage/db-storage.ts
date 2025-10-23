@@ -187,19 +187,42 @@ export class DbStorage implements IStorage {
       .where(eq(marketingForms.id, formId));
   }
   
-  async generateFormEmbedCode(formId: number): Promise<string> {
-    const form = await this.getMarketingForm(formId);
+  async generateFormEmbedCode(formId: number, organizationId?: number): Promise<string> {
+    const form = await this.getMarketingForm(formId, organizationId);
     
     if (!form) {
       throw new Error(`Marketing form with ID ${formId} not found`);
     }
     
-    // Determine base URL - works in both dev and production
-    const baseUrl = process.env.REPLIT_DOMAINS 
-      ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-      : (process.env.PUBLIC_URL || 'http://localhost:5000');
+    // Fetch organization data to build organization-specific URL
+    const orgResult = await db.select()
+      .from(organizations)
+      .where(eq(organizations.id, form.organizationId))
+      .limit(1);
     
-    // Generate embed code with full URL for external websites
+    const org = orgResult[0];
+    if (!org) {
+      throw new Error(`Organization with ID ${form.organizationId} not found`);
+    }
+    
+    // Build organization-specific URL
+    let baseUrl: string;
+    const baseDomain = process.env.BASE_DOMAIN || 'aicrm.co.uk';
+    
+    if (org.customDomain) {
+      // Use custom domain if configured (e.g., crm.acme.com)
+      baseUrl = `https://${org.customDomain}`;
+    } else if (org.subdomain) {
+      // Use organization subdomain (e.g., companyA.aicrm.co.uk)
+      baseUrl = `https://${org.subdomain}.${baseDomain}`;
+    } else {
+      // Fallback to default domain
+      baseUrl = process.env.REPLIT_DOMAINS 
+        ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+        : (process.env.PUBLIC_URL || 'http://localhost:5000');
+    }
+    
+    // Generate embed code with organization-specific URL
     const embedCode = `
 <!-- CRM Form Embed Code -->
 <div id="crm-form-${formId}"></div>
