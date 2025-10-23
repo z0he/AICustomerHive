@@ -32,12 +32,29 @@ import {
 export class DbStorage implements IStorage {
   // ----- Marketing Forms methods -----
   
-  async getMarketingForms(): Promise<MarketingForm[]> {
+  async getMarketingForms(folder?: string, organizationId?: number): Promise<MarketingForm[]> {
+    const conditions = [];
+    if (folder !== undefined) {
+      conditions.push(eq(marketingForms.folder, folder));
+    }
+    if (organizationId !== undefined) {
+      conditions.push(eq(marketingForms.organizationId, organizationId));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select().from(marketingForms)
+        .where(and(...conditions))
+        .orderBy(desc(marketingForms.createdAt));
+    }
     return await db.select().from(marketingForms).orderBy(desc(marketingForms.createdAt));
   }
   
-  async getMarketingForm(id: number): Promise<MarketingForm | undefined> {
-    const result = await db.select().from(marketingForms).where(eq(marketingForms.id, id));
+  async getMarketingForm(id: number, organizationId?: number): Promise<MarketingForm | undefined> {
+    const conditions = [eq(marketingForms.id, id)];
+    if (organizationId !== undefined) {
+      conditions.push(eq(marketingForms.organizationId, organizationId));
+    }
+    const result = await db.select().from(marketingForms).where(and(...conditions));
     return result[0];
   }
   
@@ -55,15 +72,20 @@ export class DbStorage implements IStorage {
     return result[0];
   }
   
-  async updateMarketingForm(id: number, form: Partial<InsertMarketingForm>): Promise<MarketingForm> {
+  async updateMarketingForm(id: number, form: Partial<InsertMarketingForm>, organizationId?: number): Promise<MarketingForm> {
     const updateData = {
       ...form,
       updatedAt: new Date()
     };
     
+    const conditions = [eq(marketingForms.id, id)];
+    if (organizationId !== undefined) {
+      conditions.push(eq(marketingForms.organizationId, organizationId));
+    }
+    
     const result = await db.update(marketingForms)
       .set(updateData)
-      .where(eq(marketingForms.id, id))
+      .where(and(...conditions))
       .returning();
       
     if (result.length === 0) {
@@ -73,10 +95,15 @@ export class DbStorage implements IStorage {
     return result[0];
   }
   
-  async deleteMarketingForm(id: number): Promise<boolean> {
+  async deleteMarketingForm(id: number, organizationId?: number): Promise<boolean> {
     try {
+      const conditions = [eq(marketingForms.id, id)];
+      if (organizationId !== undefined) {
+        conditions.push(eq(marketingForms.organizationId, organizationId));
+      }
+      
       const result = await db.delete(marketingForms)
-        .where(eq(marketingForms.id, id))
+        .where(and(...conditions))
         .returning();
         
       return result.length > 0;
@@ -86,10 +113,14 @@ export class DbStorage implements IStorage {
     }
   }
   
-  async getFormSubmissions(formId: number): Promise<FormSubmission[]> {
+  async getFormSubmissions(formId: number, organizationId?: number): Promise<FormSubmission[]> {
+    const conditions = [eq(formSubmissions.formId, formId)];
+    if (organizationId !== undefined) {
+      conditions.push(eq(formSubmissions.organizationId, organizationId));
+    }
     return await db.select()
       .from(formSubmissions)
-      .where(eq(formSubmissions.formId, formId))
+      .where(and(...conditions))
       .orderBy(desc(formSubmissions.submittedAt));
   }
   
@@ -420,12 +451,38 @@ export class DbStorage implements IStorage {
   
   // ----- Campaign methods -----
   
-  async getCampaigns(period: string = '30d'): Promise<Campaign[]> {
+  async getCampaigns(period: string = '30d', organizationId?: number): Promise<Campaign[]> {
+    const conditions = [];
+    
+    // Add period-based date filtering
+    if (period) {
+      const days = parseInt(period.replace('d', '')); // e.g., "30d" → 30
+      if (!isNaN(days)) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - days);
+        conditions.push(gte(campaigns.createdAt, cutoffDate));
+      }
+    }
+    
+    // Add organization filtering
+    if (organizationId !== undefined) {
+      conditions.push(eq(campaigns.organizationId, organizationId));
+    }
+    
+    if (conditions.length > 0) {
+      return await db.select().from(campaigns)
+        .where(and(...conditions))
+        .orderBy(desc(campaigns.createdAt));
+    }
     return await db.select().from(campaigns).orderBy(desc(campaigns.createdAt));
   }
 
-  async getCampaign(id: number): Promise<Campaign | undefined> {
-    const result = await db.select().from(campaigns).where(eq(campaigns.id, id));
+  async getCampaign(id: number, organizationId?: number): Promise<Campaign | undefined> {
+    const conditions = [eq(campaigns.id, id)];
+    if (organizationId !== undefined) {
+      conditions.push(eq(campaigns.organizationId, organizationId));
+    }
+    const result = await db.select().from(campaigns).where(and(...conditions));
     return result[0];
   }
 
@@ -449,7 +506,14 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async getRecentCampaigns(limit: number = 3): Promise<Campaign[]> {
+  async getRecentCampaigns(limit: number = 3, organizationId?: number): Promise<Campaign[]> {
+    if (organizationId !== undefined) {
+      return await db.select().from(campaigns)
+        .where(eq(campaigns.organizationId, organizationId))
+        .orderBy(desc(campaigns.createdAt))
+        .limit(limit);
+    }
+    
     const result = await db.select().from(campaigns)
       .orderBy(desc(campaigns.createdAt))
       .limit(limit);
@@ -527,12 +591,19 @@ export class DbStorage implements IStorage {
   
   // ----- Customer methods -----
   
-  async getCustomers(): Promise<Customer[]> {
+  async getCustomers(organizationId?: number): Promise<Customer[]> {
+    if (organizationId !== undefined) {
+      return await db.select().from(customers).where(eq(customers.organizationId, organizationId));
+    }
     return await db.select().from(customers);
   }
 
-  async getCustomer(id: number): Promise<Customer | undefined> {
-    const result = await db.select().from(customers).where(eq(customers.id, id));
+  async getCustomer(id: number, organizationId?: number): Promise<Customer | undefined> {
+    const conditions = [eq(customers.id, id)];
+    if (organizationId !== undefined) {
+      conditions.push(eq(customers.organizationId, organizationId));
+    }
+    const result = await db.select().from(customers).where(and(...conditions));
     return result[0];
   }
 
@@ -554,13 +625,20 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async getCustomerActivities(): Promise<CustomerActivity[]> {
+  async getCustomerActivities(organizationId?: number): Promise<CustomerActivity[]> {
+    // Note: customer_activities table doesn't have organizationId column yet
+    // TODO: Add organizationId to customer_activities schema or implement JOIN with customers table
     return await db.select().from(customerActivities);
   }
   
-  async exportCustomers(): Promise<any> {
+  async exportCustomers(organizationId?: number): Promise<any> {
     try {
-      const customersList = await db.select().from(customers);
+      let customersList;
+      if (organizationId !== undefined) {
+        customersList = await db.select().from(customers).where(eq(customers.organizationId, organizationId));
+      } else {
+        customersList = await db.select().from(customers);
+      }
       
       // Format the data for export in a standard format (CSV data structure)
       const exportData = {
@@ -584,10 +662,15 @@ export class DbStorage implements IStorage {
     }
   }
   
-  async updateCustomer(id: number, data: Partial<InsertCustomer>): Promise<Customer> {
+  async updateCustomer(id: number, data: Partial<InsertCustomer>, organizationId?: number): Promise<Customer> {
+    const conditions = [eq(customers.id, id)];
+    if (organizationId !== undefined) {
+      conditions.push(eq(customers.organizationId, organizationId));
+    }
+    
     const result = await db.update(customers)
       .set(data)
-      .where(eq(customers.id, id))
+      .where(and(...conditions))
       .returning();
       
     if (result.length === 0) {
@@ -597,9 +680,13 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async deleteCustomer(id: number): Promise<boolean> {
+  async deleteCustomer(id: number, organizationId?: number): Promise<boolean> {
     try {
-      const result = await db.delete(customers).where(eq(customers.id, id));
+      const conditions = [eq(customers.id, id)];
+      if (organizationId !== undefined) {
+        conditions.push(eq(customers.organizationId, organizationId));
+      }
+      const result = await db.delete(customers).where(and(...conditions));
       return true;
     } catch (error) {
       console.error(`Failed to delete customer ${id}:`, error);
@@ -671,44 +758,65 @@ export class DbStorage implements IStorage {
   
   // ----- Lead methods -----
   
-  async getLeads(): Promise<Lead[]> {
+  async getLeads(organizationId?: number): Promise<Lead[]> {
+    if (organizationId !== undefined) {
+      return await db.select().from(leads).where(eq(leads.organizationId, organizationId));
+    }
     return await db.select().from(leads);
   }
 
-  async getLeadsBySource(source: string): Promise<Lead[]> {
+  async getLeadsBySource(source: string, organizationId?: number): Promise<Lead[]> {
+    const conditions = [eq(leads.leadSource, source)];
+    if (organizationId !== undefined) {
+      conditions.push(eq(leads.organizationId, organizationId));
+    }
     return await db.select()
       .from(leads)
-      .where(eq(leads.leadSource, source));
+      .where(and(...conditions));
   }
   
-  async getLeadsByStatus(status: string): Promise<Lead[]> {
+  async getLeadsByStatus(status: string, organizationId?: number): Promise<Lead[]> {
+    const conditions = [eq(leads.leadStatus, status)];
+    if (organizationId !== undefined) {
+      conditions.push(eq(leads.organizationId, organizationId));
+    }
     return await db.select()
       .from(leads)
-      .where(eq(leads.leadStatus, status));
+      .where(and(...conditions));
   }
   
-  async getLeadsByScoreRange(minScore: number, maxScore: number): Promise<Lead[]> {
+  async getLeadsByScoreRange(minScore: number, maxScore: number, organizationId?: number): Promise<Lead[]> {
+    const conditions = [
+      sql`${leads.score} >= ${minScore}`,
+      sql`${leads.score} <= ${maxScore}`
+    ];
+    if (organizationId !== undefined) {
+      conditions.push(eq(leads.organizationId, organizationId));
+    }
     return await db.select()
       .from(leads)
-      .where(
-        and(
-          sql`${leads.score} >= ${minScore}`,
-          sql`${leads.score} <= ${maxScore}`
-        )
-      );
+      .where(and(...conditions));
   }
   
-  async getLeadsRequiringFollowUp(): Promise<Lead[]> {
+  async getLeadsRequiringFollowUp(organizationId?: number): Promise<Lead[]> {
     const now = new Date();
+    const conditions = [sql`${leads.nextFollowUpDate} <= ${now}`];
+    if (organizationId !== undefined) {
+      conditions.push(eq(leads.organizationId, organizationId));
+    }
     
     return await db.select()
       .from(leads)
-      .where(sql`${leads.nextFollowUpDate} <= ${now}`)
+      .where(and(...conditions))
       .orderBy(leads.nextFollowUpDate);
   }
 
-  async getLead(id: number): Promise<Lead | undefined> {
-    const result = await db.select().from(leads).where(eq(leads.id, id));
+  async getLead(id: number, organizationId?: number): Promise<Lead | undefined> {
+    const conditions = [eq(leads.id, id)];
+    if (organizationId !== undefined) {
+      conditions.push(eq(leads.organizationId, organizationId));
+    }
+    const result = await db.select().from(leads).where(and(...conditions));
     return result[0];
   }
 
@@ -778,11 +886,16 @@ export class DbStorage implements IStorage {
     return result[0];
   }
   
-  async updateLead(id: number, leadData: Partial<InsertLead>): Promise<Lead> {
+  async updateLead(id: number, leadData: Partial<InsertLead>, organizationId?: number): Promise<Lead> {
+    const conditions = [eq(leads.id, id)];
+    if (organizationId !== undefined) {
+      conditions.push(eq(leads.organizationId, organizationId));
+    }
+    
     const result = await db
       .update(leads)
       .set(leadData)
-      .where(eq(leads.id, id))
+      .where(and(...conditions))
       .returning();
     
     if (result.length === 0) {
@@ -792,9 +905,13 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
-  async deleteLead(id: number): Promise<boolean> {
+  async deleteLead(id: number, organizationId?: number): Promise<boolean> {
     try {
-      const result = await db.delete(leads).where(eq(leads.id, id));
+      const conditions = [eq(leads.id, id)];
+      if (organizationId !== undefined) {
+        conditions.push(eq(leads.organizationId, organizationId));
+      }
+      const result = await db.delete(leads).where(and(...conditions));
       return true;
     } catch (error) {
       console.error(`Failed to delete lead ${id}:`, error);
@@ -802,9 +919,9 @@ export class DbStorage implements IStorage {
     }
   }
   
-  async updateLeadScore(id: number, scoringData: any): Promise<Lead> {
+  async updateLeadScore(id: number, scoringData: any, organizationId?: number): Promise<Lead> {
     // First get the current lead
-    const lead = await this.getLead(id);
+    const lead = await this.getLead(id, organizationId);
     if (!lead) {
       throw new Error(`Lead with ID ${id} not found`);
     }
@@ -846,26 +963,34 @@ export class DbStorage implements IStorage {
       score: newScore,
       engagementLevel: scoringData.engagementLevel || lead.engagementLevel,
       conversionProbability: this.calculateConversionProbability(newScore)
-    });
+    }, organizationId);
     
     return updatedLead;
   }
 
-  async getTopLeads(limit: number = 5): Promise<Lead[]> {
-    const result = await db.select()
+  async getTopLeads(limit: number = 5, organizationId?: number): Promise<Lead[]> {
+    let query = db.select()
       .from(leads)
       .orderBy(desc(leads.score))
       .limit(limit);
     
-    return result;
+    if (organizationId !== undefined) {
+      return await db.select()
+        .from(leads)
+        .where(eq(leads.organizationId, organizationId))
+        .orderBy(desc(leads.score))
+        .limit(limit);
+    }
+    
+    return await query;
   }
   
-  async assignLeadOwner(id: number, ownerName: string): Promise<Lead> {
-    return await this.updateLead(id, { leadOwner: ownerName });
+  async assignLeadOwner(id: number, ownerName: string, organizationId?: number): Promise<Lead> {
+    return await this.updateLead(id, { leadOwner: ownerName }, organizationId);
   }
   
-  async addLeadTags(id: number, newTags: string[]): Promise<Lead> {
-    const lead = await this.getLead(id);
+  async addLeadTags(id: number, newTags: string[], organizationId?: number): Promise<Lead> {
+    const lead = await this.getLead(id, organizationId);
     if (!lead) {
       throw new Error(`Lead with ID ${id} not found`);
     }
@@ -874,11 +999,11 @@ export class DbStorage implements IStorage {
     const existingTags = lead.tags || [];
     const updatedTags = [...new Set([...existingTags, ...newTags])];
     
-    return await this.updateLead(id, { tags: updatedTags });
+    return await this.updateLead(id, { tags: updatedTags }, organizationId);
   }
   
-  async addLeadNote(id: number, note: string): Promise<Lead> {
-    const lead = await this.getLead(id);
+  async addLeadNote(id: number, note: string, organizationId?: number): Promise<Lead> {
+    const lead = await this.getLead(id, organizationId);
     if (!lead) {
       throw new Error(`Lead with ID ${id} not found`);
     }
@@ -890,7 +1015,7 @@ export class DbStorage implements IStorage {
       ? `${existingNotes}\n\n[${timestamp}]\n${note}`
       : `[${timestamp}]\n${note}`;
     
-    return await this.updateLead(id, { notes: updatedNotes });
+    return await this.updateLead(id, { notes: updatedNotes }, organizationId);
   }
   
   // Helper methods for lead scoring
