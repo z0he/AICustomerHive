@@ -163,11 +163,16 @@ export class DbStorage implements IStorage {
       throw new Error(`Marketing form with ID ${formId} not found`);
     }
     
-    // Generate embed code
+    // Determine base URL - works in both dev and production
+    const baseUrl = process.env.REPLIT_DOMAINS 
+      ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+      : (process.env.PUBLIC_URL || 'http://localhost:5000');
+    
+    // Generate embed code with full URL for external websites
     const embedCode = `
 <!-- CRM Form Embed Code -->
-<div id="form-container-${formId}"></div>
-<script src="${process.env.PUBLIC_URL || ''}/api/marketing/forms/embed/${formId}.js"></script>
+<div id="crm-form-${formId}"></div>
+<script src="${baseUrl}/api/marketing/forms/embed/${formId}.js" async></script>
 <!-- End CRM Form Embed Code -->
 `;
     

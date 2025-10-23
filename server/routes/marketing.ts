@@ -188,7 +188,9 @@ router.get('/forms/embed/:id.js', async (req: Request, res: Response) => {
     // Track form view
     await storage.incrementFormViews(id);
     
-    // Set appropriate content type
+    // Set CORS headers to allow embedding on external websites
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader('Content-Type', 'application/javascript');
     
     // Generate JavaScript embed code that will render the form
@@ -204,6 +206,16 @@ router.get('/forms/embed/:id.js', async (req: Request, res: Response) => {
 // Submit a form (public endpoint - no auth required)
 router.post('/forms/:id/submit', async (req: Request, res: Response) => {
   try {
+    // Set CORS headers to allow form submissions from external websites
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    
+    // Handle preflight OPTIONS request
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
+    }
+    
     const formId = parseInt(req.params.id);
     const form = await storage.getMarketingForm(formId);
     
@@ -443,10 +455,17 @@ function generateEmbedJs(form: any): string {
   return `
 // Form embed code for ${form.name} (ID: ${form.id})
 (function() {
+  // Auto-detect the CRM base URL from this script's location
+  const currentScript = document.currentScript || (function() {
+    const scripts = document.getElementsByTagName('script');
+    return scripts[scripts.length - 1];
+  })();
+  const baseUrl = currentScript ? new URL(currentScript.src).origin : '';
+  
   // Create form container
-  const container = document.getElementById('form-container-${form.id}');
+  const container = document.getElementById('crm-form-${form.id}');
   if (!container) {
-    console.error('Form container not found');
+    console.error('CRM Form container not found. Make sure you have <div id="crm-form-${form.id}"></div> on your page.');
     return;
   }
   
@@ -755,7 +774,7 @@ function generateEmbedJs(form: any): string {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Submitting...';
       
-      const response = await fetch('/api/marketing/forms/${form.id}/submit', {
+      const response = await fetch(baseUrl + '/api/marketing/forms/${form.id}/submit', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
