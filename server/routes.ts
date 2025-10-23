@@ -2044,7 +2044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let emailsLimit = 50;
       
       if (userId) {
-        const user = await scopedStorage.getUserById(userId);
+        const user = await scopedStorage.getUser(userId);
         usingPersonalKeys = !!(user?.personalMailgunKey && user?.personalMailgunDomain);
         emailsUsed = user?.emailsSent || 0;
         

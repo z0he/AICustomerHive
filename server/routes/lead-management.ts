@@ -3,6 +3,13 @@ import { storage } from "../storage.js";
 import type { IStorage } from '../storage';
 import { createOrganizationScopedStorage } from '../storage/scoped-storage';
 
+function getScopedStorage(req: Request): IStorage {
+  if (req.organization?.organizationId) {
+    return createOrganizationScopedStorage(storage, req.organization.organizationId);
+  }
+  throw new Error("Organization context required but not found");
+}
+
 // ===== ADVANCED LEAD SCORING ROUTES =====
 
 export const updateLeadScoringConfig = async (req: Request, res: Response) => {
