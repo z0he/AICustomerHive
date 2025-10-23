@@ -25,6 +25,7 @@ import {
   journeyStages, type JourneyStage, type InsertJourneyStage,
   contactSegments, type ContactSegment, type InsertContactSegment,
   contactNotes, type SelectContactNote, type InsertContactNote,
+  organizations,
   type SelectContact,
   type ContactSegmentFilter
 } from "@shared/schema";
@@ -192,6 +193,11 @@ export class DbStorage implements IStorage {
     
     if (!form) {
       throw new Error(`Marketing form with ID ${formId} not found`);
+    }
+    
+    // SECURITY: Verify form belongs to the requested organization
+    if (organizationId !== undefined && form.organizationId !== organizationId) {
+      throw new Error(`Marketing form with ID ${formId} not found in organization ${organizationId}`);
     }
     
     // Fetch organization data to build organization-specific URL
