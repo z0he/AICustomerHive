@@ -37,33 +37,33 @@ export interface IStorage {
   updateUserBusinessProfile(userId: number, profile: { businessType?: string; businessIndustry?: string; companySize?: string; primaryMarket?: string }): Promise<User>;
   
   // Customer methods
-  getCustomers(): Promise<Customer[]>;
-  getCustomer(id: number): Promise<Customer | undefined>;
+  getCustomers(organizationId?: number): Promise<Customer[]>;
+  getCustomer(id: number, organizationId?: number): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
-  updateCustomer(id: number, data: Partial<InsertCustomer>): Promise<Customer>;
-  deleteCustomer(id: number): Promise<boolean>;
+  updateCustomer(id: number, data: Partial<InsertCustomer>, organizationId?: number): Promise<Customer>;
+  deleteCustomer(id: number, organizationId?: number): Promise<boolean>;
 
   // Lead methods
-  getLeads(): Promise<Lead[]>;
-  getLead(id: number): Promise<Lead | undefined>;
+  getLeads(organizationId?: number): Promise<Lead[]>;
+  getLead(id: number, organizationId?: number): Promise<Lead | undefined>;
   createLead(lead: InsertLead): Promise<Lead>;
-  updateLead(id: number, data: Partial<InsertLead>): Promise<Lead>;
-  deleteLead(id: number): Promise<boolean>;
+  updateLead(id: number, data: Partial<InsertLead>, organizationId?: number): Promise<Lead>;
+  deleteLead(id: number, organizationId?: number): Promise<boolean>;
 
   // Campaign methods
-  getCampaigns(period?: string): Promise<Campaign[]>;
+  getCampaigns(period?: string, organizationId?: number): Promise<Campaign[]>;
   
   // Marketing Forms methods
-  getMarketingForms(): Promise<MarketingForm[]>;
-  getMarketingForm(id: number): Promise<MarketingForm | undefined>;
+  getMarketingForms(organizationId?: number): Promise<MarketingForm[]>;
+  getMarketingForm(id: number, organizationId?: number): Promise<MarketingForm | undefined>;
   createMarketingForm(form: InsertMarketingForm): Promise<MarketingForm>;
-  updateMarketingForm(id: number, form: Partial<InsertMarketingForm>): Promise<MarketingForm>;
-  deleteMarketingForm(id: number): Promise<boolean>;
-  getFormSubmissions(formId: number): Promise<FormSubmission[]>;
+  updateMarketingForm(id: number, form: Partial<InsertMarketingForm>, organizationId?: number): Promise<MarketingForm>;
+  deleteMarketingForm(id: number, organizationId?: number): Promise<boolean>;
+  getFormSubmissions(formId: number, organizationId?: number): Promise<FormSubmission[]>;
   createFormSubmission(submission: InsertFormSubmission): Promise<FormSubmission>;
-  incrementFormViews(formId: number): Promise<void>;
-  incrementFormSubmissions(formId: number): Promise<void>;
-  generateFormEmbedCode(formId: number): Promise<string>;
+  incrementFormViews(formId: number, organizationId?: number): Promise<void>;
+  incrementFormSubmissions(formId: number, organizationId?: number): Promise<void>;
+  generateFormEmbedCode(formId: number, organizationId?: number): Promise<string>;
   
   // Chat Assistant methods
   getChatConversations(): Promise<ChatConversation[]>;
@@ -89,9 +89,9 @@ export interface IStorage {
   createTrackingInstallation(installation: InsertTrackingInstallation): Promise<TrackingInstallation>;
   updateTrackingInstallation(id: number, data: Partial<TrackingInstallation>): Promise<TrackingInstallation>;
   generateTrackingCode(websiteUrl: string, options: {owner: number}): Promise<string>;
-  getCampaign(id: number): Promise<Campaign | undefined>;
+  getCampaign(id: number, organizationId?: number): Promise<Campaign | undefined>;
   createCampaign(campaign: InsertCampaign): Promise<Campaign>;
-  getRecentCampaigns(limit?: number): Promise<Campaign[]>;
+  getRecentCampaigns(limit?: number, organizationId?: number): Promise<Campaign[]>;
   
   // Message Variant methods (for A/B testing)
   getMessageVariants(campaignId: number): Promise<MessageVariant[]>;
@@ -99,21 +99,21 @@ export interface IStorage {
   updateMessageVariantStats(variantId: number, impressions?: number, conversions?: number): Promise<MessageVariant>;
   
   // Customer methods  
-  getCustomerActivities(): Promise<CustomerActivity[]>;
-  exportCustomers(): Promise<any>; // Exports customer data in standard format
+  getCustomerActivities(organizationId?: number): Promise<CustomerActivity[]>;
+  exportCustomers(organizationId?: number): Promise<any>; // Exports customer data in standard format
   importCustomers(customerData: any[]): Promise<{ imported: number; errors: any[] }>;
   
   // Lead methods
-  getLeadsBySource(source: string): Promise<Lead[]>;
-  getLeadsByStatus(status: string): Promise<Lead[]>;
-  getLeadsByScoreRange(minScore: number, maxScore: number): Promise<Lead[]>;
-  getLeadsRequiringFollowUp(): Promise<Lead[]>;
+  getLeadsBySource(source: string, organizationId?: number): Promise<Lead[]>;
+  getLeadsByStatus(status: string, organizationId?: number): Promise<Lead[]>;
+  getLeadsByScoreRange(minScore: number, maxScore: number, organizationId?: number): Promise<Lead[]>;
+  getLeadsRequiringFollowUp(organizationId?: number): Promise<Lead[]>;
   insertLead(lead: any): Promise<Lead>; // For import API
-  updateLeadScore(id: number, scoringData: any): Promise<Lead>;
-  getTopLeads(limit?: number): Promise<Lead[]>;
-  assignLeadOwner(id: number, ownerName: string): Promise<Lead>;
-  addLeadTags(id: number, tags: string[]): Promise<Lead>;
-  addLeadNote(id: number, note: string): Promise<Lead>;
+  updateLeadScore(id: number, scoringData: any, organizationId?: number): Promise<Lead>;
+  getTopLeads(limit?: number, organizationId?: number): Promise<Lead[]>;
+  assignLeadOwner(id: number, ownerName: string, organizationId?: number): Promise<Lead>;
+  addLeadTags(id: number, tags: string[], organizationId?: number): Promise<Lead>;
+  addLeadNote(id: number, note: string, organizationId?: number): Promise<Lead>;
   
   // Contact Notes methods (unified contact system)
   getContactNotes(contactId: string): Promise<SelectContactNote[]>;
@@ -136,57 +136,57 @@ export interface IStorage {
   }): Promise<SelectContact[]>;
   
   // Task methods
-  getTasks(): Promise<Task[]>;
-  getTask(id: number): Promise<Task | undefined>;
+  getTasks(organizationId?: number): Promise<Task[]>;
+  getTask(id: number, organizationId?: number): Promise<Task | undefined>;
   createTask(task: InsertTask): Promise<Task>;
-  toggleTaskCompletion(id: number): Promise<Task>;
+  toggleTaskCompletion(id: number, organizationId?: number): Promise<Task>;
   
   // Dashboard metrics
   getDashboardMetrics(): Promise<any[]>;
   
   // Calendar/Scheduling methods
-  getCalendarEvents(startDate?: Date, endDate?: Date): Promise<CalendarEvent[]>;
-  getCalendarEventsByOwner(ownerId: number, startDate?: Date, endDate?: Date): Promise<CalendarEvent[]>;
-  getCalendarEventsByEntity(entityType: string, entityId: number): Promise<CalendarEvent[]>;
-  getCalendarEvent(id: number): Promise<CalendarEvent | undefined>;
+  getCalendarEvents(startDate?: Date, endDate?: Date, organizationId?: number): Promise<CalendarEvent[]>;
+  getCalendarEventsByOwner(ownerId: number, startDate?: Date, endDate?: Date, organizationId?: number): Promise<CalendarEvent[]>;
+  getCalendarEventsByEntity(entityType: string, entityId: number, organizationId?: number): Promise<CalendarEvent[]>;
+  getCalendarEvent(id: number, organizationId?: number): Promise<CalendarEvent | undefined>;
   createCalendarEvent(event: InsertCalendarEvent): Promise<CalendarEvent>;
-  updateCalendarEvent(id: number, eventData: Partial<CalendarEvent>): Promise<CalendarEvent>;
-  deleteCalendarEvent(id: number): Promise<boolean>;
+  updateCalendarEvent(id: number, eventData: Partial<CalendarEvent>, organizationId?: number): Promise<CalendarEvent>;
+  deleteCalendarEvent(id: number, organizationId?: number): Promise<boolean>;
   
   // Email methods
-  getEmailTemplates(category?: string): Promise<EmailTemplate[]>;
-  getEmailTemplate(id: number): Promise<EmailTemplate | undefined>;
+  getEmailTemplates(category?: string, organizationId?: number): Promise<EmailTemplate[]>;
+  getEmailTemplate(id: number, organizationId?: number): Promise<EmailTemplate | undefined>;
   createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
-  updateEmailTemplate(id: number, templateData: Partial<EmailTemplate>): Promise<EmailTemplate>;
-  deleteEmailTemplate(id: number): Promise<boolean>;
+  updateEmailTemplate(id: number, templateData: Partial<EmailTemplate>, organizationId?: number): Promise<EmailTemplate>;
+  deleteEmailTemplate(id: number, organizationId?: number): Promise<boolean>;
   
   // Email logs
-  getEmailLogs(entityType?: string, entityId?: number): Promise<EmailLog[]>;
+  getEmailLogs(entityType?: string, entityId?: number, organizationId?: number): Promise<EmailLog[]>;
   createEmailLog(log: InsertEmailLog): Promise<EmailLog>;
   sendEmail(from: string, to: string, subject: string, body: string, options?: any): Promise<EmailLog>;
   sendEmailWithTemplate(templateId: number, to: string, data: any, options?: any): Promise<EmailLog>;
   
   // Scheduled emails
-  getScheduledEmails(status?: string): Promise<ScheduledEmail[]>;
-  getScheduledEmail(id: number): Promise<ScheduledEmail | undefined>;
+  getScheduledEmails(status?: string, organizationId?: number): Promise<ScheduledEmail[]>;
+  getScheduledEmail(id: number, organizationId?: number): Promise<ScheduledEmail | undefined>;
   createScheduledEmail(scheduledEmail: InsertScheduledEmail): Promise<ScheduledEmail>;
-  updateScheduledEmail(id: number, data: Partial<ScheduledEmail>): Promise<ScheduledEmail>;
-  deleteScheduledEmail(id: number): Promise<boolean>;
-  getScheduledEmailsReady(): Promise<ScheduledEmail[]>;
+  updateScheduledEmail(id: number, data: Partial<ScheduledEmail>, organizationId?: number): Promise<ScheduledEmail>;
+  deleteScheduledEmail(id: number, organizationId?: number): Promise<boolean>;
+  getScheduledEmailsReady(organizationId?: number): Promise<ScheduledEmail[]>;
   
   // Marketing Forms
-  getMarketingForms(folder?: string): Promise<MarketingForm[]>;
-  getMarketingForm(id: number): Promise<MarketingForm | undefined>;
+  getMarketingForms(folder?: string, organizationId?: number): Promise<MarketingForm[]>;
+  getMarketingForm(id: number, organizationId?: number): Promise<MarketingForm | undefined>;
   createMarketingForm(form: InsertMarketingForm): Promise<MarketingForm>;
-  updateMarketingForm(id: number, formData: Partial<MarketingForm>): Promise<MarketingForm>;
-  deleteMarketingForm(id: number): Promise<boolean>;
-  generateFormEmbedCode(formId: number): Promise<string>;
-  incrementFormViews(formId: number): Promise<MarketingForm>;
-  incrementFormSubmissions(formId: number): Promise<MarketingForm>;
+  updateMarketingForm(id: number, formData: Partial<MarketingForm>, organizationId?: number): Promise<MarketingForm>;
+  deleteMarketingForm(id: number, organizationId?: number): Promise<boolean>;
+  generateFormEmbedCode(formId: number, organizationId?: number): Promise<string>;
+  incrementFormViews(formId: number, organizationId?: number): Promise<MarketingForm>;
+  incrementFormSubmissions(formId: number, organizationId?: number): Promise<MarketingForm>;
   
   // Form Submissions
-  getFormSubmissions(formId?: number): Promise<FormSubmission[]>;
-  getFormSubmission(id: number): Promise<FormSubmission | undefined>;
+  getFormSubmissions(formId?: number, organizationId?: number): Promise<FormSubmission[]>;
+  getFormSubmission(id: number, organizationId?: number): Promise<FormSubmission | undefined>;
   createFormSubmission(submission: InsertFormSubmission): Promise<FormSubmission>;
   getFormSubmissionsByContact(contactId: number): Promise<FormSubmission[]>;
   
@@ -205,20 +205,20 @@ export interface IStorage {
   getContactPageViews(contactId: number): Promise<PageView[]>;
   
   // Tracking Installations
-  getTrackingInstallations(): Promise<TrackingInstallation[]>;
-  getTrackingInstallation(id: number): Promise<TrackingInstallation | undefined>;
+  getTrackingInstallations(organizationId?: number): Promise<TrackingInstallation[]>;
+  getTrackingInstallation(id: number, organizationId?: number): Promise<TrackingInstallation | undefined>;
   createTrackingInstallation(installation: InsertTrackingInstallation): Promise<TrackingInstallation>;
-  updateTrackingInstallation(id: number, data: Partial<TrackingInstallation>): Promise<TrackingInstallation>;
+  updateTrackingInstallation(id: number, data: Partial<TrackingInstallation>, organizationId?: number): Promise<TrackingInstallation>;
   generateTrackingCode(websiteUrl: string, settings?: any): Promise<string>;
-  updateTrackingLastPing(id: number): Promise<TrackingInstallation>;
+  updateTrackingLastPing(id: number, organizationId?: number): Promise<TrackingInstallation>;
   
   // Chat Conversation methods
-  getChatConversations(): Promise<ChatConversation[]>;
-  getChatConversationsByUserId(userId: number): Promise<ChatConversation[]>;
-  getChatConversationById(id: number): Promise<ChatConversation | undefined>;
+  getChatConversations(organizationId?: number): Promise<ChatConversation[]>;
+  getChatConversationsByUserId(userId: number, organizationId?: number): Promise<ChatConversation[]>;
+  getChatConversationById(id: number, organizationId?: number): Promise<ChatConversation | undefined>;
   createChatConversation(conversation: InsertChatConversation & { createdAt: Date }): Promise<ChatConversation>;
-  updateChatConversation(id: number, conversationData: Partial<ChatConversation>): Promise<ChatConversation>;
-  deleteChatConversation(id: number): Promise<void>;
+  updateChatConversation(id: number, conversationData: Partial<ChatConversation>, organizationId?: number): Promise<ChatConversation>;
+  deleteChatConversation(id: number, organizationId?: number): Promise<void>;
   
   // Chat Message methods
   getChatMessages(): Promise<ChatMessage[]>;
@@ -229,25 +229,25 @@ export interface IStorage {
   deleteChatMessage(id: number): Promise<void>;
   
   // Customer Journey methods
-  getCustomerTouchpoints(): Promise<CustomerTouchpoint[]>;
-  getCustomerTouchpoint(id: number): Promise<CustomerTouchpoint | undefined>;
+  getCustomerTouchpoints(organizationId?: number): Promise<CustomerTouchpoint[]>;
+  getCustomerTouchpoint(id: number, organizationId?: number): Promise<CustomerTouchpoint | undefined>;
   createCustomerTouchpoint(touchpoint: InsertCustomerTouchpoint): Promise<CustomerTouchpoint>;
-  updateCustomerTouchpoint(id: number, touchpointData: Partial<CustomerTouchpoint>): Promise<CustomerTouchpoint>;
-  deleteCustomerTouchpoint(id: number): Promise<void>;
+  updateCustomerTouchpoint(id: number, touchpointData: Partial<CustomerTouchpoint>, organizationId?: number): Promise<CustomerTouchpoint>;
+  deleteCustomerTouchpoint(id: number, organizationId?: number): Promise<void>;
   
   // Journey Stage methods
-  getJourneyStages(): Promise<JourneyStage[]>;
-  getJourneyStage(id: number): Promise<JourneyStage | undefined>;
+  getJourneyStages(organizationId?: number): Promise<JourneyStage[]>;
+  getJourneyStage(id: number, organizationId?: number): Promise<JourneyStage | undefined>;
   createJourneyStage(stage: InsertJourneyStage): Promise<JourneyStage>;
-  updateJourneyStage(id: number, stageData: Partial<JourneyStage>): Promise<JourneyStage>;
-  deleteJourneyStage(id: number): Promise<void>;
+  updateJourneyStage(id: number, stageData: Partial<JourneyStage>, organizationId?: number): Promise<JourneyStage>;
+  deleteJourneyStage(id: number, organizationId?: number): Promise<void>;
 
   // Unified Contact Segment methods
-  getContactSegments(userId?: number): Promise<ContactSegment[]>;
-  getContactSegment(id: number): Promise<ContactSegment | undefined>;
+  getContactSegments(userId?: number, organizationId?: number): Promise<ContactSegment[]>;
+  getContactSegment(id: number, organizationId?: number): Promise<ContactSegment | undefined>;
   createContactSegment(segment: InsertContactSegment): Promise<ContactSegment>;
-  updateContactSegment(id: number, segmentData: Partial<ContactSegment>): Promise<ContactSegment>;
-  deleteContactSegment(id: number): Promise<void>;
+  updateContactSegment(id: number, segmentData: Partial<ContactSegment>, organizationId?: number): Promise<ContactSegment>;
+  deleteContactSegment(id: number, organizationId?: number): Promise<void>;
   
   // Unified Contact retrieval and filtering
   getUnifiedContacts(userId?: number): Promise<Contact[]>;
