@@ -114,6 +114,13 @@ const businessProfileSchema = z.object({
   primaryMarket: z.string().optional(),
 });
 
+const organizationSettingsSchema = z.object({
+  name: z.string().min(2, "Organization name must be at least 2 characters"),
+  subdomain: z.string().optional(),
+  customDomain: z.string().optional(),
+  primaryColor: z.string().optional(),
+});
+
 // Define types for tracking installations
 interface TrackingInstallation {
   id: number;
@@ -133,6 +140,7 @@ type ProfileSettingsFormData = z.infer<typeof profileSettingsSchema>;
 type NotificationSettingsFormData = z.infer<typeof notificationSettingsSchema>;
 type PersonalAPIKeysFormData = z.infer<typeof personalAPIKeysSchema>;
 type BusinessProfileFormData = z.infer<typeof businessProfileSchema>;
+type OrganizationSettingsFormData = z.infer<typeof organizationSettingsSchema>;
 
 const SettingsPage: React.FC = () => {
   // Get URL parameters to check for 'tab' parameter
@@ -140,7 +148,7 @@ const SettingsPage: React.FC = () => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      return tabParam && ['profile', 'notifications', 'integrations', 'tracking', 'appearance', 'usage'].includes(tabParam)
+      return tabParam && ['profile', 'notifications', 'integrations', 'tracking', 'organization', 'appearance', 'usage'].includes(tabParam)
         ? tabParam
         : 'profile';
     }
@@ -323,6 +331,21 @@ const SettingsPage: React.FC = () => {
     }
   });
 
+  const organizationForm = useForm<OrganizationSettingsFormData>({
+    resolver: zodResolver(organizationSettingsSchema),
+    defaultValues: {
+      name: '',
+      subdomain: '',
+      customDomain: '',
+      primaryColor: '#4F46E5',
+    }
+  });
+
+  // Query organization data
+  const { data: organizationData, isLoading: isLoadingOrganization } = useQuery({
+    queryKey: ['/api/organization'],
+  });
+
   // Set default form values when user data is loaded
   useEffect(() => {
     if (userData?.user) {
@@ -349,6 +372,18 @@ const SettingsPage: React.FC = () => {
       notificationForm.reset(notificationSettings);
     }
   }, [notificationSettings, notificationForm]);
+
+  // Set default organization form values when organization data is loaded
+  useEffect(() => {
+    if (organizationData) {
+      organizationForm.reset({
+        name: organizationData.name || '',
+        subdomain: organizationData.subdomain || '',
+        customDomain: organizationData.customDomain || '',
+        primaryColor: organizationData.primaryColor || '#4F46E5',
+      });
+    }
+  }, [organizationData, organizationForm]);
 
   // Mutations
   const generateTrackingCode = useMutation({
@@ -492,6 +527,26 @@ const SettingsPage: React.FC = () => {
     },
   });
 
+  const updateOrganizationMutation = useMutation({
+    mutationFn: async (data: OrganizationSettingsFormData) => {
+      return await apiRequest('/api/organization', 'PATCH', data);
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Organization Updated',
+        description: 'Your organization settings have been successfully updated.',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/organization'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Update Failed',
+        description: error.message || 'Failed to update organization settings',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Form submissions
   const onOpenAISubmit = (data: OpenAIConfigFormData) => {
     configureOpenAIMutation.mutate(data);
@@ -511,6 +566,10 @@ const SettingsPage: React.FC = () => {
 
   const onBusinessProfileSubmit = (data: BusinessProfileFormData) => {
     updateBusinessProfileMutation.mutate(data);
+  };
+
+  const onOrganizationSubmit = (data: OrganizationSettingsFormData) => {
+    updateOrganizationMutation.mutate(data);
   };
 
   // Handle generation of tracking code
@@ -580,7 +639,7 @@ const SettingsPage: React.FC = () => {
           <div className="max-w-5xl">
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="profile">
                   <div className="flex items-center">
                     <User className="h-4 w-4 mr-2" />
@@ -603,6 +662,12 @@ const SettingsPage: React.FC = () => {
                   <div className="flex items-center">
                     <Code className="h-4 w-4 mr-2" />
                     <span>Tracking</span>
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger value="organization">
+                  <div className="flex items-center">
+                    <Globe className="h-4 w-4 mr-2" />
+                    <span>Organization</span>
                   </div>
                 </TabsTrigger>
                 <TabsTrigger value="appearance">
@@ -1447,6 +1512,159 @@ const SettingsPage: React.FC = () => {
                         </div>
                       </TabsContent>
                     </Tabs>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Organization Tab */}
+              <TabsContent value="organization" className="mt-4 space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Globe className="h-5 w-5" />
+                      Organization Settings
+                    </CardTitle>
+                    <CardDescription>
+                      Manage your organization details and custom domain
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoadingOrganization ? (
+                      <div className="flex justify-center py-8">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                    ) : (
+                      <Form {...organizationForm}>
+                        <form onSubmit={organizationForm.handleSubmit(onOrganizationSubmit)} className="space-y-6">
+                          <div className="space-y-4">
+                            <FormField
+                              control={organizationForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Organization Name</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="Your Organization Name" 
+                                      data-testid="input-organization-name"
+                                      {...field} 
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    The name of your organization as it appears throughout the CRM
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={organizationForm.control}
+                              name="customDomain"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Custom Domain</FormLabel>
+                                  <FormControl>
+                                    <Input 
+                                      placeholder="crm.yourdomain.com" 
+                                      data-testid="input-custom-domain"
+                                      {...field} 
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Use your own domain for your CRM (e.g., crm.yourdomain.com). After adding, configure your DNS to point to your Replit deployment.
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={organizationForm.control}
+                              name="subdomain"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Subdomain (Alternative)</FormLabel>
+                                  <FormControl>
+                                    <div className="flex items-center gap-2">
+                                      <Input 
+                                        placeholder="yourcompany" 
+                                        data-testid="input-subdomain"
+                                        {...field} 
+                                      />
+                                      <span className="text-sm text-muted-foreground whitespace-nowrap">.aicrm.co.uk</span>
+                                    </div>
+                                  </FormControl>
+                                  <FormDescription>
+                                    If you don't have a custom domain, use a subdomain (e.g., yourcompany.aicrm.co.uk)
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            <FormField
+                              control={organizationForm.control}
+                              name="primaryColor"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Primary Color</FormLabel>
+                                  <FormControl>
+                                    <div className="flex items-center gap-3">
+                                      <Input 
+                                        type="color" 
+                                        className="w-20 h-10"
+                                        data-testid="input-primary-color"
+                                        {...field} 
+                                      />
+                                      <Input 
+                                        type="text" 
+                                        placeholder="#4F46E5"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        data-testid="input-primary-color-text"
+                                      />
+                                    </div>
+                                  </FormControl>
+                                  <FormDescription>
+                                    Brand color for your organization
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="p-4 bg-blue-50 rounded-lg">
+                            <div className="flex items-start gap-3">
+                              <Globe className="h-5 w-5 text-blue-600 mt-0.5" />
+                              <div className="text-sm">
+                                <p className="font-medium text-blue-900 mb-1">DNS Configuration Required</p>
+                                <p className="text-blue-700 mb-2">
+                                  After adding a custom domain, you'll need to configure your DNS settings:
+                                </p>
+                                <ol className="list-decimal list-inside text-blue-700 space-y-1">
+                                  <li>Publish your CRM to get your deployment URL</li>
+                                  <li>Add a CNAME record pointing your custom domain to your Replit deployment</li>
+                                  <li>Wait for DNS propagation (can take up to 24 hours)</li>
+                                </ol>
+                              </div>
+                            </div>
+                          </div>
+
+                          <Button 
+                            type="submit" 
+                            data-testid="button-save-organization"
+                            disabled={updateOrganizationMutation.isPending}
+                          >
+                            {updateOrganizationMutation.isPending && (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            Save Changes
+                          </Button>
+                        </form>
+                      </Form>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

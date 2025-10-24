@@ -45,6 +45,7 @@ import dataConsistencyRoutes from "./routes/data-consistency.js";
 import trackRoutes from "./routes/track.js";
 import dataQualityRoutes from "./routes/data-quality.js";
 import contactsRoutes from "./routes/contacts.js";
+import organizationRoutes from "./routes/organization";
 
 // Helper function to get organization-scoped storage from request
 function getScopedStorage(req: Request): IStorage {
@@ -87,6 +88,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount contacts routes (new unified endpoint)
   app.use("/api/contacts", contactsRoutes);
+  
+  // Mount organization routes
+  app.use("/api/organization", organizationRoutes);
   
   // Feature flags endpoint
   app.get("/api/flags", async (req: Request, res: Response) => {
