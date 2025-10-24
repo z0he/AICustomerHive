@@ -47,7 +47,16 @@ export const insertOrganizationSchema = createInsertSchema(organizations).pick({
   settings: true,
 });
 
+export const updateOrganizationSchema = createInsertSchema(organizations).pick({
+  name: true,
+  subdomain: true,
+  customDomain: true,
+  logoUrl: true,
+  primaryColor: true,
+}).partial();
+
 export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+export type UpdateOrganization = z.infer<typeof updateOrganizationSchema>;
 export type Organization = typeof organizations.$inferSelect;
 
 // Organization Members table - many-to-many relationship between users and organizations

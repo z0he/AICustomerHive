@@ -3,31 +3,41 @@ import { storage } from '../storage';
 import { createOrganizationScopedStorage } from '../storage/scoped-storage';
 import { checkAuth } from '../middleware/auth';
 import { db } from '../db';
-import { organizations, organizationMembers } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { organizations, organizationMembers, updateOrganizationSchema } from '@shared/schema';
+import { eq, and } from 'drizzle-orm';
 
 const router = Router();
 
 router.get('/', checkAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
+    const organizationId = req.organization?.organizationId;
     
     if (!userId) {
       return res.status(401).json({ message: 'Authentication required' });
     }
     
+    if (!organizationId) {
+      return res.status(400).json({ message: 'Organization context required' });
+    }
+    
     const membership = await db.select()
       .from(organizationMembers)
-      .where(eq(organizationMembers.userId, userId))
+      .where(
+        and(
+          eq(organizationMembers.userId, userId),
+          eq(organizationMembers.organizationId, organizationId)
+        )
+      )
       .limit(1);
     
     if (!membership || membership.length === 0) {
-      return res.status(404).json({ message: 'User is not a member of any organization' });
+      return res.status(403).json({ message: 'User is not a member of this organization' });
     }
     
     const org = await db.select()
       .from(organizations)
-      .where(eq(organizations.id, membership[0].organizationId))
+      .where(eq(organizations.id, organizationId))
       .limit(1);
     
     if (!org || org.length === 0) {
@@ -44,30 +54,39 @@ router.get('/', checkAuth, async (req: Request, res: Response) => {
 router.patch('/', checkAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
+    const organizationId = req.organization?.organizationId;
     
     if (!userId) {
       return res.status(401).json({ message: 'Authentication required' });
     }
     
+    if (!organizationId) {
+      return res.status(400).json({ message: 'Organization context required' });
+    }
+    
     const membership = await db.select()
       .from(organizationMembers)
-      .where(eq(organizationMembers.userId, userId))
+      .where(
+        and(
+          eq(organizationMembers.userId, userId),
+          eq(organizationMembers.organizationId, organizationId)
+        )
+      )
       .limit(1);
     
     if (!membership || membership.length === 0) {
-      return res.status(404).json({ message: 'User is not a member of any organization' });
+      return res.status(403).json({ message: 'User is not a member of this organization' });
     }
     
-    const organizationId = membership[0].organizationId;
+    const validationResult = updateOrganizationSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        message: 'Invalid update data', 
+        errors: validationResult.error.errors 
+      });
+    }
     
-    const { name, subdomain, customDomain, logoUrl, primaryColor } = req.body;
-    
-    const updates: any = {};
-    if (name !== undefined) updates.name = name;
-    if (subdomain !== undefined) updates.subdomain = subdomain;
-    if (customDomain !== undefined) updates.customDomain = customDomain;
-    if (logoUrl !== undefined) updates.logoUrl = logoUrl;
-    if (primaryColor !== undefined) updates.primaryColor = primaryColor;
+    const updates = validationResult.data;
     updates.updatedAt = new Date();
     
     const result = await db.update(organizations)
