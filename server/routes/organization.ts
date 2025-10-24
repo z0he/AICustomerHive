@@ -2,23 +2,32 @@ import { Request, Response, Router } from 'express';
 import { storage } from '../storage';
 import { createOrganizationScopedStorage } from '../storage/scoped-storage';
 import { checkAuth } from '../middleware/auth';
-import { db } from '../lib/db';
-import { organizations } from '@shared/schema';
+import { db } from '../db';
+import { organizations, organizationMembers } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 const router = Router();
 
 router.get('/', checkAuth, async (req: Request, res: Response) => {
   try {
-    const organizationId = req.organization?.organizationId;
+    const userId = (req as any).user?.id;
     
-    if (!organizationId) {
-      return res.status(400).json({ message: 'Organization context required' });
+    if (!userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    
+    const membership = await db.select()
+      .from(organizationMembers)
+      .where(eq(organizationMembers.userId, userId))
+      .limit(1);
+    
+    if (!membership || membership.length === 0) {
+      return res.status(404).json({ message: 'User is not a member of any organization' });
     }
     
     const org = await db.select()
       .from(organizations)
-      .where(eq(organizations.id, organizationId))
+      .where(eq(organizations.id, membership[0].organizationId))
       .limit(1);
     
     if (!org || org.length === 0) {
@@ -34,16 +43,22 @@ router.get('/', checkAuth, async (req: Request, res: Response) => {
 
 router.patch('/', checkAuth, async (req: Request, res: Response) => {
   try {
-    const organizationId = req.organization?.organizationId;
     const userId = (req as any).user?.id;
-    
-    if (!organizationId) {
-      return res.status(400).json({ message: 'Organization context required' });
-    }
     
     if (!userId) {
       return res.status(401).json({ message: 'Authentication required' });
     }
+    
+    const membership = await db.select()
+      .from(organizationMembers)
+      .where(eq(organizationMembers.userId, userId))
+      .limit(1);
+    
+    if (!membership || membership.length === 0) {
+      return res.status(404).json({ message: 'User is not a member of any organization' });
+    }
+    
+    const organizationId = membership[0].organizationId;
     
     const { name, subdomain, customDomain, logoUrl, primaryColor } = req.body;
     
