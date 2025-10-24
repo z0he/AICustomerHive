@@ -343,7 +343,7 @@ const SettingsPage: React.FC = () => {
 
   // Query organization data
   const { data: organizationData, isLoading: isLoadingOrganization } = useQuery({
-    queryKey: ['/api/organization'],
+    queryKey: ['/api/organization/me'],
   });
 
   // Set default form values when user data is loaded
@@ -529,14 +529,14 @@ const SettingsPage: React.FC = () => {
 
   const updateOrganizationMutation = useMutation({
     mutationFn: async (data: OrganizationSettingsFormData) => {
-      return await apiRequest('/api/organization', 'PATCH', data);
+      return await apiRequest('/api/organization/me', 'PATCH', data);
     },
     onSuccess: () => {
       toast({
         title: 'Organization Updated',
         description: 'Your organization settings have been successfully updated.',
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/organization'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/organization/me'] });
     },
     onError: (error: any) => {
       toast({
