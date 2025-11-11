@@ -12,7 +12,7 @@ import { SelectUser } from "@shared/schema";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { notifyNewUserRegistration, notifySystemError } from "./lib/notification-service";
-import * as admin from "firebase-admin";
+import admin from "firebase-admin";
 
 declare global {
   namespace Express {
