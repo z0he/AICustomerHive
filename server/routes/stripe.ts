@@ -106,17 +106,17 @@ router.post('/create-checkout-session', checkAuth, async (req: Request, res: Res
         case 'starter':
           priceId = STRIPE_PRICE_STARTER;
           bundleName = 'Starter';
-          credits = 500; // This should match your Stripe product
+          credits = 200; // Matches Stripe product metadata
           break;
         case 'growth':
           priceId = STRIPE_PRICE_GROWTH;
           bundleName = 'Growth';
-          credits = 2000; // This should match your Stripe product
+          credits = 450; // Matches Stripe product metadata
           break;
         case 'scale':
           priceId = STRIPE_PRICE_SCALE;
           bundleName = 'Scale';
-          credits = 5000; // This should match your Stripe product
+          credits = 1300; // Matches Stripe product metadata
           break;
         default:
           return res.status(400).json({ error: 'Invalid bundle type' });

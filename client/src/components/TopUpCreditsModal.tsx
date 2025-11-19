@@ -32,9 +32,9 @@ interface Bundle {
 }
 
 const BUNDLES: Bundle[] = [
-  { type: 'starter', name: 'Starter', credits: 500, price: 29, icon: Sparkles },
-  { type: 'growth', name: 'Growth', credits: 2000, price: 99, icon: Zap, popular: true },
-  { type: 'scale', name: 'Scale', credits: 5000, price: 199, icon: Rocket },
+  { type: 'starter', name: 'Starter', credits: 200, price: 10, icon: Sparkles },
+  { type: 'growth', name: 'Growth', credits: 450, price: 20, icon: Zap, popular: true },
+  { type: 'scale', name: 'Scale', credits: 1300, price: 50, icon: Rocket },
 ];
 
 const MIN_CUSTOM_AMOUNT = 10;
