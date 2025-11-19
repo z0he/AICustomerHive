@@ -47,6 +47,7 @@ import dataQualityRoutes from "./routes/data-quality.js";
 import contactsRoutes from "./routes/contacts.js";
 import organizationRoutes from "./routes/organization";
 import creditsRoutes from "./routes/credits";
+import stripeRoutes from "./routes/stripe";
 
 // Helper function to get organization-scoped storage from request
 function getScopedStorage(req: Request): IStorage {
@@ -95,6 +96,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Mount credits routes
   app.use("/api", creditsRoutes);
+  
+  // Mount Stripe checkout routes
+  // Note: Webhook is mounted in server/index.ts BEFORE express.json() for raw body access
+  app.use("/api/stripe", stripeRoutes);
   
   // Feature flags endpoint
   app.get("/api/flags", async (req: Request, res: Response) => {

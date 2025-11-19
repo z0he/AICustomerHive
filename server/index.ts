@@ -4,8 +4,14 @@ import { setupVite, serveStatic, log } from "./vite";
 import { notifySystemError } from "./lib/notification-service";
 import { emailScheduler } from "./lib/email-scheduler";
 import fileUpload from "express-fileupload";
+import { handleStripeWebhook } from "./routes/stripe";
 
 const app = express();
+
+// Mount Stripe webhook BEFORE express.json() to preserve raw body for signature verification
+// CRITICAL: Use app.post() for the specific webhook endpoint only, not app.use()
+app.post("/api/stripe/webhook", express.raw({ type: 'application/json' }), handleStripeWebhook);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(fileUpload({
