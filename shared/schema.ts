@@ -1296,3 +1296,51 @@ export const insertFeatureFlagSchema = createInsertSchema(featureFlags).pick({
 
 export type InsertFeatureFlag = z.infer<typeof insertFeatureFlagSchema>;
 export type SelectFeatureFlag = typeof featureFlags.$inferSelect;
+
+// ===== PAY-AS-YOU-GO CREDIT SYSTEM =====
+
+// Credit transaction type enum
+export const creditTransactionTypeEnum = pgEnum("credit_transaction_type", [
+  "email",
+  "automation",
+  "ai",
+  "voice",
+  "topup",
+  "system"
+]);
+
+// Credits table - tracks current balance per organization
+export const credits = pgTable("credits", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull().unique(), // One balance per organization
+  balance: integer("balance").notNull().default(0), // Current credit balance
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertCreditSchema = createInsertSchema(credits).pick({
+  organizationId: true,
+  balance: true,
+});
+
+export type InsertCredit = z.infer<typeof insertCreditSchema>;
+export type Credit = typeof credits.$inferSelect;
+
+// Credit Transactions table - audit log of all credit changes
+export const creditTransactions = pgTable("credit_transactions", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(), // Organization this transaction belongs to
+  amount: integer("amount").notNull(), // Signed integer: positive for credits added, negative for credits deducted
+  type: creditTransactionTypeEnum("type").notNull(), // Type of transaction
+  metadata: jsonb("metadata"), // Additional context: action details, campaign id, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertCreditTransactionSchema = createInsertSchema(creditTransactions).pick({
+  organizationId: true,
+  amount: true,
+  type: true,
+  metadata: true,
+});
+
+export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
+export type CreditTransaction = typeof creditTransactions.$inferSelect;

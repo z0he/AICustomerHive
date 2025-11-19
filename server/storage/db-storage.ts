@@ -27,7 +27,9 @@ import {
   contactNotes, type SelectContactNote, type InsertContactNote,
   organizations,
   type SelectContact,
-  type ContactSegmentFilter
+  type ContactSegmentFilter,
+  credits, type Credit, type InsertCredit,
+  creditTransactions, type CreditTransaction, type InsertCreditTransaction
 } from "@shared/schema";
 
 export class DbStorage implements IStorage {
@@ -2545,5 +2547,50 @@ export class DbStorage implements IStorage {
       console.error('Failed to filter contacts:', error);
       return [];
     }
+  }
+  
+  // ----- Credit System methods -----
+  
+  async getOrganizationCredits(organizationId: number): Promise<Credit | undefined> {
+    const result = await db.select().from(credits)
+      .where(eq(credits.organizationId, organizationId))
+      .limit(1);
+    return result[0];
+  }
+  
+  async createOrganizationCredits(organizationId: number, initialBalance: number = 0): Promise<Credit> {
+    const creditData = {
+      organizationId,
+      balance: initialBalance,
+      updatedAt: new Date()
+    };
+    
+    const result = await db.insert(credits).values(creditData).returning();
+    return result[0];
+  }
+  
+  async updateCreditBalance(organizationId: number, newBalance: number): Promise<Credit> {
+    const result = await db.update(credits)
+      .set({ 
+        balance: newBalance,
+        updatedAt: new Date()
+      })
+      .where(eq(credits.organizationId, organizationId))
+      .returning();
+    
+    return result[0];
+  }
+  
+  async getCreditTransactions(organizationId: number, limit: number = 10): Promise<CreditTransaction[]> {
+    return await db.select().from(creditTransactions)
+      .where(eq(creditTransactions.organizationId, organizationId))
+      .orderBy(desc(creditTransactions.createdAt))
+      .limit(limit);
+  }
+  
+  async createCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction> {
+    // createdAt will be auto-set by schema default
+    const result = await db.insert(creditTransactions).values(transaction as any).returning();
+    return result[0];
   }
 }

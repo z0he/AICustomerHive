@@ -21,7 +21,9 @@ import {
   journeyStages, type JourneyStage, type InsertJourneyStage,
   contactSegments, type ContactSegment, type InsertContactSegment,
   contactNotes, type SelectContactNote, type InsertContactNote,
-  type Contact, type SelectContact, type ContactSegmentFilter
+  type Contact, type SelectContact, type ContactSegmentFilter,
+  credits, type Credit, type InsertCredit,
+  creditTransactions, type CreditTransaction, type InsertCreditTransaction
 } from "@shared/schema";
 import { DbStorage } from "./storage/db-storage";
 
@@ -254,6 +256,13 @@ export interface IStorage {
   getContactsBySegment(segmentId: number): Promise<Contact[]>;
   applyContactFilters(contacts: Contact[], filters: ContactSegmentFilter[]): Contact[];
   refreshSegmentCounts(segmentId: number): Promise<ContactSegment>;
+  
+  // Credit System methods
+  getOrganizationCredits(organizationId: number): Promise<Credit | undefined>;
+  createOrganizationCredits(organizationId: number, initialBalance?: number): Promise<Credit>;
+  updateCreditBalance(organizationId: number, newBalance: number): Promise<Credit>;
+  getCreditTransactions(organizationId: number, limit?: number): Promise<CreditTransaction[]>;
+  createCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction>;
 }
 
 export class MemStorage implements IStorage {
@@ -2344,6 +2353,28 @@ export class MemStorage implements IStorage {
     maxScore?: number;
   }): Promise<SelectContact[]> {
     throw new Error("Contact filtering not implemented in MemStorage - use DbStorage");
+  }
+  
+  // ----- Credit System methods -----
+  
+  async getOrganizationCredits(organizationId: number): Promise<Credit | undefined> {
+    throw new Error("Credit system not implemented in MemStorage - use DbStorage");
+  }
+  
+  async createOrganizationCredits(organizationId: number, initialBalance: number = 0): Promise<Credit> {
+    throw new Error("Credit system not implemented in MemStorage - use DbStorage");
+  }
+  
+  async updateCreditBalance(organizationId: number, newBalance: number): Promise<Credit> {
+    throw new Error("Credit system not implemented in MemStorage - use DbStorage");
+  }
+  
+  async getCreditTransactions(organizationId: number, limit: number = 10): Promise<CreditTransaction[]> {
+    throw new Error("Credit system not implemented in MemStorage - use DbStorage");
+  }
+  
+  async createCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction> {
+    throw new Error("Credit system not implemented in MemStorage - use DbStorage");
   }
 }
 

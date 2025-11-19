@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import {
   LayoutDashboard, Users, Map, Filter, Megaphone, Zap, Mail, FileText,
-  Calendar as CalIcon, Database, BarChart3, Settings
+  Calendar as CalIcon, Database, BarChart3, Settings, Coins
 } from 'lucide-react';
 import { useFlag } from '@/hooks/use-feature-flags';
+import { useCredits } from '@/hooks/use-credits';
+import { Button } from '@/components/ui/button';
+import { TopUpCreditsModal } from '@/components/TopUpCreditsModal';
 
 type NavItem = { label: string; href: string; icon?: any; children?: NavItem[]; flagKey?: string };
 
@@ -73,6 +77,8 @@ function isActive(current: string, href: string) {
 
 export function Sidebar() {
   const [loc] = useLocation();
+  const { data: credits, isLoading: creditsLoading } = useCredits();
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
 
   const NavItemComponent = ({ item }: { item: NavItem }) => {
     const flagEnabled = item.flagKey ? useFlag(item.flagKey) : true;
@@ -120,11 +126,11 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="w-64 border-r border-slate-200 bg-white">
+    <aside className="w-64 border-r border-slate-200 bg-white flex flex-col">
       <div className="h-14 flex items-center px-4 font-semibold text-emerald-700">
         AICRM
       </div>
-      <nav className="py-2">
+      <nav className="py-2 flex-1 overflow-y-auto">
         {NAV.map((sec) => (
           <div key={sec.label}>
             <div className="px-4 pt-6 pb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
@@ -140,6 +146,44 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+      
+      {/* Credit Balance Display */}
+      <div className="border-t border-slate-200 p-4" data-testid="credit-balance-section">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <Coins size={16} className="text-amber-500" />
+            <span className="font-medium">Credits</span>
+          </div>
+          {!creditsLoading && credits && (
+            <span 
+              className={`text-lg font-bold ${
+                credits.balance < 10 ? 'text-red-600' : 'text-emerald-600'
+              }`}
+              data-testid="credit-balance-amount"
+            >
+              {credits.balance.toLocaleString()}
+            </span>
+          )}
+          {creditsLoading && (
+            <span className="text-sm text-slate-400">Loading...</span>
+          )}
+        </div>
+        <Button 
+          size="sm" 
+          variant="outline" 
+          className="w-full text-xs"
+          onClick={() => setShowTopUpModal(true)}
+          data-testid="button-topup-credits"
+        >
+          Top Up Credits
+        </Button>
+      </div>
+      
+      <TopUpCreditsModal
+        open={showTopUpModal}
+        onClose={() => setShowTopUpModal(false)}
+        current={credits?.balance}
+      />
     </aside>
   );
 }

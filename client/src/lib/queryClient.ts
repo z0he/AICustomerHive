@@ -1,7 +1,35 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Custom error class for insufficient credits
+export class InsufficientCreditsError extends Error {
+  required: number;
+  current: number;
+  
+  constructor(required: number, current: number) {
+    super('INSUFFICIENT_CREDITS');
+    this.name = 'InsufficientCreditsError';
+    this.required = required;
+    this.current = current;
+  }
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // Special handling for 402 Payment Required (insufficient credits)
+    if (res.status === 402) {
+      try {
+        const data = await res.json();
+        if (data.error === 'INSUFFICIENT_CREDITS') {
+          throw new InsufficientCreditsError(data.required, data.current);
+        }
+      } catch (e) {
+        if (e instanceof InsufficientCreditsError) {
+          throw e;
+        }
+        // If parsing fails, fall through to generic error
+      }
+    }
+    
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
@@ -75,6 +103,13 @@ export const getQueryFn: <T>(options: {
     }
   };
 
+// Global credit error handler - will be set by CreditErrorProvider
+let globalCreditErrorHandler: ((error: unknown) => void) | null = null;
+
+export function setGlobalCreditErrorHandler(handler: (error: unknown) => void) {
+  globalCreditErrorHandler = handler;
+}
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -86,6 +121,12 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       retry: false,
+      onError: (error) => {
+        // Check if this is a credit error and handle it globally
+        if (error instanceof InsufficientCreditsError && globalCreditErrorHandler) {
+          globalCreditErrorHandler(error);
+        }
+      },
     },
   },
 });

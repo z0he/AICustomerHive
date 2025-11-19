@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { CreditErrorProvider } from "@/contexts/CreditErrorContext";
 import ChatAssistant from "@/components/ai/ChatAssistant";
 import FeedbackButton from "@/components/feedback/FeedbackButton";
 import { useEffect } from "react";
@@ -23,9 +24,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <WouterRouter>
-          <AppContent />
-        </WouterRouter>
+        <CreditErrorProvider>
+          <WouterRouter>
+            <AppContent />
+          </WouterRouter>
+        </CreditErrorProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
