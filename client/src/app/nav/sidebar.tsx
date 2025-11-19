@@ -8,6 +8,7 @@ import { useFlag } from '@/hooks/use-feature-flags';
 import { useCredits } from '@/hooks/use-credits';
 import { Button } from '@/components/ui/button';
 import { TopUpCreditsModal } from '@/components/TopUpCreditsModal';
+import LogoutButton from '@/components/auth/LogoutButton';
 
 type NavItem = { label: string; href: string; icon?: any; children?: NavItem[]; flagKey?: string };
 
@@ -177,6 +178,11 @@ export function Sidebar() {
         >
           Top Up Credits
         </Button>
+        <LogoutButton 
+          variant="outline" 
+          className="w-full mt-2 text-xs" 
+          showIcon={true}
+        />
       </div>
       
       <TopUpCreditsModal
