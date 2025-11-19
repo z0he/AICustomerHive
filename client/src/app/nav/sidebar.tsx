@@ -151,13 +151,13 @@ export function Sidebar() {
       <div className="border-t border-slate-200 p-4" data-testid="credit-balance-section">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Coins size={16} className="text-amber-500" />
+            <Coins size={16} className={credits?.lowBalance ? 'text-amber-600' : 'text-amber-500'} />
             <span className="font-medium">Credits</span>
           </div>
           {!creditsLoading && credits && (
             <span 
               className={`text-lg font-bold ${
-                credits.balance < 10 ? 'text-red-600' : 'text-emerald-600'
+                credits.lowBalance ? 'text-red-600' : 'text-emerald-600'
               }`}
               data-testid="credit-balance-amount"
             >
@@ -170,8 +170,8 @@ export function Sidebar() {
         </div>
         <Button 
           size="sm" 
-          variant="outline" 
-          className="w-full text-xs"
+          variant={credits?.lowBalance ? 'default' : 'outline'}
+          className={`w-full text-xs ${credits?.lowBalance ? 'bg-amber-600 hover:bg-amber-700' : ''}`}
           onClick={() => setShowTopUpModal(true)}
           data-testid="button-topup-credits"
         >

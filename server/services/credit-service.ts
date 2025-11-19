@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { credits, creditTransactions, organizations } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import type { CreditTransaction } from "@shared/schema";
 
 export interface CreditCost {
@@ -301,5 +301,56 @@ export async function getTransactions(
   } catch (error) {
     console.error('Error getting credit transactions:', error);
     throw new Error('Failed to retrieve credit transactions');
+  }
+}
+
+/**
+ * Get comprehensive credit information for an organization
+ * Including balance, totals, transactions, and low balance status
+ */
+export async function getCreditInfo(
+  organizationId: number,
+  transactionLimit: number = 20
+): Promise<{
+  balance: number;
+  totalPurchasedCredits: number;
+  totalUsedCredits: number;
+  transactions: CreditTransaction[];
+  lowBalance: boolean;
+  threshold: number;
+}> {
+  try {
+    // Get current balance and recent transactions in parallel
+    const [balance, transactions] = await Promise.all([
+      getBalance(organizationId),
+      getTransactions(organizationId, transactionLimit)
+    ]);
+    
+    // Calculate totals using SQL aggregation to avoid fetching all rows
+    const totalsResult = await db.select({
+      totalPurchased: sql<number>`COALESCE(SUM(CASE WHEN ${creditTransactions.amount} > 0 THEN ${creditTransactions.amount} ELSE 0 END), 0)`,
+      totalUsed: sql<number>`COALESCE(SUM(CASE WHEN ${creditTransactions.amount} < 0 THEN ABS(${creditTransactions.amount}) ELSE 0 END), 0)`
+    })
+    .from(creditTransactions)
+    .where(eq(creditTransactions.organizationId, organizationId));
+    
+    const totalPurchasedCredits = Number(totalsResult[0]?.totalPurchased || 0);
+    const totalUsedCredits = Number(totalsResult[0]?.totalUsed || 0);
+    
+    // Low balance threshold
+    const threshold = 20;
+    const lowBalance = balance < threshold;
+    
+    return {
+      balance,
+      totalPurchasedCredits,
+      totalUsedCredits,
+      transactions,
+      lowBalance,
+      threshold
+    };
+  } catch (error) {
+    console.error('Error getting comprehensive credit info:', error);
+    throw new Error('Failed to retrieve credit information');
   }
 }

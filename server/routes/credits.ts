@@ -6,7 +6,8 @@ const router = Router();
 
 /**
  * GET /api/credits
- * Get current credit balance and recent transactions for the organization
+ * Get comprehensive credit information for the organization
+ * This is the single source of truth for all credit data
  */
 router.get('/credits', checkAuth, async (req: Request, res: Response) => {
   try {
@@ -19,16 +20,10 @@ router.get('/credits', checkAuth, async (req: Request, res: Response) => {
       });
     }
     
-    // Get balance and last 10 transactions in parallel
-    const [balance, lastTransactions] = await Promise.all([
-      creditService.getBalance(organizationId),
-      creditService.getTransactions(organizationId, 10)
-    ]);
+    // Get comprehensive credit info (last 20 transactions by default)
+    const creditInfo = await creditService.getCreditInfo(organizationId, 20);
     
-    return res.json({
-      balance,
-      lastTransactions
-    });
+    return res.json(creditInfo);
   } catch (error) {
     console.error('Error fetching credit information:', error);
     return res.status(500).json({

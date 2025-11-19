@@ -5,6 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useCredits } from '@/hooks/use-credits';
+import { TopUpCreditsModal } from '@/components/TopUpCreditsModal';
 
 // UI Components
 import UsageWarning from '@/components/usage/UsageWarning';
@@ -16,6 +18,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -57,6 +62,11 @@ import {
   Zap,
   Users,
   DollarSign,
+  Coins,
+  CreditCard,
+  ArrowUpCircle,
+  ArrowDownCircle,
+  Info,
 } from 'lucide-react';
 
 // Form schemas
@@ -141,6 +151,239 @@ type NotificationSettingsFormData = z.infer<typeof notificationSettingsSchema>;
 type PersonalAPIKeysFormData = z.infer<typeof personalAPIKeysSchema>;
 type BusinessProfileFormData = z.infer<typeof businessProfileSchema>;
 type OrganizationSettingsFormData = z.infer<typeof organizationSettingsSchema>;
+
+// Credit Dashboard Component
+function CreditDashboard() {
+  const { data: creditInfo, isLoading } = useCredits();
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
+
+  const getTransactionTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      topup: 'Top Up',
+      email: 'Email Sent',
+      automation: 'Automation',
+      ai: 'AI Action',
+      voice: 'Voice Command',
+      system: 'System Credit'
+    };
+    return labels[type] || type;
+  };
+
+  const getTransactionTypeBadge = (type: string, amount: number) => {
+    if (amount > 0) {
+      return <Badge className="bg-green-100 text-green-800">Credit Added</Badge>;
+    }
+    
+    const colors: Record<string, string> = {
+      email: 'bg-blue-100 text-blue-800',
+      automation: 'bg-purple-100 text-purple-800',
+      ai: 'bg-indigo-100 text-indigo-800',
+      voice: 'bg-pink-100 text-pink-800',
+    };
+    
+    return <Badge className={colors[type] || 'bg-gray-100 text-gray-800'}>{getTransactionTypeLabel(type)}</Badge>;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-6 w-6 animate-spin mr-2" />
+        Loading credit information...
+      </div>
+    );
+  }
+
+  if (!creditInfo) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>Unable to load credit information. Please refresh the page.</AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <>
+      {/* Low Balance Warning */}
+      {creditInfo.lowBalance && (
+        <Alert className="border-amber-500 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertTitle className="text-amber-900">Low Credit Balance</AlertTitle>
+          <AlertDescription className="text-amber-800">
+            Your credit balance is below {creditInfo.threshold} credits. Top up now to continue using AICRM features without interruption.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Credit Balance Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Coins className="h-5 w-5 text-amber-500" />
+            Credit Balance
+          </CardTitle>
+          <CardDescription>
+            Your current AICRM credit balance and usage summary
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Balance Display */}
+          <div className="flex items-center justify-between p-6 bg-gradient-to-br from-emerald-50 to-blue-50 rounded-lg">
+            <div>
+              <p className="text-sm text-slate-600 mb-1">Available Credits</p>
+              <p className="text-4xl font-bold text-emerald-700">{creditInfo.balance.toLocaleString()}</p>
+            </div>
+            <Coins className="h-16 w-16 text-emerald-200" />
+          </div>
+
+          {/* Summary Stats */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 border rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <ArrowUpCircle className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-slate-600">Total Purchased</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{creditInfo.totalPurchasedCredits.toLocaleString()}</p>
+            </div>
+            <div className="p-4 border rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <ArrowDownCircle className="h-4 w-4 text-blue-600" />
+                <span className="text-sm text-slate-600">Total Used</span>
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{creditInfo.totalUsedCredits.toLocaleString()}</p>
+            </div>
+          </div>
+
+          {/* Top Up Button */}
+          <Button 
+            className="w-full" 
+            size="lg"
+            onClick={() => setShowTopUpModal(true)}
+            data-testid="button-topup-credits-billing"
+          >
+            <CreditCard className="mr-2 h-4 w-4" />
+            Top Up Credits
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Credit Activity Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Credit Activity
+          </CardTitle>
+          <CardDescription>
+            Recent credit transactions (last 20 entries)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {creditInfo.transactions.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              <p>No credit transactions yet</p>
+              <p className="text-sm mt-2">Top up credits to get started</p>
+            </div>
+          ) : (
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Description</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {creditInfo.transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="text-sm">
+                        {new Date(transaction.createdAt).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        {getTransactionTypeBadge(transaction.type, transaction.amount)}
+                      </TableCell>
+                      <TableCell className={`text-right font-medium ${transaction.amount > 0 ? 'text-green-600' : 'text-slate-600'}`}>
+                        {transaction.amount > 0 ? '+' : ''}{transaction.amount.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600">
+                        {transaction.metadata?.bundle_type && `${transaction.metadata.bundle_type} bundle`}
+                        {transaction.metadata?.source === 'stripe' && ' via Stripe'}
+                        {transaction.metadata?.source === 'manual' && ' (Manual)'}
+                        {transaction.type === 'email' && 'Email sent'}
+                        {transaction.type === 'ai' && 'AI action'}
+                        {transaction.type === 'automation' && 'Automation step'}
+                        {transaction.type === 'voice' && 'Voice command'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* How Credits Work - FAQ */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Info className="h-5 w-5" />
+            How AICRM Credits Work
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-3">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <p className="font-medium text-blue-900 mb-2">Credit Usage Rates</p>
+              <ul className="space-y-1 text-sm text-blue-800">
+                <li>• <strong>1 credit</strong> = 1 email sent</li>
+                <li>• <strong>2 credits</strong> = 1 AI action (insights, suggestions, etc.)</li>
+                <li>• <strong>3 credits</strong> = 1 automation step or voice command</li>
+              </ul>
+            </div>
+
+            <div className="p-4 bg-green-50 rounded-lg">
+              <p className="font-medium text-green-900 mb-2">Credits Never Expire</p>
+              <p className="text-sm text-green-800">
+                Your credits are only used when you perform actions. They never expire and remain in your account until used.
+              </p>
+            </div>
+
+            <div className="p-4 bg-purple-50 rounded-lg">
+              <p className="font-medium text-purple-900 mb-2">Flexible Top-Ups</p>
+              <p className="text-sm text-purple-800">
+                Add more credits at any time using the Top Up Credits button. Choose from preset bundles or enter a custom amount (minimum $10 = 180 credits).
+              </p>
+            </div>
+
+            <div className="p-4 bg-amber-50 rounded-lg">
+              <p className="font-medium text-amber-900 mb-2">Low Balance Alerts</p>
+              <p className="text-sm text-amber-800">
+                You'll receive warnings when your balance falls below {creditInfo.threshold} credits. Keep your balance topped up to avoid service interruptions.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Top Up Modal */}
+      <TopUpCreditsModal
+        open={showTopUpModal}
+        onClose={() => setShowTopUpModal(false)}
+        current={creditInfo.balance}
+      />
+    </>
+  );
+}
 
 const SettingsPage: React.FC = () => {
   // Get URL parameters to check for 'tab' parameter
@@ -1765,67 +2008,7 @@ const SettingsPage: React.FC = () => {
 
               {/* Usage & Billing Tab */}
               <TabsContent value="usage" className="mt-4 space-y-6">
-                {usageLoading ? (
-                  <div className="flex items-center justify-center p-8">
-                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                    Loading usage data...
-                  </div>
-                ) : (
-                  <>
-                    {/* Usage Dashboard */}
-                    {usageData && (
-                      <UsageWarning 
-                        usage={{
-                          aiPrompts: {
-                            used: usageData.aiPrompts?.used || 0,
-                            limit: usageData.aiPrompts?.limit || 20,
-                            hasPersonalKey: usageData.aiPrompts?.hasPersonalKey || false
-                          },
-                          emails: {
-                            used: usageData.emails?.used || 0,
-                            limit: usageData.emails?.limit || 50,
-                            hasPersonalKey: usageData.emails?.hasPersonalKey || false
-                          },
-                          tier: usageData.tier || 'free'
-                        }}
-                        showFullDashboard={true}
-                      />
-                    )}
-
-                    {/* Upgrade Guidance Card */}
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Zap className="h-5 w-5" />
-                          Need More Access?
-                        </CardTitle>
-                        <CardDescription>
-                          Add your own API keys to bypass usage limits and get unlimited access
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <Key className="h-5 w-5 text-blue-600 mt-0.5" />
-                            <div>
-                              <p className="font-medium text-gray-900 mb-2">Unlock Unlimited Access</p>
-                              <p className="text-sm text-gray-600 mb-4">
-                                Add your personal OpenAI and Mailgun API keys to remove all usage limits and get unlimited AI prompts and email sending.
-                              </p>
-                              <Button 
-                                onClick={() => setActiveTab('integrations')}
-                                className="bg-blue-600 hover:bg-blue-700"
-                              >
-                                <Key className="h-4 w-4 mr-2" />
-                                Configure API Keys
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </>
-                )}
+                <CreditDashboard />
               </TabsContent>
             </Tabs>
         </div>

@@ -1,19 +1,25 @@
 import { useQuery } from '@tanstack/react-query';
 
-export interface CreditBalance {
+export interface CreditTransaction {
+  id: number;
+  organizationId: number;
+  amount: number;
+  type: string;
+  metadata: any;
+  createdAt: string;
+}
+
+export interface CreditInfo {
   balance: number;
-  lastTransactions: Array<{
-    id: number;
-    organizationId: number;
-    amount: number;
-    type: string;
-    metadata: any;
-    createdAt: string;
-  }>;
+  totalPurchasedCredits: number;
+  totalUsedCredits: number;
+  transactions: CreditTransaction[];
+  lowBalance: boolean;
+  threshold: number;
 }
 
 export function useCredits() {
-  return useQuery<CreditBalance>({
+  return useQuery<CreditInfo>({
     queryKey: ['/api/credits'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
