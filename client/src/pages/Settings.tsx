@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useCredits } from '@/hooks/use-credits';
 import { TopUpCreditsModal } from '@/components/TopUpCreditsModal';
+import type { Organization } from '@shared/schema';
 
 // UI Components
 import UsageWarning from '@/components/usage/UsageWarning';
@@ -160,7 +161,7 @@ function CreditDashboard() {
   const { toast } = useToast();
 
   // Fetch organization data to get referral code
-  const { data: orgData } = useQuery({
+  const { data: orgData } = useQuery<Organization>({
     queryKey: ['/api/organization/me'],
   });
 
