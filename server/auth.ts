@@ -13,6 +13,10 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { notifyNewUserRegistration, notifySystemError } from "./lib/notification-service";
 import admin from "firebase-admin";
+import { db } from "./db";
+import { organizations, organizationMembers } from "@shared/schema";
+import { generateReferralCode, grantWelcomeCredits, processReferralBonus } from "./services/credit-service";
+import { eq } from "drizzle-orm";
 
 declare global {
   namespace Express {
@@ -208,6 +212,62 @@ export function setupAuth(app: Express) {
         password: hashedPassword,
       });
       
+      // Create organization for the user
+      const orgName = req.body.organizationName || `${user.name}'s Organization`;
+      const orgSlug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const uniqueSlug = `${orgSlug}-${Date.now()}`;
+      
+      // Check if user provided a referral code
+      const referralCode = req.body.referralCode;
+      let referrerOrgId: number | null = null;
+      
+      if (referralCode) {
+        // Look up the referrer organization by code
+        const referrerOrg = await db.select()
+          .from(organizations)
+          .where(eq(organizations.referralCode, referralCode.toUpperCase()))
+          .limit(1);
+        
+        if (referrerOrg.length > 0) {
+          referrerOrgId = referrerOrg[0].id;
+          console.log(`Found referrer organization ${referrerOrgId} with code ${referralCode}`);
+        } else {
+          console.log(`Referral code ${referralCode} not found - continuing without referral`);
+        }
+      }
+      
+      // Generate unique referral code for new organization
+      const newReferralCode = await generateReferralCode();
+      
+      // Create the organization
+      const [organization] = await db.insert(organizations)
+        .values({
+          name: orgName,
+          slug: uniqueSlug,
+          referralCode: newReferralCode,
+          referredByOrgId: referrerOrgId,
+          hasReceivedWelcomeCredits: false
+        })
+        .returning();
+      
+      // Link user to organization as owner
+      await db.insert(organizationMembers)
+        .values({
+          organizationId: organization.id,
+          userId: user.id,
+          role: 'owner'
+        });
+      
+      // Grant welcome credits
+      await grantWelcomeCredits(organization.id);
+      
+      // Process referral bonus if applicable
+      if (referrerOrgId) {
+        await processReferralBonus(organization.id, referrerOrgId);
+      }
+      
+      console.log(`✓ User ${user.id} registered with organization ${organization.id} (referral code: ${newReferralCode})`);
+      
       // Generate JWT token
       const token = generateToken(user);
       
@@ -350,8 +410,12 @@ export function setupAuth(app: Express) {
       // Check if user exists with this email
       let user = await storage.getUserByUsername(userEmail || googleId);
       
+      let isNewUser = false;
+      
       if (!user) {
         console.log("User not found, creating new user account");
+        isNewUser = true;
+        
         // Create a new user
         const initials = userName
           ? userName
@@ -370,6 +434,59 @@ export function setupAuth(app: Express) {
         });
         
         console.log(`Successfully created new user account for: ${userEmail}`);
+        
+        // Create organization for the new user
+        const orgName = `${user.name}'s Organization`;
+        const orgSlug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const uniqueSlug = `${orgSlug}-${Date.now()}`;
+        
+        // Check if user provided a referral code
+        const referralCode = req.body.referralCode;
+        let referrerOrgId: number | null = null;
+        
+        if (referralCode) {
+          const referrerOrg = await db.select()
+            .from(organizations)
+            .where(eq(organizations.referralCode, referralCode.toUpperCase()))
+            .limit(1);
+          
+          if (referrerOrg.length > 0) {
+            referrerOrgId = referrerOrg[0].id;
+            console.log(`Found referrer organization ${referrerOrgId} with code ${referralCode}`);
+          }
+        }
+        
+        // Generate unique referral code for new organization
+        const newReferralCode = await generateReferralCode();
+        
+        // Create the organization
+        const [organization] = await db.insert(organizations)
+          .values({
+            name: orgName,
+            slug: uniqueSlug,
+            referralCode: newReferralCode,
+            referredByOrgId: referrerOrgId,
+            hasReceivedWelcomeCredits: false
+          })
+          .returning();
+        
+        // Link user to organization as owner
+        await db.insert(organizationMembers)
+          .values({
+            organizationId: organization.id,
+            userId: user.id,
+            role: 'owner'
+          });
+        
+        // Grant welcome credits
+        await grantWelcomeCredits(organization.id);
+        
+        // Process referral bonus if applicable
+        if (referrerOrgId) {
+          await processReferralBonus(organization.id, referrerOrgId);
+        }
+        
+        console.log(`✓ User ${user.id} registered via Google with organization ${organization.id} (referral code: ${newReferralCode})`);
       } else {
         console.log(`Found existing user account for: ${userEmail}`);
       }
