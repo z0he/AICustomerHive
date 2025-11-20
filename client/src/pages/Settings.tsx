@@ -156,6 +156,13 @@ type OrganizationSettingsFormData = z.infer<typeof organizationSettingsSchema>;
 function CreditDashboard() {
   const { data: creditInfo, isLoading } = useCredits();
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [referralCodeCopied, setReferralCodeCopied] = useState(false);
+  const { toast } = useToast();
+
+  // Fetch organization data to get referral code
+  const { data: orgData } = useQuery({
+    queryKey: ['/api/organization'],
+  });
 
   const getTransactionTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -164,13 +171,22 @@ function CreditDashboard() {
       automation: 'Automation',
       ai: 'AI Action',
       voice: 'Voice Command',
-      system: 'System Credit'
+      system: 'System Credit',
+      welcome_bonus: 'Welcome Bonus',
+      referral_bonus: 'Referral Bonus'
     };
     return labels[type] || type;
   };
 
   const getTransactionTypeBadge = (type: string, amount: number) => {
     if (amount > 0) {
+      // Special badges for bonus credits
+      if (type === 'welcome_bonus') {
+        return <Badge className="bg-emerald-100 text-emerald-800">Welcome Bonus</Badge>;
+      }
+      if (type === 'referral_bonus') {
+        return <Badge className="bg-violet-100 text-violet-800">Referral Bonus</Badge>;
+      }
       return <Badge className="bg-green-100 text-green-800">Credit Added</Badge>;
     }
     
@@ -182,6 +198,18 @@ function CreditDashboard() {
     };
     
     return <Badge className={colors[type] || 'bg-gray-100 text-gray-800'}>{getTransactionTypeLabel(type)}</Badge>;
+  };
+
+  const copyReferralCode = () => {
+    if (orgData?.organization?.referralCode) {
+      navigator.clipboard.writeText(orgData.organization.referralCode);
+      setReferralCodeCopied(true);
+      toast({
+        title: "Copied!",
+        description: "Referral code copied to clipboard",
+      });
+      setTimeout(() => setReferralCodeCopied(false), 2000);
+    }
   };
 
   if (isLoading) {
@@ -214,6 +242,70 @@ function CreditDashboard() {
             Your credit balance is below {creditInfo.threshold} credits. Top up now to continue using AICRM features without interruption.
           </AlertDescription>
         </Alert>
+      )}
+
+      {/* Referral Code Card */}
+      {orgData?.organization?.referralCode && (
+        <Card className="bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-violet-600" />
+              Invite Friends & Earn Credits
+            </CardTitle>
+            <CardDescription className="text-slate-700">
+              Share your referral code and both you and your invitees get bonus credits!
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-white rounded-lg border-2 border-violet-200">
+              <Label className="text-sm font-medium text-slate-700 mb-2 block">Your Referral Code</Label>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-2xl font-bold text-violet-700 tracking-wider px-4 py-3 bg-violet-50 rounded border border-violet-200">
+                  {orgData.organization.referralCode}
+                </code>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={copyReferralCode}
+                  className="border-violet-300 hover:bg-violet-50"
+                  data-testid="button-copy-referral-code"
+                >
+                  {referralCodeCopied ? (
+                    <>
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-5 w-5" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-white rounded-lg border border-violet-200">
+                <p className="text-xs text-slate-600 mb-1">They Get</p>
+                <p className="text-lg font-bold text-violet-700">+100 Credits</p>
+                <p className="text-xs text-slate-500">On top of 200 welcome credits</p>
+              </div>
+              <div className="p-3 bg-white rounded-lg border border-violet-200">
+                <p className="text-xs text-slate-600 mb-1">You Get</p>
+                <p className="text-lg font-bold text-violet-700">+100 Credits</p>
+                <p className="text-xs text-slate-500">When they sign up</p>
+              </div>
+            </div>
+
+            <div className="text-sm text-slate-600 bg-white p-3 rounded-lg border border-violet-100">
+              <p className="font-medium text-slate-800 mb-1">How it works:</p>
+              <ol className="space-y-1 ml-4 list-decimal">
+                <li>Share your referral code with friends or colleagues</li>
+                <li>They enter it during signup</li>
+                <li>Both accounts receive instant bonus credits!</li>
+              </ol>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Credit Balance Card */}
@@ -342,6 +434,13 @@ function CreditDashboard() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
+            <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+              <p className="font-medium text-emerald-900 mb-2">🎉 Free Welcome Credits</p>
+              <p className="text-sm text-emerald-800">
+                All new AICRM accounts start with <strong>200 free credits</strong> to explore the platform. Use referral codes when signing up to get an additional 100 credits bonus!
+              </p>
+            </div>
+
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="font-medium text-blue-900 mb-2">Credit Usage Rates</p>
               <ul className="space-y-1 text-sm text-blue-800">
