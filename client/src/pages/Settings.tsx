@@ -161,7 +161,7 @@ function CreditDashboard() {
 
   // Fetch organization data to get referral code
   const { data: orgData } = useQuery({
-    queryKey: ['/api/organization'],
+    queryKey: ['/api/organization/me'],
   });
 
   const getTransactionTypeLabel = (type: string) => {
@@ -201,8 +201,8 @@ function CreditDashboard() {
   };
 
   const copyReferralCode = () => {
-    if (orgData?.organization?.referralCode) {
-      navigator.clipboard.writeText(orgData.organization.referralCode);
+    if (orgData?.referralCode) {
+      navigator.clipboard.writeText(orgData.referralCode);
       setReferralCodeCopied(true);
       toast({
         title: "Copied!",
@@ -245,7 +245,7 @@ function CreditDashboard() {
       )}
 
       {/* Referral Code Card */}
-      {orgData?.organization?.referralCode && (
+      {orgData?.referralCode && (
         <Card className="bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -261,7 +261,7 @@ function CreditDashboard() {
               <Label className="text-sm font-medium text-slate-700 mb-2 block">Your Referral Code</Label>
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-2xl font-bold text-violet-700 tracking-wider px-4 py-3 bg-violet-50 rounded border border-violet-200">
-                  {orgData.organization.referralCode}
+                  {orgData.referralCode}
                 </code>
                 <Button
                   variant="outline"
