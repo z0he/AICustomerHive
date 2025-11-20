@@ -66,7 +66,7 @@ export async function getBalance(organizationId: number): Promise<number> {
 export async function addCredits(
   organizationId: number,
   amount: number,
-  type: "topup" | "system",
+  type: "topup" | "system" | "welcome_bonus" | "referral_bonus",
   metadata?: Record<string, any>
 ): Promise<{ balance: number; transaction: CreditTransaction }> {
   if (amount <= 0) {
@@ -352,5 +352,166 @@ export async function getCreditInfo(
   } catch (error) {
     console.error('Error getting comprehensive credit info:', error);
     throw new Error('Failed to retrieve credit information');
+  }
+}
+
+// ===== WELCOME CREDITS & REFERRAL SYSTEM =====
+
+/**
+ * Generate a unique referral code for an organization
+ * Returns an 8-character alphanumeric code (excludes similar chars like 0,O,1,I)
+ */
+export async function generateReferralCode(): Promise<string> {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Exclude similar chars
+  let code = '';
+  let isUnique = false;
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  while (!isUnique && attempts < maxAttempts) {
+    // Generate 8-character code
+    code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    
+    // Check if code already exists
+    const existing = await db.select()
+      .from(organizations)
+      .where(eq(organizations.referralCode, code))
+      .limit(1);
+    
+    isUnique = existing.length === 0;
+    attempts++;
+  }
+  
+  if (!isUnique) {
+    throw new Error('Failed to generate unique referral code after multiple attempts');
+  }
+  
+  return code;
+}
+
+/**
+ * Grant welcome credits to a new organization (idempotent)
+ * Only grants credits if hasReceivedWelcomeCredits is false
+ */
+export async function grantWelcomeCredits(organizationId: number): Promise<void> {
+  const FREE_STARTER_CREDITS = parseInt(process.env.FREE_STARTER_CREDITS || '200');
+  
+  try {
+    await db.transaction(async (txDb) => {
+      // Check if organization has already received welcome credits
+      const org = await txDb.select()
+        .from(organizations)
+        .where(eq(organizations.id, organizationId))
+        .limit(1);
+      
+      if (org.length === 0) {
+        throw new Error(`Organization ${organizationId} not found`);
+      }
+      
+      if (org[0].hasReceivedWelcomeCredits) {
+        console.log(`Organization ${organizationId} has already received welcome credits - skipping`);
+        return; // Already received, skip (idempotency)
+      }
+      
+      // Grant welcome credits
+      await addCredits(
+        organizationId,
+        FREE_STARTER_CREDITS,
+        'welcome_bonus',
+        {
+          source: 'system',
+          description: 'Welcome credits for new AICRM account'
+        }
+      );
+      
+      // Mark as received
+      await txDb.update(organizations)
+        .set({ hasReceivedWelcomeCredits: true })
+        .where(eq(organizations.id, organizationId));
+      
+      console.log(`✓ Granted ${FREE_STARTER_CREDITS} welcome credits to organization ${organizationId}`);
+    });
+  } catch (error) {
+    console.error(`Error granting welcome credits to org ${organizationId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Process referral bonus for both referrer and invitee (idempotent)
+ * Only grants bonuses if invitee hasn't been referred before
+ */
+export async function processReferralBonus(
+  inviteeOrgId: number,
+  referrerOrgId: number
+): Promise<void> {
+  const REFERRAL_BONUS_REFERRER = parseInt(process.env.REFERRAL_BONUS_REFERRER || '100');
+  const REFERRAL_BONUS_INVITEE = parseInt(process.env.REFERRAL_BONUS_INVITEE || '100');
+  
+  try {
+    await db.transaction(async (txDb) => {
+      // Check invitee organization
+      const invitee = await txDb.select()
+        .from(organizations)
+        .where(eq(organizations.id, inviteeOrgId))
+        .limit(1);
+      
+      if (invitee.length === 0) {
+        throw new Error(`Invitee organization ${inviteeOrgId} not found`);
+      }
+      
+      // Check if invitee has already been referred (idempotency check)
+      if (invitee[0].referredByOrgId !== null) {
+        console.log(`Organization ${inviteeOrgId} has already been referred - skipping referral bonus`);
+        return; // Already referred, skip
+      }
+      
+      // Check referrer organization exists
+      const referrer = await txDb.select()
+        .from(organizations)
+        .where(eq(organizations.id, referrerOrgId))
+        .limit(1);
+      
+      if (referrer.length === 0) {
+        throw new Error(`Referrer organization ${referrerOrgId} not found`);
+      }
+      
+      // Grant bonus to referrer
+      await addCredits(
+        referrerOrgId,
+        REFERRAL_BONUS_REFERRER,
+        'referral_bonus',
+        {
+          source: 'system',
+          description: 'Referral bonus – invited new organization',
+          inviteeOrgId: inviteeOrgId
+        }
+      );
+      
+      // Grant bonus to invitee
+      await addCredits(
+        inviteeOrgId,
+        REFERRAL_BONUS_INVITEE,
+        'referral_bonus',
+        {
+          source: 'system',
+          description: 'Referral bonus – joined via referral',
+          referrerOrgId: referrerOrgId
+        }
+      );
+      
+      // Mark invitee as referred
+      await txDb.update(organizations)
+        .set({ referredByOrgId: referrerOrgId })
+        .where(eq(organizations.id, inviteeOrgId));
+      
+      console.log(`✓ Referral bonus granted: Referrer org ${referrerOrgId} +${REFERRAL_BONUS_REFERRER}, Invitee org ${inviteeOrgId} +${REFERRAL_BONUS_INVITEE}`);
+    });
+  } catch (error) {
+    console.error(`Error processing referral bonus (referrer: ${referrerOrgId}, invitee: ${inviteeOrgId}):`, error);
+    throw error;
   }
 }
