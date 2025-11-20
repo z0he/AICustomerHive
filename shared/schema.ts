@@ -34,6 +34,11 @@ export const organizations = pgTable("organizations", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at"),
+  
+  // Referral & Welcome Credits System
+  referralCode: text("referral_code").unique(), // Unique referral code for this organization
+  referredByOrgId: integer("referred_by_org_id"), // Organization that referred this one (nullable)
+  hasReceivedWelcomeCredits: boolean("has_received_welcome_credits").default(false), // Idempotency flag
 });
 
 export const insertOrganizationSchema = createInsertSchema(organizations).pick({
@@ -1306,7 +1311,9 @@ export const creditTransactionTypeEnum = pgEnum("credit_transaction_type", [
   "ai",
   "voice",
   "topup",
-  "system"
+  "system",
+  "welcome_bonus",
+  "referral_bonus"
 ]);
 
 // Credits table - tracks current balance per organization
