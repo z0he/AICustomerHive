@@ -1,0 +1,74 @@
+You are now responsible for fixing the Stripe webhook so credits update correctly.
+
+Please do ALL of the following:
+
+1. Locate the Express entry file (typically server/index.ts or server/app.ts).  
+   Identify where express.json() and express.static() are used.
+
+2. Insert the following webhook route **ABOVE ALL OTHER middleware**,  
+   specifically ABOVE express.json() and ABOVE any “app.get('*')” route.
+
+   Use this exact code:
+
+   // ------------------------
+   // STRIPE WEBHOOK (MUST COME FIRST)
+   // ------------------------
+   app.post(
+     "/api/stripe/webhook",
+     express.raw({ type: "application/json" }),
+     async (req, res) => {
+       try {
+         const sig = req.headers["stripe-signature"];
+         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+           apiVersion: "2025-10-29.clover",
+         });
+
+         const event = stripe.webhooks.constructEvent(
+           req.body,
+           sig,
+           process.env.STRIPE_WEBHOOK_SECRET
+         );
+
+         console.log("🔥 WEBHOOK RECEIVED:", event.type);
+
+         if (event.type === "checkout.session.completed") {
+           const session = event.data.object;
+
+           const metadata = session.metadata || {};
+           const credits = Number(metadata.credits || 0);
+           const organizationId = metadata.organizationId;
+           const type = metadata.type;
+
+           console.log("🔥 Adding credits:", {
+             organizationId,
+             credits,
+             type,
+           });
+
+           await creditService.addCredits(organizationId, credits, {
+             type,
+             stripeSessionId: session.id,
+           });
+
+           return res.status(200).send("ok");
+         }
+
+         return res.status(200).send("ignored");
+       } catch (err) {
+         console.error("❌ Webhook error:", err);
+         return res.status(400).send("Webhook Error");
+       }
+     }
+   );
+
+3. Ensure this route appears BEFORE:
+   - express.json()
+   - express.urlencoded()
+   - app.use(express.static(...))
+   - any catch-all route such as app.get("*")
+
+4. After inserting the webhook, re-verify that all other API routes still work.
+
+5. Restart the Replit server.
+
+6. Print out: “Webhook installed and active.”
