@@ -26,6 +26,19 @@ The frontend uses React 18 with TypeScript, styled with Tailwind CSS for custom 
 ### System Design Choices
 The system uses a modular architecture for both frontend and backend to ensure scalability and maintainability. Authentication is handled via JWT and sessions. Data import/export supports CSV/JSON with field mapping. A dual-table approach for contacts maintains backward compatibility while transitioning to a unified contact system.
 
+### Recent Changes (November 2025)
+**Welcome Credits & Referral System (Nov 20, 2025)**:
+- **Welcome Credits**: New organizations automatically receive 200 free credits upon registration
+- **Referral System**: Organization-level referral codes allow users to invite others
+  - Referrers earn 100 credits when someone uses their code
+  - New users receive 300 total credits (200 welcome + 100 referral bonus)
+- **Database Schema**: Added `referralCode`, `referredByOrgId`, and `hasReceivedWelcomeCredits` to organizations table
+- **Credit Transaction Types**: Added `welcome_bonus` and `referral_bonus` to track promotional credits
+- **Idempotency**: System prevents duplicate credit grants using database flags
+- **UI Enhancement**: Settings page displays referral code with copy-to-clipboard functionality
+- **Backward Compatibility**: Existing Stripe payment flow completely preserved and unaffected
+- **Environment Variables**: Credit amounts configurable via FREE_STARTER_CREDITS, REFERRAL_BONUS_REFERRER, REFERRAL_BONUS_INVITEE
+
 ### Recent Changes (October 2025)
 **Email System UX Enhancement (Oct 10, 2025)**:
 - **Fixed Misleading Sandbox Warning**: Updated `/api/config/mailgun/status` endpoint to return enforced PRIMARY_EMAIL_DOMAIN (mail.aicrm.co.uk) instead of env var value
