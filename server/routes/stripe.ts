@@ -50,9 +50,10 @@ router.post('/create-checkout-session', checkAuth, async (req: Request, res: Res
     let credits: number;
 
     // Get the base URL for success/cancel redirects
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : 'http://localhost:5000';
+    // Use the request origin to ensure we redirect back to the same domain
+    const protocol = req.protocol || 'https';
+    const host = req.get('host') || 'localhost:5000';
+    const baseUrl = `${protocol}://${host}`;
 
     if (type === 'custom') {
       // Custom amount - validate and calculate credits
