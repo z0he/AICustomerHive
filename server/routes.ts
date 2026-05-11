@@ -48,6 +48,7 @@ import contactsRoutes from "./routes/contacts.js";
 import organizationRoutes from "./routes/organization";
 import creditsRoutes from "./routes/credits";
 import stripeRoutes from "./routes/stripe";
+import { attachRealtimeServer } from "./agent/realtime";
 
 // Helper function to get organization-scoped storage from request
 function getScopedStorage(req: Request): IStorage {
@@ -2824,5 +2825,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   const httpServer = createServer(app);
+  attachRealtimeServer(httpServer);
   return httpServer;
 }
