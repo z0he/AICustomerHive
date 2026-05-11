@@ -6,10 +6,15 @@ import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { CreditErrorProvider } from "@/contexts/CreditErrorContext";
 import ChatAssistant from "@/components/ai/ChatAssistant";
 import FeedbackButton from "@/components/feedback/FeedbackButton";
+import AgentDock from "@/components/agent/AgentDock";
 import { useEffect } from "react";
 import { initGA } from "@/lib/analytics";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { AppRoutes } from "@/app/routes";
+
+// While the new voice agent is being tested, hide the legacy ChatAssistant.
+// Flip to true to bring it back.
+const SHOW_LEGACY_CHAT_ASSISTANT = false;
 
 function Router() {
   const { user } = useAuth();
@@ -52,7 +57,8 @@ function AppContent() {
   return (
     <>
       <Router />
-      {user && <ChatAssistant />}
+      {user && SHOW_LEGACY_CHAT_ASSISTANT && <ChatAssistant />}
+      {user && <AgentDock />}
       <FeedbackButton />
       <Toaster />
     </>
