@@ -1,6 +1,11 @@
 import OpenAI from "openai";
 import { agentToolRegistry } from "./tools";
 import type { ServerEvent } from "./protocol";
+import {
+  DAILY_CAP_PENCE,
+  checkDailyCap,
+  recordTextUsage,
+} from "./usage-tracker";
 
 const MODEL = "gpt-4o-mini";
 const MAX_TOOL_ITERATIONS = 5;
@@ -17,6 +22,7 @@ Your responses will be spoken aloud, so:
 export type Sender = (event: ServerEvent) => void;
 
 export interface BrainContext {
+  userId: number;
   organizationId: number;
   messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[];
   send: Sender;
@@ -40,6 +46,16 @@ export async function handleUserText(
     ctx.send({
       type: "error",
       message: "OpenAI API key not configured on the server.",
+    });
+    return;
+  }
+
+  const cap = await checkDailyCap(ctx.userId);
+  if (!cap.ok) {
+    const capPounds = (cap.capPence / 100).toFixed(2);
+    ctx.send({
+      type: "error",
+      message: `You've reached today's £${capPounds} AI usage cap. It resets at midnight UTC.`,
     });
     return;
   }
@@ -70,6 +86,19 @@ export async function handleUserText(
             : "AI request failed",
       });
       return;
+    }
+
+    if (completion.usage) {
+      try {
+        await recordTextUsage({
+          userId: ctx.userId,
+          organizationId: ctx.organizationId,
+          inputTokens: completion.usage.prompt_tokens,
+          outputTokens: completion.usage.completion_tokens,
+        });
+      } catch (err) {
+        console.error("[agent] failed to record usage:", err);
+      }
     }
 
     const choice = completion.choices[0];

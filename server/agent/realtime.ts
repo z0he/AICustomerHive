@@ -164,6 +164,7 @@ async function routeMessage(
 
   if (msg?.type === "user.text" && typeof msg.text === "string") {
     await handleUserText(msg.text, {
+      userId: state.userId,
       organizationId: state.organizationId,
       messages: state.messages,
       send,

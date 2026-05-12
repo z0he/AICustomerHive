@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, varchar, json, jsonb, real, uuid, pgEnum, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, json, jsonb, real, uuid, pgEnum, primaryKey, date, unique, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 // Import Json type
@@ -1351,3 +1351,35 @@ export const insertCreditTransactionSchema = createInsertSchema(creditTransactio
 
 export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
 export type CreditTransaction = typeof creditTransactions.$inferSelect;
+
+// Voice agent daily usage tracking (one row per user per UTC day)
+// estimated_pence is the cumulative AI cost in pence. Daily cap is enforced
+// against this column. Created lazily on the user's first request of the day.
+export const voiceUsageDaily = pgTable(
+  "voice_usage_daily",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id").notNull(),
+    organizationId: integer("organization_id").notNull(),
+    dayUtc: date("day_utc").notNull(),
+    estimatedPence: integer("estimated_pence").notNull().default(0),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    voiceSeconds: integer("voice_seconds").notNull().default(0),
+    requestCount: integer("request_count").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userDayUnique: unique("voice_usage_daily_user_day_unique").on(
+      table.userId,
+      table.dayUtc,
+    ),
+    orgDayIdx: index("voice_usage_daily_org_day_idx").on(
+      table.organizationId,
+      table.dayUtc,
+    ),
+  }),
+);
+
+export type VoiceUsageDaily = typeof voiceUsageDaily.$inferSelect;
