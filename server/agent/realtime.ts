@@ -1,11 +1,12 @@
 import type { IncomingMessage, Server as HttpServer } from "http";
 import type { Duplex } from "stream";
+import type OpenAI from "openai";
 import { WebSocket, WebSocketServer } from "ws";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { organizations } from "@shared/schema";
-import { handleUserText } from "./mock-dispatcher";
+import { handleUserText } from "./brain";
 import { REALTIME_PATH, type ClientEvent, type ServerEvent } from "./protocol";
 
 const JWT_SECRET =
@@ -14,6 +15,7 @@ const JWT_SECRET =
 interface SessionState {
   userId: number;
   organizationId: number;
+  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[];
 }
 
 export function attachRealtimeServer(httpServer: HttpServer): void {
@@ -46,7 +48,11 @@ export function attachRealtimeServer(httpServer: HttpServer): void {
           return;
         }
         wss.handleUpgrade(req, socket, head, (ws) => {
-          handleConnection(ws, { userId: payload.id, organizationId });
+          handleConnection(ws, {
+            userId: payload.id,
+            organizationId,
+            messages: [],
+          });
         });
       })
       .catch((err) => {
@@ -159,6 +165,7 @@ async function routeMessage(
   if (msg?.type === "user.text" && typeof msg.text === "string") {
     await handleUserText(msg.text, {
       organizationId: state.organizationId,
+      messages: state.messages,
       send,
     });
     return;

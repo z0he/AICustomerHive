@@ -9,6 +9,12 @@ export const countContactsTool = defineTool({
   description:
     "Count the total number of contacts in the current organization.",
   parameters: z.object({}),
+  parametersJsonSchema: {
+    type: "object",
+    properties: {},
+    required: [],
+    additionalProperties: false,
+  },
   async execute(_args, ctx) {
     const [row] = await db
       .select({ value: count() })

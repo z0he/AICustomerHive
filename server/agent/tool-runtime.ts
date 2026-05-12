@@ -8,7 +8,17 @@ export interface ToolDefinition<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
   name: string;
   description: string;
   parameters: TSchema;
+  parametersJsonSchema: Record<string, unknown>;
   execute: (args: z.infer<TSchema>, ctx: ToolContext) => Promise<unknown>;
+}
+
+export interface OpenAIToolDefinition {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
 }
 
 export function defineTool<TSchema extends z.ZodTypeAny>(
@@ -33,6 +43,17 @@ export class ToolRegistry {
 
   list(): ToolDefinition[] {
     return Array.from(this.tools.values());
+  }
+
+  toOpenAITools(): OpenAIToolDefinition[] {
+    return this.list().map((t) => ({
+      type: "function" as const,
+      function: {
+        name: t.name,
+        description: t.description,
+        parameters: t.parametersJsonSchema,
+      },
+    }));
   }
 
   has(name: string): boolean {

@@ -12,6 +12,26 @@ export const findInactiveCustomersTool = defineTool({
     daysInactive: z.number().int().min(1).max(3650).default(90),
     limit: z.number().int().min(1).max(500).default(50),
   }),
+  parametersJsonSchema: {
+    type: "object",
+    properties: {
+      daysInactive: {
+        type: "integer",
+        minimum: 1,
+        maximum: 3650,
+        description:
+          "Number of days since last contact to qualify as inactive. Defaults to 90.",
+      },
+      limit: {
+        type: "integer",
+        minimum: 1,
+        maximum: 500,
+        description: "Maximum contacts to return. Defaults to 50.",
+      },
+    },
+    required: [],
+    additionalProperties: false,
+  },
   async execute(args, ctx) {
     const cutoff = new Date(Date.now() - args.daysInactive * 24 * 60 * 60 * 1000);
 

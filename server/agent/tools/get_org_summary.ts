@@ -9,6 +9,12 @@ export const getOrgSummaryTool = defineTool({
   description:
     "Get a high-level summary of the current organization: total contacts and total campaigns.",
   parameters: z.object({}),
+  parametersJsonSchema: {
+    type: "object",
+    properties: {},
+    required: [],
+    additionalProperties: false,
+  },
   async execute(_args, ctx) {
     const [contactRow] = await db
       .select({ value: count() })
