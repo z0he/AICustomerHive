@@ -12,6 +12,12 @@ import { countContactsBySourceTool } from "./count_contacts_by_source";
 import { countContactsByCountryTool } from "./count_contacts_by_country";
 import { countContactsByOwnerTool } from "./count_contacts_by_owner";
 import { contactsWithoutOwnerTool } from "./contacts_without_owner";
+import { upcomingFollowupsTool } from "./upcoming_followups";
+import { upcomingTasksTool } from "./upcoming_tasks";
+import { upcomingCalendarEventsTool } from "./upcoming_calendar_events";
+import { listCampaignsTool } from "./list_campaigns";
+import { emailActivitySummaryTool } from "./email_activity_summary";
+import { recentFormSubmissionsTool } from "./recent_form_submissions";
 
 export const agentToolRegistry = new ToolRegistry();
 
@@ -29,6 +35,12 @@ agentToolRegistry.registerAll([
   countContactsByCountryTool,
   countContactsByOwnerTool,
   contactsWithoutOwnerTool,
+  upcomingFollowupsTool,
+  upcomingTasksTool,
+  upcomingCalendarEventsTool,
+  listCampaignsTool,
+  emailActivitySummaryTool,
+  recentFormSubmissionsTool,
 ]);
 
 export {
@@ -45,4 +57,10 @@ export {
   countContactsByCountryTool,
   countContactsByOwnerTool,
   contactsWithoutOwnerTool,
+  upcomingFollowupsTool,
+  upcomingTasksTool,
+  upcomingCalendarEventsTool,
+  listCampaignsTool,
+  emailActivitySummaryTool,
+  recentFormSubmissionsTool,
 };
