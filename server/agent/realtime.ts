@@ -1,12 +1,11 @@
 import type { IncomingMessage, Server as HttpServer } from "http";
 import type { Duplex } from "stream";
-import type OpenAI from "openai";
 import { WebSocket, WebSocketServer } from "ws";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { organizations } from "@shared/schema";
-import { handleUserText } from "./brain";
+import { RealtimeSession } from "./realtime-brain";
 import { REALTIME_PATH, type ClientEvent, type ServerEvent } from "./protocol";
 
 const JWT_SECRET =
@@ -15,7 +14,7 @@ const JWT_SECRET =
 interface SessionState {
   userId: number;
   organizationId: number;
-  messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[];
+  brain: RealtimeSession | null;
 }
 
 export function attachRealtimeServer(httpServer: HttpServer): void {
@@ -51,7 +50,7 @@ export function attachRealtimeServer(httpServer: HttpServer): void {
           handleConnection(ws, {
             userId: payload.id,
             organizationId,
-            messages: [],
+            brain: null,
           });
         });
       })
@@ -150,6 +149,11 @@ function handleConnection(ws: WebSocket, state: SessionState): void {
   ws.on("error", (err) => {
     console.error("[agent] ws error:", err);
   });
+
+  ws.on("close", () => {
+    state.brain?.close();
+    state.brain = null;
+  });
 }
 
 async function routeMessage(
@@ -163,12 +167,14 @@ async function routeMessage(
   }
 
   if (msg?.type === "user.text" && typeof msg.text === "string") {
-    await handleUserText(msg.text, {
-      userId: state.userId,
-      organizationId: state.organizationId,
-      messages: state.messages,
-      send,
-    });
+    if (!state.brain) {
+      state.brain = new RealtimeSession(
+        state.userId,
+        state.organizationId,
+        send,
+      );
+    }
+    await state.brain.sendUserText(msg.text);
     return;
   }
 

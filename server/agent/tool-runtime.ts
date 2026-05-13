@@ -12,13 +12,11 @@ export interface ToolDefinition<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
   execute: (args: z.infer<TSchema>, ctx: ToolContext) => Promise<unknown>;
 }
 
-export interface OpenAIToolDefinition {
+export interface OpenAIRealtimeToolDefinition {
   type: "function";
-  function: {
-    name: string;
-    description: string;
-    parameters: Record<string, unknown>;
-  };
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
 }
 
 export function defineTool<TSchema extends z.ZodTypeAny>(
@@ -45,14 +43,12 @@ export class ToolRegistry {
     return Array.from(this.tools.values());
   }
 
-  toOpenAITools(): OpenAIToolDefinition[] {
+  toOpenAIRealtimeTools(): OpenAIRealtimeToolDefinition[] {
     return this.list().map((t) => ({
       type: "function" as const,
-      function: {
-        name: t.name,
-        description: t.description,
-        parameters: t.parametersJsonSchema,
-      },
+      name: t.name,
+      description: t.description,
+      parameters: t.parametersJsonSchema,
     }));
   }
 
