@@ -6,6 +6,12 @@ import { getIndustryBreakdownTool } from "./get_industry_breakdown";
 import { getLifecycleBreakdownTool } from "./get_lifecycle_breakdown";
 import { topContactsByScoreTool } from "./top_contacts_by_score";
 import { recentActivityTool } from "./recent_activity";
+import { searchContactsTool } from "./search_contacts";
+import { getContactDetailsTool } from "./get_contact_details";
+import { countContactsBySourceTool } from "./count_contacts_by_source";
+import { countContactsByCountryTool } from "./count_contacts_by_country";
+import { countContactsByOwnerTool } from "./count_contacts_by_owner";
+import { contactsWithoutOwnerTool } from "./contacts_without_owner";
 
 export const agentToolRegistry = new ToolRegistry();
 
@@ -17,6 +23,12 @@ agentToolRegistry.registerAll([
   getLifecycleBreakdownTool,
   topContactsByScoreTool,
   recentActivityTool,
+  searchContactsTool,
+  getContactDetailsTool,
+  countContactsBySourceTool,
+  countContactsByCountryTool,
+  countContactsByOwnerTool,
+  contactsWithoutOwnerTool,
 ]);
 
 export {
@@ -27,4 +39,10 @@ export {
   getLifecycleBreakdownTool,
   topContactsByScoreTool,
   recentActivityTool,
+  searchContactsTool,
+  getContactDetailsTool,
+  countContactsBySourceTool,
+  countContactsByCountryTool,
+  countContactsByOwnerTool,
+  contactsWithoutOwnerTool,
 };
