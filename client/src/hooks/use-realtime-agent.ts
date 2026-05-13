@@ -4,13 +4,19 @@ type ServerEvent =
   | { type: "ready" }
   | { type: "pong" }
   | { type: "assistant.text"; text: string }
+  | { type: "audio.output"; audio: string }
+  | { type: "audio.done" }
+  | { type: "speech.started" }
+  | { type: "speech.stopped" }
   | { type: "tool.call"; name: string; args: Record<string, unknown> }
   | { type: "tool.result"; name: string; result: unknown }
   | { type: "error"; message: string };
 
 type ClientEvent =
   | { type: "ping" }
-  | { type: "user.text"; text: string };
+  | { type: "user.text"; text: string }
+  | { type: "audio.input"; audio: string }
+  | { type: "session.cancel" };
 
 export type AgentMessage =
   | { id: string; role: "user"; text: string; ts: number }
@@ -26,6 +32,14 @@ export type AgentMessage =
 
 export type AgentStatus = "idle" | "connecting" | "open" | "closed" | "error";
 
+interface UseRealtimeAgentOptions {
+  enabled: boolean;
+  onAudioOutput?: (base64: string) => void;
+  onAudioDone?: () => void;
+  onSpeechStarted?: () => void;
+  onSpeechStopped?: () => void;
+}
+
 const REALTIME_PATH = "/api/agent/realtime";
 
 function buildWsUrl(token: string): string {
@@ -37,11 +51,16 @@ function newId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function useRealtimeAgent(opts: { enabled: boolean }) {
+export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
   const [status, setStatus] = useState<AgentStatus>("idle");
   const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
+  const [isAssistantSpeaking, setIsAssistantSpeaking] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+
+  const cbs = useRef(opts);
+  cbs.current = opts;
 
   const connect = useCallback(() => {
     const token = localStorage.getItem("auth_token");
@@ -61,9 +80,7 @@ export function useRealtimeAgent(opts: { enabled: boolean }) {
     const ws = new WebSocket(buildWsUrl(token));
     wsRef.current = ws;
 
-    ws.onopen = () => {
-      setStatus("open");
-    };
+    ws.onopen = () => setStatus("open");
 
     ws.onmessage = (ev) => {
       let event: ServerEvent;
@@ -82,6 +99,22 @@ export function useRealtimeAgent(opts: { enabled: boolean }) {
             ...m,
             { id: newId(), role: "assistant", text: event.text, ts: Date.now() },
           ]);
+          return;
+        case "audio.output":
+          setIsAssistantSpeaking(true);
+          cbs.current.onAudioOutput?.(event.audio);
+          return;
+        case "audio.done":
+          setIsAssistantSpeaking(false);
+          cbs.current.onAudioDone?.();
+          return;
+        case "speech.started":
+          setIsUserSpeaking(true);
+          cbs.current.onSpeechStarted?.();
+          return;
+        case "speech.stopped":
+          setIsUserSpeaking(false);
+          cbs.current.onSpeechStopped?.();
           return;
         case "tool.call":
           setMessages((m) => [
@@ -120,6 +153,8 @@ export function useRealtimeAgent(opts: { enabled: boolean }) {
 
     ws.onclose = () => {
       setStatus((s) => (s === "error" ? "error" : "closed"));
+      setIsAssistantSpeaking(false);
+      setIsUserSpeaking(false);
       wsRef.current = null;
     };
   }, []);
@@ -130,16 +165,33 @@ export function useRealtimeAgent(opts: { enabled: boolean }) {
     setStatus("closed");
   }, []);
 
-  const send = useCallback((text: string) => {
+  const sendRaw = useCallback((payload: ClientEvent) => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    const payload: ClientEvent = { type: "user.text", text };
     ws.send(JSON.stringify(payload));
-    setMessages((m) => [
-      ...m,
-      { id: newId(), role: "user", text, ts: Date.now() },
-    ]);
   }, []);
+
+  const sendText = useCallback(
+    (text: string) => {
+      sendRaw({ type: "user.text", text });
+      setMessages((m) => [
+        ...m,
+        { id: newId(), role: "user", text, ts: Date.now() },
+      ]);
+    },
+    [sendRaw],
+  );
+
+  const sendAudio = useCallback(
+    (base64: string) => {
+      sendRaw({ type: "audio.input", audio: base64 });
+    },
+    [sendRaw],
+  );
+
+  const cancel = useCallback(() => {
+    sendRaw({ type: "session.cancel" });
+  }, [sendRaw]);
 
   useEffect(() => {
     if (!opts.enabled) return;
@@ -150,5 +202,16 @@ export function useRealtimeAgent(opts: { enabled: boolean }) {
     };
   }, [opts.enabled, connect]);
 
-  return { status, messages, error, send, connect, disconnect };
+  return {
+    status,
+    messages,
+    error,
+    isUserSpeaking,
+    isAssistantSpeaking,
+    sendText,
+    sendAudio,
+    cancel,
+    connect,
+    disconnect,
+  };
 }

@@ -166,7 +166,7 @@ async function routeMessage(
     return;
   }
 
-  if (msg?.type === "user.text" && typeof msg.text === "string") {
+  const ensureBrain = (): RealtimeSession => {
     if (!state.brain) {
       state.brain = new RealtimeSession(
         state.userId,
@@ -174,7 +174,21 @@ async function routeMessage(
         send,
       );
     }
-    await state.brain.sendUserText(msg.text);
+    return state.brain;
+  };
+
+  if (msg?.type === "user.text" && typeof msg.text === "string") {
+    await ensureBrain().sendUserText(msg.text);
+    return;
+  }
+
+  if (msg?.type === "audio.input" && typeof msg.audio === "string") {
+    await ensureBrain().sendAudio(msg.audio);
+    return;
+  }
+
+  if (msg?.type === "session.cancel") {
+    state.brain?.cancelResponse();
     return;
   }
 

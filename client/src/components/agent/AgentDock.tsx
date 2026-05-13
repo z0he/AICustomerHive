@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mic, MicOff, Send, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRealtimeAgent, type AgentMessage } from "@/hooks/use-realtime-agent";
@@ -9,32 +9,63 @@ export default function AgentDock() {
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { status, messages, error, send } = useRealtimeAgent({ enabled: isOpen });
+  const playbackRef = useRef({
+    play: (_b64: string) => {},
+    flush: () => {},
+  });
 
-  const handleFinalTranscript = useCallback(
-    (text: string) => {
-      if (text) send(text);
+  const {
+    status,
+    messages,
+    error,
+    isUserSpeaking,
+    isAssistantSpeaking,
+    sendText,
+    sendAudio,
+    cancel,
+  } = useRealtimeAgent({
+    enabled: isOpen,
+    onAudioOutput: (b64) => playbackRef.current.play(b64),
+    onAudioDone: () => {},
+    onSpeechStarted: () => {
+      // User started talking — interrupt the assistant immediately.
+      playbackRef.current.flush();
+      cancel();
     },
-    [send],
-  );
+  });
 
-  const { isListening, interim, startListening, stopListening, speak, isListenSupported } =
-    useVoiceIO({ onFinalTranscript: handleFinalTranscript });
+  const voice = useVoiceIO({
+    onAudioChunk: sendAudio,
+  });
 
-  useEffect(() => {
-    const last = messages[messages.length - 1];
-    if (last?.role === "assistant") speak(last.text);
-  }, [messages, speak]);
+  playbackRef.current = {
+    play: voice.playAudio,
+    flush: voice.flushAudio,
+  };
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages, interim]);
+  }, [messages]);
 
-  const handleSend = () => {
+  useEffect(() => {
+    if (!isOpen) {
+      voice.stopSession();
+    }
+  }, [isOpen, voice]);
+
+  const handleSendText = () => {
     const text = draft.trim();
     if (!text) return;
-    send(text);
+    sendText(text);
     setDraft("");
+  };
+
+  const handleVoiceToggle = async () => {
+    if (voice.isActive) {
+      voice.stopSession();
+    } else {
+      await voice.startSession();
+    }
   };
 
   if (!isOpen) {
@@ -55,6 +86,15 @@ export default function AgentDock() {
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold">Voice Agent</span>
           <StatusDot status={status} />
+          {voice.isActive && (
+            <span className="text-xs text-muted-foreground">
+              {isUserSpeaking
+                ? "listening…"
+                : isAssistantSpeaking
+                  ? "speaking…"
+                  : "idle"}
+            </span>
+          )}
         </div>
         <Button
           variant="ghost"
@@ -70,42 +110,40 @@ export default function AgentDock() {
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-2 text-sm">
         {messages.length === 0 && status === "open" && (
           <p className="text-muted-foreground text-xs">
-            Try: "how many contacts do I have?" or "find inactive customers"
+            Click the mic to start a voice session, or type below. Try "how many contacts" or "what industries are my contacts from".
           </p>
         )}
         {messages.map((m) => (
           <MessageBubble key={m.id} message={m} />
         ))}
-        {interim && (
-          <div className="text-muted-foreground italic text-xs">{interim}…</div>
-        )}
         {error && <div className="text-destructive text-xs">⚠ {error}</div>}
+        {voice.error && (
+          <div className="text-destructive text-xs">⚠ {voice.error}</div>
+        )}
       </div>
 
       <footer className="p-2 border-t flex gap-2 items-center">
-        {isListenSupported && (
-          <Button
-            variant={isListening ? "destructive" : "secondary"}
-            size="sm"
-            onClick={isListening ? stopListening : startListening}
-            disabled={status !== "open"}
-            className="h-9 w-9 p-0 shrink-0"
-            aria-label={isListening ? "Stop listening" : "Start listening"}
-          >
-            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-          </Button>
-        )}
+        <Button
+          variant={voice.isActive ? "destructive" : "secondary"}
+          size="sm"
+          onClick={handleVoiceToggle}
+          disabled={status !== "open"}
+          className="h-9 w-9 p-0 shrink-0"
+          aria-label={voice.isActive ? "End voice session" : "Start voice session"}
+        >
+          {voice.isActive ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+        </Button>
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-          placeholder={status === "open" ? "Type or speak…" : "Connecting…"}
+          onKeyDown={(e) => e.key === "Enter" && handleSendText()}
+          placeholder={status === "open" ? "Type or talk…" : "Connecting…"}
           disabled={status !== "open"}
           className="flex-1 bg-background border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
         />
         <Button
           size="sm"
-          onClick={handleSend}
+          onClick={handleSendText}
           disabled={status !== "open" || !draft.trim()}
           className="h-9 w-9 p-0 shrink-0"
           aria-label="Send"

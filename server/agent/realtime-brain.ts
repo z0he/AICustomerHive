@@ -66,6 +66,10 @@ export class RealtimeSession {
     });
   }
 
+  // When the user types (text input), we want a text-only reply (no audio).
+  // When the user speaks (audio input), server_vad auto-creates a response
+  // with default modalities (text+audio), which gives us a spoken answer.
+
   close(): void {
     if (this.oaiWs && this.oaiWs.readyState <= WebSocket.OPEN) {
       this.oaiWs.close();
@@ -120,13 +124,47 @@ export class RealtimeSession {
     this.sendToOai({
       type: "session.update",
       session: {
-        modalities: ["text"],
+        modalities: ["text", "audio"],
         instructions: SYSTEM_PROMPT,
+        voice: "alloy",
+        input_audio_format: "pcm16",
+        output_audio_format: "pcm16",
+        turn_detection: {
+          type: "server_vad",
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 500,
+        },
         tools: agentToolRegistry.toOpenAIRealtimeTools(),
         tool_choice: "auto",
         temperature: 0.6,
       },
     });
+  }
+
+  async sendAudio(base64Pcm16: string): Promise<void> {
+    if (!this.connected || this.oaiWs?.readyState !== WebSocket.OPEN) {
+      try {
+        await this.ensureConnected();
+      } catch (err) {
+        this.send({
+          type: "error",
+          message:
+            err instanceof Error
+              ? `Realtime connection failed: ${err.message}`
+              : "Realtime connection failed",
+        });
+        return;
+      }
+    }
+    this.sendToOai({
+      type: "input_audio_buffer.append",
+      audio: base64Pcm16,
+    });
+  }
+
+  cancelResponse(): void {
+    this.sendToOai({ type: "response.cancel" });
   }
 
   private sendToOai(event: unknown): void {
@@ -156,6 +194,30 @@ export class RealtimeSession {
         if (typeof event.text === "string" && event.text.length > 0) {
           this.send({ type: "assistant.text", text: event.text });
         }
+        return;
+
+      case "response.audio.delta":
+        if (typeof event.delta === "string" && event.delta.length > 0) {
+          this.send({ type: "audio.output", audio: event.delta });
+        }
+        return;
+
+      case "response.audio.done":
+        this.send({ type: "audio.done" });
+        return;
+
+      case "response.audio_transcript.done":
+        if (typeof event.transcript === "string" && event.transcript.length > 0) {
+          this.send({ type: "assistant.text", text: event.transcript });
+        }
+        return;
+
+      case "input_audio_buffer.speech_started":
+        this.send({ type: "speech.started" });
+        return;
+
+      case "input_audio_buffer.speech_stopped":
+        this.send({ type: "speech.stopped" });
         return;
 
       case "response.function_call_arguments.done":

@@ -1,113 +1,75 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AudioPlaybackQueue, MicCapture } from "@/lib/agent-audio";
 
-interface SpeechRecognitionLike extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  abort(): void;
-  onresult: ((ev: any) => void) | null;
-  onend: (() => void) | null;
-  onerror: ((ev: any) => void) | null;
+interface UseVoiceIOOptions {
+  onAudioChunk?: (base64Pcm16: string) => void;
 }
 
-type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+export function useVoiceIO(opts: UseVoiceIOOptions) {
+  const [isActive, setIsActive] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const micRef = useRef<MicCapture | null>(null);
+  const playbackRef = useRef<AudioPlaybackQueue | null>(null);
+  const onAudioChunk = useRef(opts.onAudioChunk);
+  onAudioChunk.current = opts.onAudioChunk;
 
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionCtor;
-    webkitSpeechRecognition?: SpeechRecognitionCtor;
-  }
-}
-
-function getSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
-  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
-}
-
-export function useVoiceIO(opts: { onFinalTranscript?: (text: string) => void }) {
-  const [isListening, setIsListening] = useState(false);
-  const [interim, setInterim] = useState("");
-  const recRef = useRef<SpeechRecognitionLike | null>(null);
-  const onFinal = useRef(opts.onFinalTranscript);
-  onFinal.current = opts.onFinalTranscript;
-
-  const Ctor = getSpeechRecognitionCtor();
-  const isListenSupported = !!Ctor;
-  const isSpeakSupported =
-    typeof window !== "undefined" && "speechSynthesis" in window;
-
-  const startListening = useCallback(() => {
-    if (!Ctor || isListening) return;
-    const rec = new Ctor();
-    rec.continuous = false;
-    rec.interimResults = true;
-    rec.lang = "en-US";
-
-    rec.onresult = (ev: any) => {
-      let finalText = "";
-      let interimText = "";
-      for (let i = ev.resultIndex; i < ev.results.length; i++) {
-        const r = ev.results[i];
-        if (r.isFinal) finalText += r[0].transcript;
-        else interimText += r[0].transcript;
-      }
-      setInterim(interimText);
-      if (finalText) {
-        setInterim("");
-        onFinal.current?.(finalText.trim());
-      }
-    };
-
-    rec.onend = () => {
-      setIsListening(false);
-      recRef.current = null;
-    };
-
-    rec.onerror = () => {
-      setIsListening(false);
-      recRef.current = null;
-    };
-
-    try {
-      rec.start();
-      recRef.current = rec;
-      setIsListening(true);
-    } catch {
-      setIsListening(false);
+  const ensurePlayback = useCallback((): AudioPlaybackQueue => {
+    if (!playbackRef.current) {
+      playbackRef.current = new AudioPlaybackQueue();
     }
-  }, [Ctor, isListening]);
-
-  const stopListening = useCallback(() => {
-    recRef.current?.stop();
+    return playbackRef.current;
   }, []);
 
-  const speak = useCallback(
-    (text: string) => {
-      if (!isSpeakSupported) return;
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 1.0;
-      utter.pitch = 1.0;
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utter);
-    },
-    [isSpeakSupported],
-  );
+  const startSession = useCallback(async () => {
+    if (isActive || micRef.current) return;
+    setError(null);
+    const mic = new MicCapture();
+    try {
+      await mic.start((b64) => onAudioChunk.current?.(b64));
+      micRef.current = mic;
+      ensurePlayback();
+      setIsActive(true);
+    } catch (err) {
+      mic.stop();
+      const msg =
+        err instanceof Error
+          ? err.message
+          : "Could not access microphone";
+      setError(msg);
+      setIsActive(false);
+    }
+  }, [isActive, ensurePlayback]);
+
+  const stopSession = useCallback(() => {
+    micRef.current?.stop();
+    micRef.current = null;
+    playbackRef.current?.flush();
+    setIsActive(false);
+  }, []);
+
+  const playAudio = useCallback((base64Pcm16: string) => {
+    ensurePlayback().enqueueBase64(base64Pcm16);
+  }, [ensurePlayback]);
+
+  const flushAudio = useCallback(() => {
+    playbackRef.current?.flush();
+  }, []);
 
   useEffect(() => {
     return () => {
-      recRef.current?.abort();
-      if (isSpeakSupported) window.speechSynthesis.cancel();
+      micRef.current?.stop();
+      playbackRef.current?.close();
+      micRef.current = null;
+      playbackRef.current = null;
     };
-  }, [isSpeakSupported]);
+  }, []);
 
   return {
-    isListening,
-    interim,
-    startListening,
-    stopListening,
-    speak,
-    isListenSupported,
-    isSpeakSupported,
+    isActive,
+    error,
+    startSession,
+    stopSession,
+    playAudio,
+    flushAudio,
   };
 }
