@@ -1362,7 +1362,7 @@ export const voiceUsageDaily = pgTable(
     userId: integer("user_id").notNull(),
     organizationId: integer("organization_id").notNull(),
     dayUtc: date("day_utc").notNull(),
-    estimatedPence: integer("estimated_pence").notNull().default(0),
+    estimatedMillipence: integer("estimated_millipence").notNull().default(0),
     inputTokens: integer("input_tokens").notNull().default(0),
     outputTokens: integer("output_tokens").notNull().default(0),
     voiceSeconds: integer("voice_seconds").notNull().default(0),

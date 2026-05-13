@@ -30,7 +30,7 @@ export class RealtimeSession {
   async sendUserText(text: string): Promise<void> {
     const cap = await checkDailyCap(this.userId);
     if (!cap.ok) {
-      const capPounds = (cap.capPence / 100).toFixed(2);
+      const capPounds = (cap.capMillipence / 100_000).toFixed(2);
       this.send({
         type: "error",
         message: `You've reached today's £${capPounds} AI usage cap. It resets at midnight UTC.`,
