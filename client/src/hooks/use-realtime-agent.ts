@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type ServerEvent =
   | { type: "ready" }
   | { type: "pong" }
+  | { type: "user.transcript"; text: string }
   | { type: "assistant.text"; text: string }
   | { type: "audio.output"; audio: string }
   | { type: "audio.done" }
@@ -93,6 +94,12 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
       switch (event.type) {
         case "ready":
         case "pong":
+          return;
+        case "user.transcript":
+          setMessages((m) => [
+            ...m,
+            { id: newId(), role: "user", text: event.text, ts: Date.now() },
+          ]);
           return;
         case "assistant.text":
           setMessages((m) => [

@@ -20,6 +20,10 @@ export type Sender = (event: ServerEvent) => void;
 export class RealtimeSession {
   private oaiWs: WebSocket | null = null;
   private connected = false;
+  // Tracks whether the most recent input was typed (text-only reply wanted)
+  // vs spoken (audio reply wanted). Used by handleFunctionCall so tool
+  // results echo the modality the user is actually using.
+  private lastInputWasText = false;
 
   constructor(
     private readonly userId: number,
@@ -50,6 +54,8 @@ export class RealtimeSession {
       });
       return;
     }
+
+    this.lastInputWasText = true;
 
     this.sendToOai({
       type: "conversation.item.create",
@@ -129,6 +135,7 @@ export class RealtimeSession {
         voice: "alloy",
         input_audio_format: "pcm16",
         output_audio_format: "pcm16",
+        input_audio_transcription: { model: "whisper-1" },
         turn_detection: {
           type: "server_vad",
           threshold: 0.5,
@@ -157,6 +164,7 @@ export class RealtimeSession {
         return;
       }
     }
+    this.lastInputWasText = false;
     this.sendToOai({
       type: "input_audio_buffer.append",
       audio: base64Pcm16,
@@ -183,11 +191,25 @@ export class RealtimeSession {
 
     switch (event.type) {
       case "error":
+        // Silence the "no active response to cancel" race — it fires when
+        // the user starts speaking but the assistant wasn't actually mid-reply.
+        if (
+          event.error?.code === "response_cancel_not_active" ||
+          /no active response/i.test(event.error?.message ?? "")
+        ) {
+          return;
+        }
         console.error("[realtime-brain] OAI event error:", event.error);
         this.send({
           type: "error",
           message: event.error?.message ?? "Realtime API error",
         });
+        return;
+
+      case "conversation.item.input_audio_transcription.completed":
+        if (typeof event.transcript === "string" && event.transcript.trim()) {
+          this.send({ type: "user.transcript", text: event.transcript.trim() });
+        }
         return;
 
       case "response.text.done":
@@ -280,9 +302,13 @@ export class RealtimeSession {
       },
     });
 
+    // Echo the user's input modality: typed → text-only reply, spoken → audio+text.
+    const followUpModalities = this.lastInputWasText
+      ? ["text"]
+      : ["text", "audio"];
     this.sendToOai({
       type: "response.create",
-      response: { modalities: ["text"] },
+      response: { modalities: followUpModalities },
     });
   }
 }

@@ -7,6 +7,7 @@ export type ClientEvent =
 export type ServerEvent =
   | { type: "ready" }
   | { type: "pong" }
+  | { type: "user.transcript"; text: string }
   | { type: "assistant.text"; text: string }
   | { type: "audio.output"; audio: string } // base64-encoded PCM16 24kHz mono chunk
   | { type: "audio.done" }
