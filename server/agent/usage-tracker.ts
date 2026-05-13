@@ -1,6 +1,7 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { db } from "../db";
 import { voiceUsageDaily } from "@shared/schema";
+import { resolveTierForOrg, OVERAGE_PENCE_PER_MINUTE } from "./tiers";
 
 // Cost is tracked in MILLIPENCE (1 unit = 0.001 pence = 1/100,000 of a £).
 // At Realtime mini text rates a single request is ~50-500 millipence, so
@@ -17,6 +18,11 @@ const TEXT_OUTPUT_MILLIPENCE_PER_MILLION = 48_000;
 const REALTIME_INPUT_MILLIPENCE_PER_MILLION = 800_000;
 const REALTIME_CACHED_INPUT_MILLIPENCE_PER_MILLION = 32_000;
 const REALTIME_OUTPUT_MILLIPENCE_PER_MILLION = 1_600_000;
+
+// Approximate audio token rates per second (OpenAI Realtime, May 2026).
+// Input from mic is encoded at ~100 tok/s; output speech ~150 tok/s.
+const AUDIO_INPUT_TOKENS_PER_SECOND = 100;
+const AUDIO_OUTPUT_TOKENS_PER_SECOND = 150;
 
 function todayUtcDateString(): string {
   return new Date().toISOString().slice(0, 10);
@@ -78,6 +84,7 @@ async function upsertUsage(params: {
   millipence: number;
   inputTokens: number;
   outputTokens: number;
+  voiceSeconds: number;
 }): Promise<void> {
   const today = todayUtcDateString();
   await db
@@ -89,6 +96,7 @@ async function upsertUsage(params: {
       estimatedMillipence: params.millipence,
       inputTokens: params.inputTokens,
       outputTokens: params.outputTokens,
+      voiceSeconds: params.voiceSeconds,
       requestCount: 1,
     })
     .onConflictDoUpdate({
@@ -97,6 +105,7 @@ async function upsertUsage(params: {
         estimatedMillipence: sql`${voiceUsageDaily.estimatedMillipence} + ${params.millipence}`,
         inputTokens: sql`${voiceUsageDaily.inputTokens} + ${params.inputTokens}`,
         outputTokens: sql`${voiceUsageDaily.outputTokens} + ${params.outputTokens}`,
+        voiceSeconds: sql`${voiceUsageDaily.voiceSeconds} + ${params.voiceSeconds}`,
         requestCount: sql`${voiceUsageDaily.requestCount} + 1`,
         updatedAt: sql`now()`,
       },
@@ -122,19 +131,22 @@ export async function recordTextUsage(
     millipence,
     inputTokens: params.inputTokens,
     outputTokens: params.outputTokens,
+    voiceSeconds: 0,
   });
 }
 
-export interface RecordRealtimeTextUsageParams {
+export interface RecordRealtimeUsageParams {
   userId: number;
   organizationId: number;
   inputTokens: number;
   cachedInputTokens: number;
   outputTokens: number;
+  inputAudioTokens: number;
+  outputAudioTokens: number;
 }
 
-export async function recordRealtimeTextUsage(
-  params: RecordRealtimeTextUsageParams,
+export async function recordRealtimeUsage(
+  params: RecordRealtimeUsageParams,
 ): Promise<void> {
   const millipence = Math.round(
     estimateRealtimeTextMillipence(
@@ -143,11 +155,67 @@ export async function recordRealtimeTextUsage(
       params.outputTokens,
     ),
   );
+  const voiceSeconds = Math.round(
+    params.inputAudioTokens / AUDIO_INPUT_TOKENS_PER_SECOND +
+      params.outputAudioTokens / AUDIO_OUTPUT_TOKENS_PER_SECOND,
+  );
   await upsertUsage({
     userId: params.userId,
     organizationId: params.organizationId,
     millipence,
     inputTokens: params.inputTokens,
     outputTokens: params.outputTokens,
+    voiceSeconds,
   });
+}
+
+export interface BundleStatus {
+  tier: string;
+  minutesUsed: number;
+  minutesLimit: number;
+  overageMinutes: number;
+  overagePence: number;
+}
+
+function startOfMonthUtcDateString(): string {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+    .toISOString()
+    .slice(0, 10);
+}
+
+export async function getBundleStatus(
+  userId: number,
+  organizationId: number,
+): Promise<BundleStatus> {
+  const tier = await resolveTierForOrg(organizationId);
+  const monthStart = startOfMonthUtcDateString();
+  const todayStr = todayUtcDateString();
+
+  const [row] = await db
+    .select({
+      seconds: sql<number>`COALESCE(SUM(${voiceUsageDaily.voiceSeconds}), 0)::int`,
+    })
+    .from(voiceUsageDaily)
+    .where(
+      and(
+        eq(voiceUsageDaily.userId, userId),
+        gte(voiceUsageDaily.dayUtc, monthStart),
+        lte(voiceUsageDaily.dayUtc, todayStr),
+      ),
+    );
+
+  const secondsUsed = row?.seconds ?? 0;
+  const minutesUsed = Math.floor(secondsUsed / 60);
+  const minutesLimit = tier.voiceMinutesPerMonth;
+  const overageMinutes = Math.max(0, minutesUsed - minutesLimit);
+  const overagePence = overageMinutes * OVERAGE_PENCE_PER_MINUTE;
+
+  return {
+    tier: tier.name,
+    minutesUsed,
+    minutesLimit,
+    overageMinutes,
+    overagePence,
+  };
 }

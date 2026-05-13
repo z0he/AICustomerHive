@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Mic, MicOff, Send, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useRealtimeAgent, type AgentMessage } from "@/hooks/use-realtime-agent";
+import {
+  useRealtimeAgent,
+  type AgentMessage,
+  type UsageStatus,
+} from "@/hooks/use-realtime-agent";
 import { useVoiceIO } from "@/hooks/use-voice-io";
 
 export default function AgentDock() {
@@ -20,6 +24,7 @@ export default function AgentDock() {
     error,
     isUserSpeaking,
     isAssistantSpeaking,
+    usage,
     sendText,
     sendAudio,
     cancel,
@@ -82,29 +87,32 @@ export default function AgentDock() {
 
   return (
     <div className="fixed bottom-4 left-4 w-80 max-w-[calc(100vw-2rem)] h-96 bg-background border rounded-lg shadow-xl flex flex-col z-50">
-      <header className="flex items-center justify-between px-3 py-2 border-b">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold">Voice Agent</span>
-          <StatusDot status={status} />
-          {voice.isActive && (
-            <span className="text-xs text-muted-foreground">
-              {isUserSpeaking
-                ? "listening…"
-                : isAssistantSpeaking
-                  ? "speaking…"
-                  : "idle"}
-            </span>
-          )}
+      <header className="flex flex-col px-3 py-2 border-b gap-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold">Voice Agent</span>
+            <StatusDot status={status} />
+            {voice.isActive && (
+              <span className="text-xs text-muted-foreground">
+                {isUserSpeaking
+                  ? "listening…"
+                  : isAssistantSpeaking
+                    ? "speaking…"
+                    : "idle"}
+              </span>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsOpen(false)}
+            className="h-7 w-7 p-0"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsOpen(false)}
-          className="h-7 w-7 p-0"
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        {usage && <UsageMeter usage={usage} />}
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-2 space-y-2 text-sm">
@@ -151,6 +159,43 @@ export default function AgentDock() {
           <Send className="h-4 w-4" />
         </Button>
       </footer>
+    </div>
+  );
+}
+
+function UsageMeter({ usage }: { usage: UsageStatus }) {
+  const pct = Math.min(
+    100,
+    Math.round((usage.minutesUsed / Math.max(1, usage.minutesLimit)) * 100),
+  );
+  const overage = usage.overageMinutes > 0;
+  const barColor = overage
+    ? "bg-orange-500"
+    : pct >= 90
+      ? "bg-yellow-500"
+      : "bg-green-500";
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="flex justify-between text-[10px] text-muted-foreground">
+        <span>
+          {usage.tier} · {usage.minutesUsed}/{usage.minutesLimit} min
+        </span>
+        {overage ? (
+          <span className="text-orange-500 font-medium">
+            +{usage.overageMinutes} min · £
+            {(usage.overagePence / 100).toFixed(2)}
+          </span>
+        ) : (
+          <span>{usage.minutesLimit - usage.minutesUsed} min left</span>
+        )}
+      </div>
+      <div className="h-1 w-full bg-muted rounded overflow-hidden">
+        <div
+          className={`h-full ${barColor} transition-all`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }

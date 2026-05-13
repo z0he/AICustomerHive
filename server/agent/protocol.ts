@@ -15,6 +15,14 @@ export type ServerEvent =
   | { type: "speech.stopped" }
   | { type: "tool.call"; name: string; args: Record<string, unknown> }
   | { type: "tool.result"; name: string; result: unknown }
+  | {
+      type: "usage.update";
+      tier: string;
+      minutesUsed: number;
+      minutesLimit: number;
+      overageMinutes: number;
+      overagePence: number;
+    }
   | { type: "error"; message: string };
 
 export const REALTIME_PATH = "/api/agent/realtime";

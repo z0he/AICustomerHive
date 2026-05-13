@@ -1,7 +1,7 @@
 import { WebSocket } from "ws";
 import { agentToolRegistry } from "./tools";
 import type { ServerEvent } from "./protocol";
-import { checkDailyCap, recordRealtimeTextUsage } from "./usage-tracker";
+import { checkDailyCap, getBundleStatus, recordRealtimeUsage } from "./usage-tracker";
 
 const REALTIME_MODEL = "gpt-4o-mini-realtime-preview";
 const REALTIME_URL = `wss://api.openai.com/v1/realtime?model=${REALTIME_MODEL}`;
@@ -250,13 +250,20 @@ export class RealtimeSession {
         if (event.response?.usage) {
           const usage = event.response.usage;
           try {
-            await recordRealtimeTextUsage({
+            await recordRealtimeUsage({
               userId: this.userId,
               organizationId: this.organizationId,
               inputTokens: usage.input_tokens ?? 0,
               cachedInputTokens: usage.input_token_details?.cached_tokens ?? 0,
               outputTokens: usage.output_tokens ?? 0,
+              inputAudioTokens: usage.input_token_details?.audio_tokens ?? 0,
+              outputAudioTokens: usage.output_token_details?.audio_tokens ?? 0,
             });
+            const status = await getBundleStatus(
+              this.userId,
+              this.organizationId,
+            );
+            this.send({ type: "usage.update", ...status });
           } catch (err) {
             console.error("[realtime-brain] failed to record usage:", err);
           }

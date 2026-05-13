@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { organizations } from "@shared/schema";
 import { RealtimeSession } from "./realtime-brain";
+import { getBundleStatus } from "./usage-tracker";
 import { REALTIME_PATH, type ClientEvent, type ServerEvent } from "./protocol";
 
 const JWT_SECRET =
@@ -126,6 +127,12 @@ function handleConnection(ws: WebSocket, state: SessionState): void {
   };
 
   send({ type: "ready" });
+
+  getBundleStatus(state.userId, state.organizationId)
+    .then((status) => send({ type: "usage.update", ...status }))
+    .catch((err) =>
+      console.error("[agent] initial bundle status fetch failed:", err),
+    );
 
   ws.on("message", async (raw) => {
     let msg: unknown;

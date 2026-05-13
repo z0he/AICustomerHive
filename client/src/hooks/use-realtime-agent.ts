@@ -11,7 +11,23 @@ type ServerEvent =
   | { type: "speech.stopped" }
   | { type: "tool.call"; name: string; args: Record<string, unknown> }
   | { type: "tool.result"; name: string; result: unknown }
+  | {
+      type: "usage.update";
+      tier: string;
+      minutesUsed: number;
+      minutesLimit: number;
+      overageMinutes: number;
+      overagePence: number;
+    }
   | { type: "error"; message: string };
+
+export interface UsageStatus {
+  tier: string;
+  minutesUsed: number;
+  minutesLimit: number;
+  overageMinutes: number;
+  overagePence: number;
+}
 
 type ClientEvent =
   | { type: "ping" }
@@ -58,6 +74,7 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
   const [error, setError] = useState<string | null>(null);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [isAssistantSpeaking, setIsAssistantSpeaking] = useState(false);
+  const [usage, setUsage] = useState<UsageStatus | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   const cbs = useRef(opts);
@@ -147,6 +164,15 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
             },
           ]);
           return;
+        case "usage.update":
+          setUsage({
+            tier: event.tier,
+            minutesUsed: event.minutesUsed,
+            minutesLimit: event.minutesLimit,
+            overageMinutes: event.overageMinutes,
+            overagePence: event.overagePence,
+          });
+          return;
         case "error":
           setError(event.message);
           return;
@@ -215,6 +241,7 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
     error,
     isUserSpeaking,
     isAssistantSpeaking,
+    usage,
     sendText,
     sendAudio,
     cancel,
