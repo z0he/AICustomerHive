@@ -3,7 +3,8 @@ import { agentToolRegistry } from "./tools";
 import type { ServerEvent } from "./protocol";
 import { checkDailyCap, getBundleStatus, recordRealtimeUsage } from "./usage-tracker";
 
-const REALTIME_MODEL = "gpt-4o-mini-realtime-preview";
+// GA Realtime API model. Beta `gpt-4o-mini-realtime-preview` was retired May 12 2026.
+const REALTIME_MODEL = "gpt-realtime-mini";
 const REALTIME_URL = `wss://api.openai.com/v1/realtime?model=${REALTIME_MODEL}`;
 
 const SYSTEM_PROMPT = `You are AICRM, a voice-first CRM assistant. You help users manage contacts, campaigns, and customer relationships through natural conversation.
@@ -68,7 +69,7 @@ export class RealtimeSession {
 
     this.sendToOai({
       type: "response.create",
-      response: { modalities: ["text"] },
+      response: { output_modalities: ["text"] },
     });
   }
 
@@ -95,7 +96,6 @@ export class RealtimeSession {
     const ws = new WebSocket(REALTIME_URL, {
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        "OpenAI-Beta": "realtime=v1",
       },
     });
 
@@ -127,24 +127,35 @@ export class RealtimeSession {
     this.oaiWs = ws;
     this.connected = true;
 
+    // GA session.update shape: `type: "realtime"` is required, modality config
+    // renamed to `output_modalities`, audio I/O config is nested under
+    // `audio.input` / `audio.output`, and `turn_detection` lives under
+    // `audio.input` rather than the top of the session.
     this.sendToOai({
       type: "session.update",
       session: {
-        modalities: ["text", "audio"],
+        type: "realtime",
+        model: REALTIME_MODEL,
         instructions: SYSTEM_PROMPT,
-        voice: "alloy",
-        input_audio_format: "pcm16",
-        output_audio_format: "pcm16",
-        input_audio_transcription: { model: "whisper-1" },
-        turn_detection: {
-          type: "server_vad",
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500,
+        output_modalities: ["audio"],
+        audio: {
+          input: {
+            format: { type: "audio/pcm", rate: 24000 },
+            transcription: { model: "whisper-1" },
+            turn_detection: {
+              type: "server_vad",
+              threshold: 0.5,
+              prefix_padding_ms: 300,
+              silence_duration_ms: 500,
+            },
+          },
+          output: {
+            format: { type: "audio/pcm", rate: 24000 },
+            voice: "alloy",
+          },
         },
         tools: agentToolRegistry.toOpenAIRealtimeTools(),
         tool_choice: "auto",
-        temperature: 0.6,
       },
     });
   }
@@ -219,23 +230,26 @@ export class RealtimeSession {
         }
         return;
 
-      case "response.text.done":
+      // GA renames: response.text.* → response.output_text.*,
+      // response.audio.* → response.output_audio.*,
+      // response.audio_transcript.* → response.output_audio_transcript.*
+      case "response.output_text.done":
         if (typeof event.text === "string" && event.text.length > 0) {
           this.send({ type: "assistant.text", text: event.text });
         }
         return;
 
-      case "response.audio.delta":
+      case "response.output_audio.delta":
         if (typeof event.delta === "string" && event.delta.length > 0) {
           this.send({ type: "audio.output", audio: event.delta });
         }
         return;
 
-      case "response.audio.done":
+      case "response.output_audio.done":
         this.send({ type: "audio.done" });
         return;
 
-      case "response.audio_transcript.done":
+      case "response.output_audio_transcript.done":
         if (typeof event.transcript === "string" && event.transcript.length > 0) {
           this.send({ type: "assistant.text", text: event.transcript });
         }
@@ -316,13 +330,12 @@ export class RealtimeSession {
       },
     });
 
-    // Echo the user's input modality: typed → text-only reply, spoken → audio+text.
-    const followUpModalities = this.lastInputWasText
-      ? ["text"]
-      : ["text", "audio"];
+    // Echo the user's input modality: typed → text-only reply, spoken → audio
+    // (audio responses still emit a transcript event so we get text for the UI).
+    const followUpModalities = this.lastInputWasText ? ["text"] : ["audio"];
     this.sendToOai({
       type: "response.create",
-      response: { modalities: followUpModalities },
+      response: { output_modalities: followUpModalities },
     });
   }
 }
