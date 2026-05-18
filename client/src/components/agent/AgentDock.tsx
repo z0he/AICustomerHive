@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Mic, MicOff, Send, X, Loader2 } from "lucide-react";
+import { Mic, MicOff, Send, X, Loader2, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   useRealtimeAgent,
@@ -11,6 +11,7 @@ import { useVoiceIO } from "@/hooks/use-voice-io";
 export default function AgentDock() {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState("");
+  const [showDebug, setShowDebug] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const playbackRef = useRef({
@@ -105,15 +106,27 @@ export default function AgentDock() {
               </span>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsOpen(false)}
-            className="h-7 w-7 p-0"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-0.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDebug((s) => !s)}
+              className={`h-7 w-7 p-0 ${showDebug ? "text-foreground" : "text-muted-foreground/60"}`}
+              aria-label={showDebug ? "Hide tool-call debug lines" : "Show tool-call debug lines"}
+              title={showDebug ? "Hide tool-call debug lines" : "Show tool-call debug lines"}
+            >
+              <Bug className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsOpen(false)}
+              className="h-7 w-7 p-0"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         {usage && <UsageMeter usage={usage} />}
       </header>
@@ -124,9 +137,11 @@ export default function AgentDock() {
             Click the mic to start a voice session, or type below. Try "how many contacts" or "what industries are my contacts from".
           </p>
         )}
-        {messages.map((m) => (
-          <MessageBubble key={m.id} message={m} />
-        ))}
+        {messages
+          .filter((m) => showDebug || m.role !== "tool")
+          .map((m) => (
+            <MessageBubble key={m.id} message={m} />
+          ))}
         {error && <div className="text-destructive text-xs">⚠ {error}</div>}
         {voice.error && (
           <div className="text-destructive text-xs">⚠ {voice.error}</div>
