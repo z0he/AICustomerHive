@@ -26,11 +26,22 @@ declare global {
 
 const scryptAsync = promisify(scrypt);
 
-// Secret key for JWT
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-jwt-key-change-in-production';
+// Secrets are required — no fallbacks. The previous defaults were public in
+// the open-source repo, which made token forgery possible if env vars were
+// ever unset. Refuse to boot rather than silently using a known value.
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error(
+    "JWT_SECRET environment variable is required. Set it in your environment (e.g., Replit Secrets) before starting the server.",
+  );
+}
 
-// Secret key for sessions
-const SESSION_SECRET = process.env.SESSION_SECRET || 'super-secret-session-key-change-in-production';
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+  throw new Error(
+    "SESSION_SECRET environment variable is required. Set it in your environment (e.g., Replit Secrets) before starting the server.",
+  );
+}
 
 // Initialize Firebase Admin SDK with default credentials if they exist
 let firebaseAdminInitialized = false;
