@@ -194,6 +194,11 @@ async function routeMessage(
     return;
   }
 
+  if (msg?.type === "audio.clear") {
+    state.brain?.clearAudioBuffer();
+    return;
+  }
+
   if (msg?.type === "session.cancel") {
     state.brain?.cancelResponse();
     return;

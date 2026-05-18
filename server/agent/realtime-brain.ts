@@ -175,6 +175,13 @@ export class RealtimeSession {
     this.sendToOai({ type: "response.cancel" });
   }
 
+  // Drops any audio in OAI's input buffer that hasn't been committed yet.
+  // Called when the user toggles the mic off so trailing ambient noise
+  // doesn't trip server VAD and produce a phantom response.
+  clearAudioBuffer(): void {
+    this.sendToOai({ type: "input_audio_buffer.clear" });
+  }
+
   private sendToOai(event: unknown): void {
     if (this.oaiWs?.readyState === WebSocket.OPEN) {
       this.oaiWs.send(JSON.stringify(event));

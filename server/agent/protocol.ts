@@ -2,6 +2,7 @@ export type ClientEvent =
   | { type: "ping" }
   | { type: "user.text"; text: string }
   | { type: "audio.input"; audio: string } // base64-encoded PCM16 24kHz mono
+  | { type: "audio.clear" } // discard any uncommitted audio buffered on OAI side
   | { type: "session.cancel" };
 
 export type ServerEvent =

@@ -28,6 +28,7 @@ export default function AgentDock() {
     sendText,
     sendAudio,
     cancel,
+    clearAudioInput,
   } = useRealtimeAgent({
     enabled: isOpen,
     onAudioOutput: (b64) => playbackRef.current.play(b64),
@@ -55,8 +56,9 @@ export default function AgentDock() {
   useEffect(() => {
     if (!isOpen) {
       voice.stopSession();
+      clearAudioInput();
     }
-  }, [isOpen, voice]);
+  }, [isOpen, voice, clearAudioInput]);
 
   const handleSendText = () => {
     const text = draft.trim();
@@ -68,6 +70,7 @@ export default function AgentDock() {
   const handleVoiceToggle = async () => {
     if (voice.isActive) {
       voice.stopSession();
+      clearAudioInput();
     } else {
       await voice.startSession();
     }

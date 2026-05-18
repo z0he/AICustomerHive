@@ -33,6 +33,7 @@ type ClientEvent =
   | { type: "ping" }
   | { type: "user.text"; text: string }
   | { type: "audio.input"; audio: string }
+  | { type: "audio.clear" }
   | { type: "session.cancel" };
 
 export type AgentMessage =
@@ -226,6 +227,10 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
     sendRaw({ type: "session.cancel" });
   }, [sendRaw]);
 
+  const clearAudioInput = useCallback(() => {
+    sendRaw({ type: "audio.clear" });
+  }, [sendRaw]);
+
   useEffect(() => {
     if (!opts.enabled) return;
     connect();
@@ -245,6 +250,7 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
     sendText,
     sendAudio,
     cancel,
+    clearAudioInput,
     connect,
     disconnect,
   };
