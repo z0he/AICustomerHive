@@ -1,7 +1,34 @@
 import { WebSocket } from "ws";
 import { agentToolRegistry } from "./tools";
-import type { ServerEvent } from "./protocol";
+import type { Navigate, ServerEvent } from "./protocol";
 import { checkDailyCap, getBundleStatus, recordRealtimeUsage } from "./usage-tracker";
+
+// A tool can attach `{ navigate: { route, params? } }` to its return object.
+// The dispatcher emits a ui.navigate event and strips the field before
+// forwarding the rest of the result to the model.
+function extractNavigate(result: unknown): Navigate | undefined {
+  if (!result || typeof result !== "object") return undefined;
+  const nav = (result as Record<string, unknown>).navigate;
+  if (!nav || typeof nav !== "object") return undefined;
+  const route = (nav as Record<string, unknown>).route;
+  if (typeof route !== "string" || route.length === 0) return undefined;
+  const params = (nav as Record<string, unknown>).params;
+  return {
+    route,
+    params:
+      params && typeof params === "object"
+        ? (params as Record<string, string>)
+        : undefined,
+  };
+}
+
+function stripNavigate(result: unknown): unknown {
+  if (!result || typeof result !== "object" || Array.isArray(result)) {
+    return result;
+  }
+  const { navigate: _drop, ...rest } = result as Record<string, unknown>;
+  return rest;
+}
 
 // GA Realtime API model. Beta `gpt-4o-mini-realtime-preview` was retired May 12 2026.
 const REALTIME_MODEL = "gpt-realtime-mini";
@@ -313,7 +340,11 @@ export class RealtimeSession {
         organizationId: this.organizationId,
       });
       this.send({ type: "tool.result", name, result });
-      resultOutput = JSON.stringify(result);
+      const navigate = extractNavigate(result);
+      if (navigate) {
+        this.send({ type: "ui.navigate", navigate });
+      }
+      resultOutput = JSON.stringify(stripNavigate(result));
     } catch (err) {
       const errMsg =
         err instanceof Error ? err.message : "Tool execution failed";

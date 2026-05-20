@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation } from "wouter";
+
+interface Navigate {
+  route: string;
+  params?: Record<string, string>;
+}
 
 type ServerEvent =
   | { type: "ready" }
@@ -11,6 +17,7 @@ type ServerEvent =
   | { type: "speech.stopped" }
   | { type: "tool.call"; name: string; args: Record<string, unknown> }
   | { type: "tool.result"; name: string; result: unknown }
+  | { type: "ui.navigate"; navigate: Navigate }
   | {
       type: "usage.update";
       tier: string;
@@ -77,6 +84,9 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
   const [isAssistantSpeaking, setIsAssistantSpeaking] = useState(false);
   const [usage, setUsage] = useState<UsageStatus | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const [, setLocation] = useLocation();
+  const setLocationRef = useRef(setLocation);
+  setLocationRef.current = setLocation;
 
   const cbs = useRef(opts);
   cbs.current = opts;
@@ -165,6 +175,14 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
             },
           ]);
           return;
+        case "ui.navigate": {
+          const { route, params } = event.navigate;
+          const qs = params
+            ? new URLSearchParams(params).toString()
+            : "";
+          setLocationRef.current(qs ? `${route}?${qs}` : route);
+          return;
+        }
         case "usage.update":
           setUsage({
             tier: event.tier,
