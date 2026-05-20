@@ -85,7 +85,10 @@ export default function ContactsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [stage, setStage] = useQueryParam<LifecycleStage>('stage', 'all');
-  const [search, setSearch] = useState('');
+  // `q` lives in the URL so deep-links (and the voice agent's ui.navigate
+  // hint) can land the page pre-filtered. `replace: true` avoids pushing a
+  // history entry per keystroke.
+  const [search, setSearch] = useQueryParam<string>('q', '', { replace: true });
   const [owner, setOwner] = useState<string>('');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);

@@ -64,6 +64,7 @@ export const searchContactsTool = defineTool({
       query: args.query,
       total: rows.length,
       contacts: rows,
+      navigate: { route: "/contacts", params: { q: args.query } },
     };
   },
 });
