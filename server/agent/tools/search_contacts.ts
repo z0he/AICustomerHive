@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, ilike, or } from "drizzle-orm";
+import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db";
 import { contacts } from "@shared/schema";
 import { defineTool } from "../tool-runtime";
@@ -34,6 +34,10 @@ export const searchContactsTool = defineTool({
   },
   async execute(args, ctx) {
     const pattern = `%${args.query}%`;
+    // Concatenate first + last so queries like "Charles Xavier" match the
+    // full name. Without this, ILIKE on each column independently misses
+    // any query that spans firstName and lastName.
+    const fullName = sql<string>`coalesce(${contacts.firstName}, '') || ' ' || coalesce(${contacts.lastName}, '')`;
 
     const rows = await db
       .select({
@@ -53,6 +57,7 @@ export const searchContactsTool = defineTool({
           or(
             ilike(contacts.firstName, pattern),
             ilike(contacts.lastName, pattern),
+            ilike(fullName, pattern),
             ilike(contacts.email, pattern),
             ilike(contacts.company, pattern),
           ),
