@@ -54,6 +54,13 @@ export const getContactDetailsTool = defineTool({
       return { found: false };
     }
 
-    return { found: true, contact: row };
+    return {
+      found: true,
+      contact: row,
+      navigate: {
+        route: "/contacts",
+        params: { contactId: row.id },
+      },
+    };
   },
 });

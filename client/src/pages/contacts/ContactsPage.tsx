@@ -93,8 +93,9 @@ export default function ContactsPage() {
   const [inactive, setInactive] = useQueryParam<string>('inactive', '');
   const [sort, setSort] = useQueryParam<string>('sort', '');
   const [owner, setOwner] = useQueryParam<string>('owner', '');
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  // `contactId` drives the detail drawer from the URL so voice agent
+  // deep-links and shareable links can open a contact in place.
+  const [contactId, setContactId] = useQueryParam<string>('contactId', '');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [advancedFilters, setAdvancedFilters] = useState<ContactSegmentFilter[]>([]);
@@ -259,15 +260,19 @@ export default function ContactsPage() {
     }
   };
 
+  // Drawer state is derived from the URL: if contactId matches a loaded
+  // contact, open the drawer with that record.
+  const selectedContact = contactId
+    ? contacts.find((c) => c.id === contactId) || null
+    : null;
+  const isDrawerOpen = Boolean(selectedContact);
+
   const handleContactClick = (contact: Contact) => {
-    console.log('open contact', contact.id, contact);
-    setSelectedContact(contact);
-    setIsDrawerOpen(true);
+    setContactId(contact.id);
   };
 
   const closeDrawer = () => {
-    setIsDrawerOpen(false);
-    setSelectedContact(null);
+    setContactId('');
   };
 
   const handleAddContact = () => {
