@@ -90,7 +90,7 @@ export default function ContactsPage() {
   // history entry per keystroke.
   const [search, setSearch] = useQueryParam<string>('q', '', { replace: true });
   const [inactive, setInactive] = useQueryParam<string>('inactive', '');
-  const [owner, setOwner] = useState<string>('');
+  const [owner, setOwner] = useQueryParam<string>('owner', '');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);

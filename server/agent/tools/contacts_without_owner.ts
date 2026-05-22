@@ -48,6 +48,10 @@ export const contactsWithoutOwnerTool = defineTool({
     return {
       total: rows.length,
       contacts: rows,
+      navigate: {
+        route: "/contacts",
+        params: { owner: "unassigned" },
+      },
     };
   },
 });
