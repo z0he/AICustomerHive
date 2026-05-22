@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 
+// Fired by useQueryParam.updateValue and by the realtime-agent nav handler
+// whenever the URL search string changes without a pathname change. Wouter's
+// useLocation only tracks pathname, so without this signal any hook on the
+// same route wouldn't notice a search-only change.
+export const QUERY_PARAM_CHANGE_EVENT = 'app:queryparamchange';
+
 export function getQueryParam(key: string): string | null {
   if (typeof window === 'undefined') return null;
   const urlParams = new URLSearchParams(window.location.search);
@@ -22,8 +28,14 @@ export function useQueryParam<T extends string>(
   const [value, setValue] = useState<T>(getCurrentValue);
 
   useEffect(() => {
-    const newValue = getCurrentValue();
-    setValue(newValue);
+    const sync = () => setValue(getCurrentValue());
+    sync(); // catch pathname changes via wouter's location dep
+    window.addEventListener('popstate', sync);
+    window.addEventListener(QUERY_PARAM_CHANGE_EVENT, sync);
+    return () => {
+      window.removeEventListener('popstate', sync);
+      window.removeEventListener(QUERY_PARAM_CHANGE_EVENT, sync);
+    };
   }, [location, key, defaultValue]);
 
   const updateValue = (newValue: T) => {
@@ -42,6 +54,10 @@ export function useQueryParam<T extends string>(
 
     // Immediately update state for synchronous UI updates
     setValue(newValue);
+
+    // Notify any sibling useQueryParam instances on the same pathname so
+    // they re-read the URL (their wouter location dep won't have changed).
+    window.dispatchEvent(new Event(QUERY_PARAM_CHANGE_EVENT));
   };
 
   return [value, updateValue];

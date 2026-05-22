@@ -181,6 +181,12 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
             ? new URLSearchParams(params).toString()
             : "";
           setLocationRef.current(qs ? `${route}?${qs}` : route);
+          // Wouter's useLocation only tracks pathname, so when we navigate
+          // to the same route with different search params (e.g. already
+          // on /contacts and opening a different contact drawer) hooks
+          // depending on useLocation won't fire. Notify useQueryParam
+          // listeners directly.
+          window.dispatchEvent(new Event("app:queryparamchange"));
           return;
         }
         case "usage.update":
