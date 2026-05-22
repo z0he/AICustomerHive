@@ -359,7 +359,7 @@ export default function ContactsPage() {
             <SelectItem value="all">All owners</SelectItem>
             <SelectItem value="John Doe">John Doe</SelectItem>
             <SelectItem value="Jane Smith">Jane Smith</SelectItem>
-            <SelectItem value="Unassigned">Unassigned</SelectItem>
+            <SelectItem value="unassigned">Unassigned</SelectItem>
           </SelectContent>
         </Select>
         {/* Advanced Filters Component */}
