@@ -48,6 +48,10 @@ export const topContactsByScoreTool = defineTool({
     return {
       total: rows.length,
       contacts: rows,
+      navigate: {
+        route: "/contacts",
+        params: { sort: "score" },
+      },
     };
   },
 });

@@ -178,7 +178,7 @@ router.get('/', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const { stage, q, owner, inactive, page = '1', limit = '50', advancedFilters } = req.query;
+    const { stage, q, owner, inactive, sort, page = '1', limit = '50', advancedFilters } = req.query;
 
     // Map frontend stage names to backend values
     let mappedStage = stage as string;
@@ -248,6 +248,19 @@ router.get('/', async (req: Request, res: Response) => {
           contact.leadOwner === owner || contact.contactOwner === owner
         );
       }
+    }
+
+    // Sort: explicit ?sort=score sorts highest score first (nulls last).
+    // Default ordering (no sort param) preserves storage's createdAt-desc order.
+    if (sort === 'score') {
+      filteredContacts = [...filteredContacts].sort((a, b) => {
+        const aScore = (a as any).score;
+        const bScore = (b as any).score;
+        if (aScore == null && bScore == null) return 0;
+        if (aScore == null) return 1;
+        if (bScore == null) return -1;
+        return bScore - aScore;
+      });
     }
 
     // Calculate stage counts for the pills

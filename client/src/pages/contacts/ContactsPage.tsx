@@ -79,6 +79,7 @@ interface Contact {
   lastActivity?: string;
   owner?: string;
   company?: string;
+  score?: number | null;
 }
 
 export default function ContactsPage() {
@@ -90,6 +91,7 @@ export default function ContactsPage() {
   // history entry per keystroke.
   const [search, setSearch] = useQueryParam<string>('q', '', { replace: true });
   const [inactive, setInactive] = useQueryParam<string>('inactive', '');
+  const [sort, setSort] = useQueryParam<string>('sort', '');
   const [owner, setOwner] = useQueryParam<string>('owner', '');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -113,13 +115,14 @@ export default function ContactsPage() {
     error,
     refetch: refetchContacts
   } = useQuery({
-    queryKey: ['contacts', stage, search, owner, inactive, advancedFilters],
+    queryKey: ['contacts', stage, search, owner, inactive, sort, advancedFilters],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (stage !== 'all') params.set('stage', stage);
       if (search) params.set('q', search);
       if (owner && owner !== 'all') params.set('owner', owner);
       if (inactive) params.set('inactive', inactive);
+      if (sort) params.set('sort', sort);
       
       // Add advanced filters
       if (advancedFilters.length > 0) {
@@ -391,6 +394,27 @@ export default function ContactsPage() {
         </div>
       )}
 
+      {/* Active sort banner (set via voice agent or URL) */}
+      {sort === 'score' && (
+        <div
+          className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-900"
+          data-testid="banner-sort-score"
+        >
+          <span>
+            Sorted by <strong>lead score</strong> (highest first).
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-emerald-900 hover:bg-emerald-100"
+            onClick={() => setSort('')}
+            data-testid="button-clear-sort"
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
       {/* Results */}
       <Card>
         <CardHeader>
@@ -458,6 +482,7 @@ export default function ContactsPage() {
                     <TableHead>Industry</TableHead>
                     <TableHead>Country/Region</TableHead>
                     <TableHead>Lifecycle Stage</TableHead>
+                    <TableHead>Score</TableHead>
                     <TableHead>Source</TableHead>
                     <TableHead>Last Activity</TableHead>
                     <TableHead>Owner</TableHead>
@@ -509,16 +534,23 @@ export default function ContactsPage() {
                       >
                         {contact.country || '—'}
                       </TableCell>
-                      <TableCell 
-                        className="cursor-pointer" 
+                      <TableCell
+                        className="cursor-pointer"
                         onClick={() => handleContactClick(contact)}
                       >
                         <Badge className={getStageColor(contact.lifecycleStage || 'lead')}>
                           {LIFECYCLE_STAGES.find(s => s.value === contact.lifecycleStage)?.label || contact.lifecycleStage || 'Lead'}
                         </Badge>
                       </TableCell>
-                      <TableCell 
-                        className="cursor-pointer" 
+                      <TableCell
+                        className="cursor-pointer"
+                        onClick={() => handleContactClick(contact)}
+                        data-testid={`text-contact-score-${contact.id}`}
+                      >
+                        {contact.score ?? '—'}
+                      </TableCell>
+                      <TableCell
+                        className="cursor-pointer"
                         onClick={() => handleContactClick(contact)}
                       >
                         {contact.source || '—'}
