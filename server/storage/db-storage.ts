@@ -2245,6 +2245,8 @@ export class DbStorage implements IStorage {
           location: contact.country, // Use country as location
           initials: initials,
           createdAt: contact.createdAt,
+          lastContactDate: contact.lastContactDate,
+          lastActivity: contact.lastContactDate,
           currentJourneyStageId: undefined, // Not in contacts table
           journeyEntryDate: undefined, // Not in contacts table
           linkedinUrl: contact.linkedinUrl,

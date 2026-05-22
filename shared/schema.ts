@@ -419,6 +419,8 @@ export interface Contact {
   location?: string | null;
   initials: string;
   createdAt: Date;
+  lastContactDate?: Date | null;
+  lastActivity?: Date | null;
   currentJourneyStageId?: number | null;
   journeyEntryDate?: Date | null;
 }

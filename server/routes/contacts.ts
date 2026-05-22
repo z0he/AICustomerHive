@@ -178,7 +178,7 @@ router.get('/', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const { stage, q, owner, page = '1', limit = '50', advancedFilters } = req.query;
+    const { stage, q, owner, inactive, page = '1', limit = '50', advancedFilters } = req.query;
 
     // Map frontend stage names to backend values
     let mappedStage = stage as string;
@@ -218,6 +218,21 @@ router.get('/', async (req: Request, res: Response) => {
         contact.email?.toLowerCase().includes(searchLower) ||
         contact.company?.toLowerCase().includes(searchLower)
       );
+    }
+
+    // Filter by inactivity: contacts with no lastContactDate, or whose
+    // lastContactDate is older than `inactive` days. Mirrors the
+    // find_inactive_customers voice tool so deep-links match its results.
+    if (inactive) {
+      const days = parseInt(inactive as string, 10);
+      if (Number.isFinite(days) && days >= 1 && days <= 3650) {
+        const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+        filteredContacts = filteredContacts.filter(contact => {
+          const last = (contact as any).lastContactDate;
+          if (!last) return true;
+          return new Date(last) < cutoff;
+        });
+      }
     }
 
     // Filter by owner
