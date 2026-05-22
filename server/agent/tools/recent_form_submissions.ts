@@ -58,6 +58,7 @@ export const recentFormSubmissionsTool = defineTool({
       windowDays: args.days,
       total: rows.length,
       submissions: rows,
+      navigate: { route: "/marketing-forms" },
     };
   },
 });

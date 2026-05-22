@@ -62,6 +62,7 @@ export const upcomingCalendarEventsTool = defineTool({
       windowDays: args.days,
       total: rows.length,
       events: rows,
+      navigate: { route: "/calendar" },
     };
   },
 });

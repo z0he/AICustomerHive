@@ -46,6 +46,7 @@ export const listCampaignsTool = defineTool({
     return {
       total: rows.length,
       campaigns: rows,
+      navigate: { route: "/campaigns" },
     };
   },
 });
