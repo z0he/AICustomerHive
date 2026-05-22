@@ -59,7 +59,10 @@ export const findInactiveCustomersTool = defineTool({
       daysInactive: args.daysInactive,
       total: rows.length,
       contacts: rows,
-      navigate: { route: "/contacts" },
+      navigate: {
+        route: "/contacts",
+        params: { inactive: String(args.daysInactive) },
+      },
     };
   },
 });

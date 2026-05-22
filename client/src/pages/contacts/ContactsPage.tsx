@@ -89,6 +89,7 @@ export default function ContactsPage() {
   // hint) can land the page pre-filtered. `replace: true` avoids pushing a
   // history entry per keystroke.
   const [search, setSearch] = useQueryParam<string>('q', '', { replace: true });
+  const [inactive, setInactive] = useQueryParam<string>('inactive', '');
   const [owner, setOwner] = useState<string>('');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -112,12 +113,13 @@ export default function ContactsPage() {
     error,
     refetch: refetchContacts
   } = useQuery({
-    queryKey: ['contacts', stage, search, owner, advancedFilters],
+    queryKey: ['contacts', stage, search, owner, inactive, advancedFilters],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (stage !== 'all') params.set('stage', stage);
       if (search) params.set('q', search);
       if (owner && owner !== 'all') params.set('owner', owner);
+      if (inactive) params.set('inactive', inactive);
       
       // Add advanced filters
       if (advancedFilters.length > 0) {
@@ -367,6 +369,27 @@ export default function ContactsPage() {
           onApplyFilters={handleApplyAdvancedFilters}
         />
       </div>
+
+      {/* Active inactive-days filter banner (set via voice agent or URL) */}
+      {inactive && (
+        <div
+          className="flex items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900"
+          data-testid="banner-inactive-filter"
+        >
+          <span>
+            Showing contacts inactive for <strong>{inactive}+ days</strong> (or never contacted).
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-amber-900 hover:bg-amber-100"
+            onClick={() => setInactive('')}
+            data-testid="button-clear-inactive-filter"
+          >
+            Clear
+          </Button>
+        </div>
+      )}
 
       {/* Results */}
       <Card>
