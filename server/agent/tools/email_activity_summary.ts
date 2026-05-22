@@ -50,6 +50,7 @@ export const emailActivitySummaryTool = defineTool({
       windowDays: args.days,
       totalEmails: total,
       byStatus,
+      navigate: { route: "/email" },
     };
   },
 });
