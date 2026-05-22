@@ -65,11 +65,19 @@ export const searchContactsTool = defineTool({
       )
       .limit(args.limit);
 
+    // When the search lands on exactly one contact, skip the filtered
+    // list view and open that contact's drawer directly — the user
+    // asked about one person, show them that person.
+    const navigate =
+      rows.length === 1
+        ? { route: "/contacts", params: { contactId: rows[0].id } }
+        : { route: "/contacts", params: { q: args.query } };
+
     return {
       query: args.query,
       total: rows.length,
       contacts: rows,
-      navigate: { route: "/contacts", params: { q: args.query } },
+      navigate,
     };
   },
 });
