@@ -87,6 +87,7 @@ export const createContactTool = defineTool({
           alreadyExists: true,
           contact: existing,
           navigate: { route: "/contacts", params: { contactId: existing.id } },
+          dataInvalidate: ["contacts"],
         };
       }
     }
@@ -115,6 +116,7 @@ export const createContactTool = defineTool({
       created: true,
       contact: inserted,
       navigate: { route: "/contacts", params: { contactId: inserted.id } },
+      dataInvalidate: ["contacts"],
     };
   },
 });

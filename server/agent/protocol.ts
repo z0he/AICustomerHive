@@ -26,6 +26,10 @@ export type ServerEvent =
   | { type: "tool.call"; name: string; args: Record<string, unknown> }
   | { type: "tool.result"; name: string; result: unknown }
   | { type: "ui.navigate"; navigate: Navigate }
+  // Hint that one or more cached React Query keys are stale and should be
+  // refetched. Mutation tools attach `dataInvalidate: [...]` to their result
+  // so freshly written rows show up before the drawer / list reads them.
+  | { type: "data.invalidate"; queries: string[] }
   | {
       type: "usage.update";
       tier: string;

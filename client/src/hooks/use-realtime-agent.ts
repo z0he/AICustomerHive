@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Navigate {
   route: string;
@@ -18,6 +19,7 @@ type ServerEvent =
   | { type: "tool.call"; name: string; args: Record<string, unknown> }
   | { type: "tool.result"; name: string; result: unknown }
   | { type: "ui.navigate"; navigate: Navigate }
+  | { type: "data.invalidate"; queries: string[] }
   | {
       type: "usage.update";
       tier: string;
@@ -87,6 +89,9 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
   const [, setLocation] = useLocation();
   const setLocationRef = useRef(setLocation);
   setLocationRef.current = setLocation;
+  const queryClient = useQueryClient();
+  const queryClientRef = useRef(queryClient);
+  queryClientRef.current = queryClient;
 
   const cbs = useRef(opts);
   cbs.current = opts;
@@ -187,6 +192,12 @@ export function useRealtimeAgent(opts: UseRealtimeAgentOptions) {
           // depending on useLocation won't fire. Notify useQueryParam
           // listeners directly.
           window.dispatchEvent(new Event("app:queryparamchange"));
+          return;
+        }
+        case "data.invalidate": {
+          for (const key of event.queries) {
+            queryClientRef.current.invalidateQueries({ queryKey: [key] });
+          }
           return;
         }
         case "usage.update":

@@ -22,11 +22,20 @@ function extractNavigate(result: unknown): Navigate | undefined {
   };
 }
 
-function stripNavigate(result: unknown): unknown {
+function extractDataInvalidate(result: unknown): string[] | undefined {
+  if (!result || typeof result !== "object") return undefined;
+  const raw = (result as Record<string, unknown>).dataInvalidate;
+  if (!Array.isArray(raw)) return undefined;
+  const queries = raw.filter((q): q is string => typeof q === "string" && q.length > 0);
+  return queries.length > 0 ? queries : undefined;
+}
+
+function stripFrameworkFields(result: unknown): unknown {
   if (!result || typeof result !== "object" || Array.isArray(result)) {
     return result;
   }
-  const { navigate: _drop, ...rest } = result as Record<string, unknown>;
+  const { navigate: _n, dataInvalidate: _d, ...rest } =
+    result as Record<string, unknown>;
   return rest;
 }
 
@@ -345,11 +354,15 @@ export class RealtimeSession {
         organizationId: this.organizationId,
       });
       this.send({ type: "tool.result", name, result });
+      const invalidate = extractDataInvalidate(result);
+      if (invalidate) {
+        this.send({ type: "data.invalidate", queries: invalidate });
+      }
       const navigate = extractNavigate(result);
       if (navigate) {
         this.send({ type: "ui.navigate", navigate });
       }
-      resultOutput = JSON.stringify(stripNavigate(result));
+      resultOutput = JSON.stringify(stripFrameworkFields(result));
     } catch (err) {
       const errMsg =
         err instanceof Error ? err.message : "Tool execution failed";
