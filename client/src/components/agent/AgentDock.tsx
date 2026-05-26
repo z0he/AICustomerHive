@@ -73,6 +73,10 @@ export default function AgentDock() {
       voice.stopSession();
       clearAudioInput();
     } else {
+      // Drop anything still buffered on the OAI side before listening
+      // starts — stale chunks (or ambient noise from before the mic was
+      // re-enabled) otherwise commit as a phantom user turn.
+      clearAudioInput();
       await voice.startSession();
     }
   };

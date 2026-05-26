@@ -185,9 +185,12 @@ export class RealtimeSession {
             transcription: { model: "whisper-1" },
             turn_detection: {
               type: "server_vad",
-              threshold: 0.5,
+              // Tightened from defaults (0.5 / 500) to cut phantom turns:
+              // higher threshold ignores ambient room noise, longer silence
+              // window prevents short bursts from committing as a turn.
+              threshold: 0.7,
               prefix_padding_ms: 300,
-              silence_duration_ms: 500,
+              silence_duration_ms: 800,
             },
           },
           output: {
