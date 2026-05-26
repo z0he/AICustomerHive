@@ -18,6 +18,7 @@ import { upcomingCalendarEventsTool } from "./upcoming_calendar_events";
 import { listCampaignsTool } from "./list_campaigns";
 import { emailActivitySummaryTool } from "./email_activity_summary";
 import { recentFormSubmissionsTool } from "./recent_form_submissions";
+import { createContactTool } from "./create_contact";
 
 export const agentToolRegistry = new ToolRegistry();
 
@@ -41,6 +42,7 @@ agentToolRegistry.registerAll([
   listCampaignsTool,
   emailActivitySummaryTool,
   recentFormSubmissionsTool,
+  createContactTool,
 ]);
 
 export {
@@ -63,4 +65,5 @@ export {
   listCampaignsTool,
   emailActivitySummaryTool,
   recentFormSubmissionsTool,
+  createContactTool,
 };
