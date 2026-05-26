@@ -188,9 +188,12 @@ export class RealtimeSession {
               // Tightened from defaults (0.5 / 500) to cut phantom turns:
               // higher threshold ignores ambient room noise, longer silence
               // window prevents short bursts from committing as a turn.
+              // 1200ms silence gives room for natural mid-sentence pauses
+              // before the agent jumps in. Bump further if users still get
+              // cut off, or switch to semantic_vad for cadence-aware turns.
               threshold: 0.7,
               prefix_padding_ms: 300,
-              silence_duration_ms: 800,
+              silence_duration_ms: 1200,
             },
           },
           output: {
