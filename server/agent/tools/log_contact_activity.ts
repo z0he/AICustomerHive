@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { and, eq, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db";
-import { contacts, touchpoints } from "@shared/schema";
+import { contactNotes, contacts, touchpoints } from "@shared/schema";
 import { defineTool } from "../tool-runtime";
 
 const ACTIVITY_KINDS = ["call", "email", "meeting", "note"] as const;
@@ -198,6 +198,14 @@ export const logContactActivityTool = defineTool({
           lastContactDate: contacts.lastContactDate,
         });
 
+      if (args.notes) {
+        await tx.insert(contactNotes).values({
+          organizationId: ctx.organizationId,
+          contactId: target!.id,
+          content: `${args.kind.charAt(0).toUpperCase()}${args.kind.slice(1)}: ${args.notes}`,
+        });
+      }
+
       return { touchpoint, updatedContact };
     });
 
@@ -208,7 +216,7 @@ export const logContactActivityTool = defineTool({
       notes: args.notes,
       contact: result.updatedContact,
       navigate: { route: "/contacts", params: { contactId: target.id } },
-      dataInvalidate: ["contacts"],
+      dataInvalidate: ["contacts", "contactNotes", "contactTouchpoints"],
     };
   },
 });
