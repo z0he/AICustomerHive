@@ -17,7 +17,7 @@ export const logContactActivityTool = defineTool({
       name: z.string().min(1).max(120).optional(),
       kind: z.enum(ACTIVITY_KINDS),
       notes: z.string().min(1).max(2000).optional(),
-      occurredAt: z.string().datetime({ offset: true }).optional(),
+      occurredAt: z.string().min(1).optional(),
     })
     .refine(
       (v) => Boolean(v.contactId) || Boolean(v.email) || Boolean(v.name),
@@ -59,9 +59,8 @@ export const logContactActivityTool = defineTool({
       },
       occurredAt: {
         type: "string",
-        format: "date-time",
         description:
-          "ISO 8601 timestamp (with timezone offset) for when the activity happened. Defaults to now. Use the past if the user is logging something that already occurred.",
+          "When the activity happened. Accepts any date-time string the JS Date constructor can parse — ISO 8601 preferred (e.g. '2026-05-27T22:30:00Z' or '2026-05-27T22:30:00+01:00'), but '2026-05-27 14:30' also works. Defaults to now. Omit this field entirely unless the user specified a past time.",
       },
     },
     required: ["kind"],
@@ -153,8 +152,22 @@ export const logContactActivityTool = defineTool({
       return { found: false, reason: "Contact not found in this organization." };
     }
 
-    // 2. Resolve occurredAt (default now).
-    const occurredAt = args.occurredAt ? new Date(args.occurredAt) : new Date();
+    // 2. Resolve occurredAt (default now). Parse leniently; if the model
+    // hands us garbage, return a clear error so it can retry instead of
+    // silently logging "now" when the user specified a past time.
+    let occurredAt: Date;
+    if (args.occurredAt) {
+      const parsed = new Date(args.occurredAt);
+      if (Number.isNaN(parsed.getTime())) {
+        return {
+          logged: false,
+          reason: `Could not parse occurredAt "${args.occurredAt}". Use ISO 8601 (e.g. 2026-05-27T22:30:00Z) or omit the field to log "now".`,
+        };
+      }
+      occurredAt = parsed;
+    } else {
+      occurredAt = new Date();
+    }
 
     // 3. Insert touchpoint and bump lastContactDate atomically.
     // GREATEST(NULL, ts) -> ts in Postgres, so an existing NULL is replaced.
