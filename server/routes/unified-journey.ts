@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { z } from "zod";
+import { and, desc, eq } from "drizzle-orm";
 import { unifiedJourneyService } from "../services/unified-journey-service.js";
 import { storage } from "../storage.js";
+import { db } from "../db.js";
 import type { IStorage } from '../storage';
 import { createOrganizationScopedStorage } from '../storage/scoped-storage';
-import { Contact } from "@shared/schema";
+import { Contact, touchpoints } from "@shared/schema";
 
 const router = Router();
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Helper function to get organization-scoped storage
 function getScopedStorage(req: Request): IStorage {
@@ -62,8 +66,39 @@ router.get('/contacts/:id/journey-analytics', async (req, res) => {
  */
 router.get('/contacts/:id/touchpoints', async (req, res) => {
   try {
-    // Parse contact ID - handle both "lead_56" and "customer_4" formats
     const contactIdParam = req.params.id;
+
+    // New UUID-based contacts (the unified `contacts` table) use the
+    // `touchpoints` table directly. Legacy lead_<n>/customer_<n>/numeric
+    // IDs continue through the old path below.
+    if (UUID_REGEX.test(contactIdParam)) {
+      const organizationId = (req as any).organization?.organizationId;
+      if (!organizationId) {
+        return res.status(401).json({ error: 'Organization context required' });
+      }
+
+      const rows = await db
+        .select({
+          id: touchpoints.id,
+          type: touchpoints.type,
+          subtype: touchpoints.subtype,
+          occurredAt: touchpoints.occurredAt,
+          meta: touchpoints.meta,
+        })
+        .from(touchpoints)
+        .where(
+          and(
+            eq(touchpoints.organizationId, organizationId),
+            eq(touchpoints.contactId, contactIdParam),
+          ),
+        )
+        .orderBy(desc(touchpoints.occurredAt))
+        .limit(100);
+
+      return res.json(rows);
+    }
+
+    // Parse contact ID - handle both "lead_56" and "customer_4" formats
     let contactId: number;
     
     if (contactIdParam.startsWith('lead_')) {
