@@ -1131,7 +1131,7 @@ export type SelectContactNote = typeof contactNotes.$inferSelect;
 // Journey Tables - Customer Journey Tracking
 // Touchpoint type enum
 export const touchpointTypeEnum = pgEnum("touchpoint_type", [
-  "web", "email", "form", "meeting", "note", "task"
+  "web", "email", "form", "meeting", "note", "task", "call", "sms"
 ]);
 
 // Touchpoints table
