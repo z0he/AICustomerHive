@@ -160,38 +160,65 @@ export default function ContactDrawer({ contact, isOpen, onClose, onEdit }: Cont
   };
 
   // Map touchpoints to activity format
+  const TYPE_LABELS: Record<string, string> = {
+    call: 'Call',
+    sms: 'SMS',
+    email: 'Email',
+    meeting: 'Meeting',
+    note: 'Note',
+    email_open: 'Email opened',
+    email_click: 'Email clicked',
+    web: 'Web visit',
+    website_visit: 'Web visit',
+    form_submit: 'Form submitted',
+    meeting_scheduled: 'Meeting scheduled',
+    lead_created: 'Lead created',
+  };
+
   const mapTouchpointToActivity = (touchpoint: any) => {
-    const getIconAndColor = (type: string, subtype?: string) => {
+    const getIconAndColor = (type: string) => {
       switch (type) {
+        case 'call':
+          return { icon: Phone, color: 'bg-emerald-100 text-emerald-600' };
+        case 'sms':
+          return { icon: MessageSquare, color: 'bg-sky-100 text-sky-600' };
+        case 'email':
         case 'email_open':
           return { icon: Mail, color: 'bg-blue-100 text-blue-600' };
         case 'email_click':
           return { icon: MousePointer, color: 'bg-purple-100 text-purple-600' };
         case 'web':
-          return { icon: Eye, color: 'bg-green-100 text-green-600' };
-        case 'form_submit':
-          return { icon: FileText, color: 'bg-orange-100 text-orange-600' };
         case 'website_visit':
           return { icon: Eye, color: 'bg-green-100 text-green-600' };
+        case 'form':
+        case 'form_submit':
+          return { icon: FileText, color: 'bg-orange-100 text-orange-600' };
+        case 'meeting':
         case 'meeting_scheduled':
           return { icon: Video, color: 'bg-indigo-100 text-indigo-600' };
+        case 'note':
+          return { icon: FileText, color: 'bg-amber-100 text-amber-600' };
         case 'lead_created':
           return { icon: User, color: 'bg-yellow-100 text-yellow-600' };
         default:
           return { icon: Target, color: 'bg-gray-100 text-gray-600' };
       }
     };
-    
-    const { icon, color } = getIconAndColor(touchpoint.touchpointType || touchpoint.type, touchpoint.subtype);
-    
+
+    const type = touchpoint.touchpointType || touchpoint.type;
+    const { icon, color } = getIconAndColor(type);
+    const label = TYPE_LABELS[type] || `${type} activity`;
+    const notes = touchpoint.meta?.notes;
+
     return {
       id: touchpoint.id,
-      type: touchpoint.touchpointType || touchpoint.type,
-      title: touchpoint.description || touchpoint.content || `${touchpoint.touchpointType || touchpoint.type} activity`,
+      type,
+      title: touchpoint.description || touchpoint.content || label,
+      description: typeof notes === 'string' ? notes : undefined,
       timestamp: touchpoint.createdAt || touchpoint.occurredAt,
       icon,
       color,
-      meta: touchpoint.meta
+      meta: touchpoint.meta,
     };
   };
   
@@ -515,6 +542,11 @@ export default function ContactDrawer({ contact, isOpen, onClose, onEdit }: Cont
                           </div>
                           <div className="flex-1">
                             <p className="text-sm font-medium">{activity.title}</p>
+                            {activity.description && (
+                              <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-wrap">
+                                {activity.description}
+                              </p>
+                            )}
                             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                               <Clock className="h-3 w-3" />
                               <span>{timeAgo}</span>
