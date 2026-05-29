@@ -2208,8 +2208,8 @@ export class DbStorage implements IStorage {
 
   async getUnifiedContacts(userId?: number): Promise<Contact[]> {
     try {
-      // Query the unified contacts table directly (status != 'deleted' doesn't exist, we just get active ones)
       const contactResults = await db.select().from(contacts)
+        .where(ne(contacts.status, 'deleted'))
         .orderBy(desc(contacts.createdAt));
       
       // Map to Contact format with proper field mapping

@@ -990,7 +990,7 @@ export const lifecycleStageEnum = pgEnum("lifecycle_stage", [
 ]);
 
 export const contactStatusEnum = pgEnum("contact_status", [
-  "active","inactive","lost"
+  "active","inactive","lost","deleted"
 ]);
 
 // Industry enum with complete list
