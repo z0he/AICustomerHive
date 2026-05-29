@@ -21,6 +21,7 @@ import { recentFormSubmissionsTool } from "./recent_form_submissions";
 import { createContactTool } from "./create_contact";
 import { updateContactTool } from "./update_contact";
 import { logContactActivityTool } from "./log_contact_activity";
+import { deleteContactTool } from "./delete_contact";
 
 export const agentToolRegistry = new ToolRegistry();
 
@@ -47,6 +48,7 @@ agentToolRegistry.registerAll([
   createContactTool,
   updateContactTool,
   logContactActivityTool,
+  deleteContactTool,
 ]);
 
 export {
@@ -72,4 +74,5 @@ export {
   createContactTool,
   updateContactTool,
   logContactActivityTool,
+  deleteContactTool,
 };
