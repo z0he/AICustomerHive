@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { and, eq, ilike, ne, or, sql } from "drizzle-orm";
 import { db } from "../../db";
 import { contacts } from "@shared/schema";
 import { defineTool } from "../tool-runtime";
@@ -55,7 +55,11 @@ export const getContactDetailsTool = defineTool({
         .select()
         .from(contacts)
         .where(
-          and(eq(contacts.organizationId, ctx.organizationId), matchClause),
+          and(
+            eq(contacts.organizationId, ctx.organizationId),
+            ne(contacts.status, "deleted"),
+            matchClause,
+          ),
         )
         .limit(1);
 
@@ -78,6 +82,7 @@ export const getContactDetailsTool = defineTool({
       .where(
         and(
           eq(contacts.organizationId, ctx.organizationId),
+          ne(contacts.status, "deleted"),
           or(
             ilike(contacts.firstName, pattern),
             ilike(contacts.lastName, pattern),

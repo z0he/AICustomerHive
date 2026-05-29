@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, isNull, lt, or } from "drizzle-orm";
+import { and, eq, isNull, lt, ne, or } from "drizzle-orm";
 import { db } from "../../db";
 import { contacts } from "@shared/schema";
 import { defineTool } from "../tool-runtime";
@@ -47,6 +47,7 @@ export const findInactiveCustomersTool = defineTool({
       .where(
         and(
           eq(contacts.organizationId, ctx.organizationId),
+          ne(contacts.status, "deleted"),
           or(
             isNull(contacts.lastContactDate),
             lt(contacts.lastContactDate, cutoff),

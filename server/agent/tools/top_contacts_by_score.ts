@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, desc, eq, isNotNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull, ne } from "drizzle-orm";
 import { db } from "../../db";
 import { contacts } from "@shared/schema";
 import { defineTool } from "../tool-runtime";
@@ -39,6 +39,7 @@ export const topContactsByScoreTool = defineTool({
       .where(
         and(
           eq(contacts.organizationId, ctx.organizationId),
+          ne(contacts.status, "deleted"),
           isNotNull(contacts.score),
         ),
       )

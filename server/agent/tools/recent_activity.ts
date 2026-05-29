@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, ne } from "drizzle-orm";
 import { db } from "../../db";
 import { contacts } from "@shared/schema";
 import { defineTool } from "../tool-runtime";
@@ -49,6 +49,7 @@ export const recentActivityTool = defineTool({
       .where(
         and(
           eq(contacts.organizationId, ctx.organizationId),
+          ne(contacts.status, "deleted"),
           gte(contacts.updatedAt, cutoff),
         ),
       )

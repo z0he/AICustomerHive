@@ -131,6 +131,7 @@ export const updateContactTool = defineTool({
         .where(
           and(
             eq(contacts.organizationId, ctx.organizationId),
+            ne(contacts.status, "deleted"),
             eq(contacts.id, args.contactId),
           ),
         )
@@ -148,6 +149,7 @@ export const updateContactTool = defineTool({
         .where(
           and(
             eq(contacts.organizationId, ctx.organizationId),
+            ne(contacts.status, "deleted"),
             eq(contacts.email, args.email),
           ),
         )
@@ -167,6 +169,7 @@ export const updateContactTool = defineTool({
         .where(
           and(
             eq(contacts.organizationId, ctx.organizationId),
+            ne(contacts.status, "deleted"),
             or(
               ilike(contacts.firstName, pattern),
               ilike(contacts.lastName, pattern),
@@ -210,6 +213,7 @@ export const updateContactTool = defineTool({
         .where(
           and(
             eq(contacts.organizationId, ctx.organizationId),
+            ne(contacts.status, "deleted"),
             eq(contacts.email, args.newEmail),
             ne(contacts.id, target.id),
           ),

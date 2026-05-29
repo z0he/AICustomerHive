@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { count, eq } from "drizzle-orm";
+import { and, count, eq, ne } from "drizzle-orm";
 import { db } from "../../db";
 import { contacts } from "@shared/schema";
 import { defineTool } from "../tool-runtime";
@@ -32,7 +32,12 @@ export const countContactsByCountryTool = defineTool({
         n: count(),
       })
       .from(contacts)
-      .where(eq(contacts.organizationId, ctx.organizationId))
+      .where(
+        and(
+          eq(contacts.organizationId, ctx.organizationId),
+          ne(contacts.status, "deleted"),
+        ),
+      )
       .groupBy(contacts.country);
 
     const named = rows
