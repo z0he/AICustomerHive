@@ -34,6 +34,7 @@ import {
   insertJourneyStageSchema
 } from "@shared/schema";
 import { setupAuth } from "./auth";
+import { apiLimiter, authLimiter, registerLimiter } from "./middleware/rate-limit";
 import marketingRoutes from "./routes/marketing";
 import notificationRoutes from "./routes/notifications";
 import feedbackRoutes from "./routes/feedback";
@@ -59,6 +60,13 @@ function getScopedStorage(req: Request): IStorage {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Rate limiting — reject abuse before any session/DB work happens.
+  // Stricter auth/register limiters are registered first so they take effect
+  // even though the route handlers live inside setupAuth().
+  app.use("/api/auth/register", registerLimiter);
+  app.use(["/api/auth/login", "/api/auth/google"], authLimiter);
+  app.use("/api", apiLimiter);
+
   // Set up authentication
   setupAuth(app);
   
