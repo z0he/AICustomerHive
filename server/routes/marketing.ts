@@ -5,9 +5,10 @@ import { createOrganizationScopedStorage } from '../storage/scoped-storage';
 import { checkAuth } from '../middleware/auth';
 import { z } from 'zod';
 import { journeyIntegration } from '../services/journey-integration-simple.js';
-import { 
-  insertMarketingFormSchema, 
+import {
+  insertMarketingFormSchema,
   insertFormSubmissionSchema,
+  contacts,
   type MarketingForm,
   type InsertMarketingForm,
   type FormSubmission,
@@ -18,6 +19,8 @@ import {
   type InsertPageView,
   type TrackingInstallation
 } from '@shared/schema';
+import { db } from '../db';
+import { and, eq, ne } from 'drizzle-orm';
 
 const router = Router();
 
@@ -223,6 +226,42 @@ router.get('/forms/embed/:id.js', async (req: Request, res: Response) => {
   }
 });
 
+// Pull standard contact fields out of an arbitrary form submission. A form's
+// field `name`s are author-defined, so we classify each field by its input
+// type and by name/label keywords rather than assuming fixed keys. Returns
+// only the fields we could confidently identify.
+function extractContactFields(
+  formFields: unknown,
+  data: Record<string, any>,
+): { email?: string; firstName?: string; lastName?: string; phone?: string; company?: string } {
+  const result: { email?: string; firstName?: string; lastName?: string; phone?: string; company?: string } = {};
+  let fullName: string | undefined;
+
+  const fields = Array.isArray(formFields) ? formFields : [];
+  for (const field of fields) {
+    const value = data?.[field?.name];
+    if (value == null || String(value).trim() === '') continue;
+    const v = String(value).trim();
+    const key = `${field?.name ?? ''} ${field?.label ?? ''}`.toLowerCase();
+    const type = String(field?.type ?? '').toLowerCase();
+
+    if (!result.email && (type === 'email' || /e-?mail/.test(key))) result.email = v;
+    else if (!result.firstName && /(first.?name|fname|given)/.test(key)) result.firstName = v;
+    else if (!result.lastName && /(last.?name|lname|surname|family)/.test(key)) result.lastName = v;
+    else if (!result.phone && (type === 'tel' || /(phone|mobile|\btel\b)/.test(key))) result.phone = v;
+    else if (!result.company && /(company|organi[sz]ation|business|employer)/.test(key)) result.company = v;
+    else if (!fullName && /(full.?name|\bname\b)/.test(key)) fullName = v;
+  }
+
+  // Split a single combined "name" field into first/last when we have nothing better.
+  if (fullName && !result.firstName) {
+    const parts = fullName.split(/\s+/);
+    result.firstName = parts.shift();
+    if (parts.length && !result.lastName) result.lastName = parts.join(' ');
+  }
+  return result;
+}
+
 // Submit a form (public endpoint - no auth required)
 router.post('/forms/:id/submit', async (req: Request, res: Response) => {
     const scopedStorage = getScopedStorage(req);
@@ -272,10 +311,51 @@ router.post('/forms/:id/submit', async (req: Request, res: Response) => {
     
     // Create the submission
     const submission = await scopedStorage.createFormSubmission(submissionData);
-    
+
     // Increment form submissions counter
     await scopedStorage.incrementFormSubmissions(formId);
-    
+
+    // Add the submitter to the CRM as a contact (HubSpot-style form behaviour).
+    // Create-if-new, keyed on email within the org; enriching an existing
+    // contact is a deliberate follow-up. Wrapped so a contact write can never
+    // break the visitor-facing submission that already succeeded above.
+    try {
+      const orgId = req.organization?.organizationId;
+      const fields = extractContactFields(form.formFields, req.body.data || {});
+      if (orgId && fields.email) {
+        const [existing] = await db
+          .select({ id: contacts.id })
+          .from(contacts)
+          .where(and(
+            eq(contacts.organizationId, orgId),
+            ne(contacts.status, 'deleted'),
+            eq(contacts.email, fields.email),
+          ))
+          .limit(1);
+
+        if (!existing) {
+          await db.insert(contacts).values({
+            organizationId: orgId,
+            firstName: fields.firstName ?? null,
+            lastName: fields.lastName ?? null,
+            email: fields.email,
+            phone: fields.phone ?? null,
+            company: fields.company ?? null,
+            contactSource: 'Website',
+            referrerUrl: submissionData.referrer ?? null,
+            landingPageUrl: submissionData.pageUrl ?? null,
+            utmSource: submissionData.utmSource ?? null,
+            utmMedium: submissionData.utmMedium ?? null,
+            utmCampaign: submissionData.utmCampaign ?? null,
+            utmTerm: submissionData.utmTerm ?? null,
+            utmContent: submissionData.utmContent ?? null,
+          });
+        }
+      }
+    } catch (contactErr) {
+      console.error('Form submission stored, but contact creation failed:', contactErr);
+    }
+
     // Return success response
     return res.status(201).json({
       success: true,
