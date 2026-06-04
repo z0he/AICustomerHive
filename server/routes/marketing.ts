@@ -21,6 +21,7 @@ import {
 } from '@shared/schema';
 import { db } from '../db';
 import { and, eq, ne } from 'drizzle-orm';
+import { getAppBaseUrl } from '../lib/app-url';
 
 const router = Router();
 
@@ -153,7 +154,13 @@ router.patch('/forms/:id', checkAuth, async (req: Request, res: Response) => {
     
     // Update the form
     const updatedForm = await scopedStorage.updateMarketingForm(id, formData);
-    return res.json(updatedForm);
+
+    // Regenerate the embed code so it always reflects the current app URL.
+    // Without this, a form created before an embed-host change keeps its stale
+    // (and possibly unreachable) <script src>. generateFormEmbedCode also
+    // persists the embedCode column, so the next fetch is fresh too.
+    const embedCode = await scopedStorage.generateFormEmbedCode(id);
+    return res.json({ ...updatedForm, embedCode });
   } catch (error) {
     console.error('Error updating marketing form:', error);
     return res.status(500).json({ message: 'Failed to update marketing form' });
@@ -216,8 +223,11 @@ router.get('/forms/embed/:id.js', async (req: Request, res: Response) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     res.setHeader('Content-Type', 'application/javascript');
     
-    // Generate JavaScript embed code that will render the form
-    const embedJs = generateEmbedJs(form);
+    // Generate JavaScript embed code that will render the form. Pass the
+    // canonical app URL so the embed's submit call targets this app directly,
+    // rather than guessing its own origin at runtime (which breaks for async
+    // scripts, where document.currentScript is null).
+    const embedJs = generateEmbedJs(form, getAppBaseUrl());
     
     return res.send(embedJs);
   } catch (error) {
@@ -557,17 +567,14 @@ router.patch('/tracking/installations/:id', checkAuth, async (req: Request, res:
 });
 
 // Helper function to generate JavaScript code for embedding forms
-function generateEmbedJs(form: any): string {
+function generateEmbedJs(form: any, baseUrl: string): string {
   return `
 // Form embed code for ${form.name} (ID: ${form.id})
 (function() {
-  // Auto-detect the CRM base URL from this script's location
-  const currentScript = document.currentScript || (function() {
-    const scripts = document.getElementsByTagName('script');
-    return scripts[scripts.length - 1];
-  })();
-  const baseUrl = currentScript ? new URL(currentScript.src).origin : '';
-  
+  // The CRM app URL is baked in at generation time so the submit call always
+  // reaches the app, regardless of how the embed script is loaded.
+  const baseUrl = ${JSON.stringify(baseUrl)};
+
   // Create form container
   const container = document.getElementById('crm-form-${form.id}');
   if (!container) {

@@ -1,6 +1,7 @@
 import { eq, desc, and, sql, asc, gte, lte, ne } from "drizzle-orm";
 import { db } from "../db";
 import { IStorage } from "../storage";
+import { getAppBaseUrl } from "../lib/app-url";
 import { 
   users, type User, type InsertUser,
   campaigns, type Campaign, type InsertCampaign,
@@ -213,24 +214,14 @@ export class DbStorage implements IStorage {
       throw new Error(`Organization with ID ${form.organizationId} not found`);
     }
     
-    // Build organization-specific URL
-    let baseUrl: string;
-    const baseDomain = process.env.BASE_DOMAIN || 'aicrm.co.uk';
-    
-    if (org.customDomain) {
-      // Use custom domain if configured (e.g., crm.acme.com)
-      baseUrl = `https://${org.customDomain}`;
-    } else if (org.subdomain) {
-      // Use organization subdomain (e.g., companyA.aicrm.co.uk)
-      baseUrl = `https://${org.subdomain}.${baseDomain}`;
-    } else {
-      // Fallback to default domain
-      baseUrl = process.env.REPLIT_DOMAINS 
-        ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-        : (process.env.PUBLIC_URL || 'http://localhost:5000');
-    }
-    
-    // Generate embed code with organization-specific URL
+    // The embed snippet must load from the host that actually serves this app,
+    // not the org's own marketing-website domain (customDomain/subdomain) — those
+    // don't serve the AICRM API, so the <script src> would 404 and the form would
+    // never render. The form ID below is globally unique and identifies the org,
+    // so one canonical app host works for every tenant (same as HubSpot).
+    const baseUrl = getAppBaseUrl();
+
+    // Generate embed code pointing at the canonical app host
     const embedCode = `
 <!-- CRM Form Embed Code -->
 <div id="crm-form-${formId}"></div>
