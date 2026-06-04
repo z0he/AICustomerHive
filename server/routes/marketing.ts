@@ -272,20 +272,30 @@ function extractContactFields(
   return result;
 }
 
+// Embedded forms post cross-origin (from the customer's website to this app),
+// and the JSON content-type makes it a non-simple request, so the browser sends
+// a CORS preflight OPTIONS first. router.post() never matches OPTIONS, so the
+// preflight needs its own handler or the browser blocks the actual submit.
+function setFormSubmitCorsHeaders(res: Response): void {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+// CORS preflight for the public submit endpoint.
+router.options('/forms/:id/submit', (_req: Request, res: Response) => {
+  setFormSubmitCorsHeaders(res);
+  return res.status(204).end();
+});
+
 // Submit a form (public endpoint - no auth required)
 router.post('/forms/:id/submit', async (req: Request, res: Response) => {
     const scopedStorage = getScopedStorage(req);
   try {
-    // Set CORS headers to allow form submissions from external websites
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    
-    // Handle preflight OPTIONS request
-    if (req.method === 'OPTIONS') {
-      return res.status(200).end();
-    }
-    
+    // The actual POST response also needs the CORS header so the browser lets
+    // the page read it.
+    setFormSubmitCorsHeaders(res);
+
     const formId = parseInt(req.params.id);
     const form = await scopedStorage.getMarketingForm(formId);
     
