@@ -44,6 +44,7 @@ interface MarketingForm {
 const MarketingForms = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
+  const [editingForm, setEditingForm] = useState<{ id: number } | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedForm, setSelectedForm] = useState<any>(null);
   const [clipboardTimeout, setClipboardTimeout] = useState<Record<number, boolean>>({});
@@ -134,8 +135,8 @@ const MarketingForms = () => {
       <div>
           <div className="flex justify-end mb-6">
             <div className="flex gap-2">
-              <Button 
-                onClick={() => setIsCreateFormOpen(true)}
+              <Button
+                onClick={() => { setEditingForm(null); setIsCreateFormOpen(true); }}
                 className="flex items-center gap-2"
               >
                 <FilePlus size={16} />
@@ -172,10 +173,10 @@ const MarketingForms = () => {
                     <p className="text-muted-foreground">
                       No forms found in this category. Create a new form to get started.
                     </p>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="mt-4"
-                      onClick={() => setIsCreateFormOpen(true)}
+                      onClick={() => { setEditingForm(null); setIsCreateFormOpen(true); }}
                     >
                       Create Form
                     </Button>
@@ -240,6 +241,7 @@ const MarketingForms = () => {
                               variant="ghost"
                               size="icon"
                               title="Edit form"
+                              onClick={() => { setEditingForm({ id: form.id }); setIsCreateFormOpen(true); }}
                             >
                               <FileEdit size={16} />
                             </Button>
@@ -278,10 +280,14 @@ const MarketingForms = () => {
           </Card>
         </div>
 
-      {/* Form Creation Dialog */}
-      <CreateFormDialog 
-        open={isCreateFormOpen} 
-        onOpenChange={setIsCreateFormOpen} 
+      {/* Form Creation / Edit Dialog */}
+      <CreateFormDialog
+        open={isCreateFormOpen}
+        onOpenChange={(open) => {
+          setIsCreateFormOpen(open);
+          if (!open) setEditingForm(null);
+        }}
+        editForm={editingForm}
       />
 
       {/* Form Preview Dialog */}

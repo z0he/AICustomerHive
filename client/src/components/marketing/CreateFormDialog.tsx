@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useToast } from '@/hooks/use-toast';
@@ -87,13 +87,28 @@ const initialFormFields: FormFieldType[] = [
 interface CreateFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** When provided, the dialog opens in edit mode for this form (only `id` is required). */
+  editForm?: { id: number } | null;
 }
 
-export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) {
+export function CreateFormDialog({ open, onOpenChange, editForm }: CreateFormDialogProps) {
+  const isEditMode = !!editForm?.id;
   const [formFields, setFormFields] = useState<FormFieldType[]>(initialFormFields);
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  // In edit mode, pull the full form record (the list row doesn't carry
+  // title/description/formFields/etc.) so we can prefill every field.
+  const { data: fullForm } = useQuery({
+    queryKey: ['/api/marketing/forms', editForm?.id],
+    queryFn: async () => {
+      const res = await fetch(`/api/marketing/forms/${editForm!.id}`);
+      if (!res.ok) throw new Error('Failed to load form');
+      return res.json();
+    },
+    enabled: open && isEditMode,
+  });
 
   // Initialize form with default values
   const form = useForm<FormValues>({
@@ -113,35 +128,60 @@ export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) 
     },
   });
 
-  // Create form mutation
-  const createFormMutation = useMutation({
+  // Prefill the form when editing an existing record.
+  useEffect(() => {
+    if (!open || !isEditMode || !fullForm) return;
+    form.reset({
+      name: fullForm.name ?? '',
+      title: fullForm.title ?? 'Contact Us',
+      description: fullForm.description ?? '',
+      submitButtonText: fullForm.submitButtonText ?? 'Submit',
+      successMessage: fullForm.successMessage ?? 'Thank you for your submission!',
+      redirectUrl: fullForm.redirectUrl ?? '',
+      formType: fullForm.formType ?? 'inline',
+      folder: fullForm.folder ?? 'Default',
+      trackingEnabled: fullForm.trackingEnabled ?? true,
+      captchaEnabled: fullForm.captchaEnabled ?? false,
+      status: fullForm.status ?? 'active',
+    });
+    if (Array.isArray(fullForm.formFields) && fullForm.formFields.length > 0) {
+      setFormFields(fullForm.formFields);
+    }
+    setStep(1);
+  }, [open, isEditMode, fullForm]);
+
+  // Create or update form mutation
+  const saveFormMutation = useMutation({
     mutationFn: async (data: FormValues & { formFields: any[] }) => {
-      const response = await fetch('/api/marketing/forms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        isEditMode ? `/api/marketing/forms/${editForm!.id}` : '/api/marketing/forms',
+        {
+          method: isEditMode ? 'PATCH' : 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
         },
-        body: JSON.stringify(data),
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create form');
+        throw new Error(errorData.message || `Failed to ${isEditMode ? 'update' : 'create'} form`);
       }
 
       return response.json();
     },
     onSuccess: () => {
       toast({
-        title: 'Form created',
-        description: 'Your form has been created successfully.',
+        title: isEditMode ? 'Form updated' : 'Form created',
+        description: `Your form has been ${isEditMode ? 'updated' : 'created'} successfully.`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/marketing/forms'] });
       resetDialog();
     },
     onError: (error) => {
       toast({
-        title: 'Error creating form',
+        title: `Error ${isEditMode ? 'updating' : 'creating'} form`,
         description: error instanceof Error ? error.message : 'An error occurred',
         variant: 'destructive',
       });
@@ -151,7 +191,7 @@ export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) 
 
   const handleSubmit = (values: FormValues) => {
     setIsSubmitting(true);
-    createFormMutation.mutate({
+    saveFormMutation.mutate({
       ...values,
       formFields,
     });
@@ -169,7 +209,7 @@ export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
-          <DialogTitle>Create New Form</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Form' : 'Create New Form'}</DialogTitle>
           <DialogDescription>
             Design a form to collect information from your website visitors.
           </DialogDescription>
@@ -202,9 +242,9 @@ export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) 
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Folder</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -272,9 +312,9 @@ export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) 
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Form Type</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -302,9 +342,9 @@ export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) 
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Status</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -437,10 +477,10 @@ export function CreateFormDialog({ open, onOpenChange }: CreateFormDialogProps) 
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Creating Form...
+                    {isEditMode ? 'Updating Form...' : 'Creating Form...'}
                   </span>
                 ) : (
-                  'Create Form'
+                  isEditMode ? 'Update Form' : 'Create Form'
                 )}
               </Button>
             </DialogFooter>
