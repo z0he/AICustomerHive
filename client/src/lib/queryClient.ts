@@ -35,11 +35,27 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
+
 export async function apiRequest(
   url: string,
   method: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  // Backward compatibility: an older convention called this as
+  // apiRequest(method, url, data). The signature was later flipped to
+  // (url, method, data) without updating every call site, which left those
+  // calls passing an HTTP verb where a URL is expected. Detect that case —
+  // first arg is a bare HTTP verb and second arg looks like a path/URL — and
+  // swap, so both call orders work.
+  if (
+    HTTP_METHODS.has(url?.toUpperCase?.()) &&
+    typeof method === "string" &&
+    (method.startsWith("/") || method.startsWith("http"))
+  ) {
+    [url, method] = [method, url];
+  }
+
   // Prepare headers
   const headers: Record<string, string> = {
     ...(data ? { "Content-Type": "application/json" } : {}),
