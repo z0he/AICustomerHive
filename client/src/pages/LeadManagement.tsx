@@ -209,9 +209,11 @@ export default function LeadManagement() {
         description: "Lead note has been successfully added"
       });
       
-      // Refetch lead data
+      // Refetch lead data — must match the open-lead query key
+      // (`/api/leads/${id}`), not the ["/api/leads", id] array form, or the
+      // dialog keeps showing stale notes and the add looks like a no-op.
       if (selectedLeadId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/leads", selectedLeadId] });
+        queryClient.invalidateQueries({ queryKey: [`/api/leads/${selectedLeadId}`] });
       }
     },
     onError: (error) => {
@@ -234,10 +236,11 @@ export default function LeadManagement() {
         description: "Lead owner has been successfully assigned"
       });
       
-      // Refetch lead data
+      // Refetch lead data — list key, plus the open-lead query key
+      // (`/api/leads/${id}`) so the dialog reflects the new owner.
       queryClient.invalidateQueries({ queryKey: ["/api/leads"] });
       if (selectedLeadId) {
-        queryClient.invalidateQueries({ queryKey: ["/api/leads", selectedLeadId] });
+        queryClient.invalidateQueries({ queryKey: [`/api/leads/${selectedLeadId}`] });
       }
     },
     onError: (error) => {
