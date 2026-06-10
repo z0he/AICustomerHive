@@ -513,12 +513,15 @@ export class DbStorage implements IStorage {
     const campaignData = {
       name: insertCampaign.name,
       type: insertCampaign.type,
-      targetAudience: typeof insertCampaign.targetAudience === 'string' 
-        ? insertCampaign.targetAudience 
+      targetAudience: typeof insertCampaign.targetAudience === 'string'
+        ? insertCampaign.targetAudience
         : JSON.stringify(insertCampaign.targetAudience),
       message: insertCampaign.message,
       startDate: insertCampaign.startDate,
       endDate: insertCampaign.endDate,
+      // Preserve the tenant id injected by scoped storage — without it the
+      // campaign saves with a null org and the org-filtered list never shows it.
+      organizationId: (insertCampaign as any).organizationId,
       createdAt: new Date()
     };
     
