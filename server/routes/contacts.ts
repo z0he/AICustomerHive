@@ -21,6 +21,45 @@ function getScopedStorage(req: Request): IStorage {
   throw new Error("Organization context required but not found");
 }
 
+// Matches a v4-style UUID (the unified `contacts` table primary key).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Resolve a route :id to the unified `contacts` table UUID.
+ * Accepts a unified UUID directly, or a legacy `lead_<n>`/`customer_<n>`/numeric id
+ * (kept as a fallback during the contact-unification transition).
+ * Returns null when the contact can't be found / the id can't be parsed.
+ */
+async function resolveContactUuid(scopedStorage: IStorage, rawContactId: string): Promise<string | null> {
+  if (UUID_RE.test(rawContactId)) {
+    const contact = await scopedStorage.getContact(rawContactId);
+    return contact ? contact.id : null;
+  }
+
+  // Legacy numeric / prefixed id scheme
+  let actualId: number;
+  let contactType: 'lead' | 'customer';
+  if (rawContactId.startsWith('lead_')) {
+    actualId = parseInt(rawContactId.replace('lead_', ''));
+    contactType = 'lead';
+  } else if (rawContactId.startsWith('customer_')) {
+    actualId = parseInt(rawContactId.replace('customer_', ''));
+    contactType = 'customer';
+  } else {
+    const numericId = parseInt(rawContactId);
+    if (numericId > 10000) {
+      actualId = numericId - 10000;
+      contactType = 'lead';
+    } else {
+      actualId = numericId;
+      contactType = 'customer';
+    }
+  }
+
+  if (isNaN(actualId)) return null;
+  return scopedStorage.getUnifiedContactByLegacyId(actualId, contactType);
+}
+
 // Industry values for validation
 const INDUSTRY_VALUES = [
   "Accounting","Airlines/Aviation","Alternative Dispute Resolution","Alternative Medicine","Animation",
@@ -513,36 +552,9 @@ router.delete('/:id', async (req: Request, res: Response) => {
 router.get('/:id/notes', async (req: Request, res: Response) => {
     const scopedStorage = getScopedStorage(req);
   try {
-    const rawContactId = req.params.id;
-    
-    // Extract numeric ID and determine contact type
-    let actualId: number;
-    let contactType: 'lead' | 'customer';
-    
-    if (rawContactId.startsWith('lead_')) {
-      actualId = parseInt(rawContactId.replace('lead_', ''));
-      contactType = 'lead';
-    } else if (rawContactId.startsWith('customer_')) {
-      actualId = parseInt(rawContactId.replace('customer_', ''));
-      contactType = 'customer';
-    } else {
-      const numericId = parseInt(rawContactId);
-      if (numericId > 10000) {
-        actualId = numericId - 10000;
-        contactType = 'lead';
-      } else {
-        actualId = numericId;
-        contactType = 'customer';
-      }
-    }
-    
-    if (isNaN(actualId)) {
-      return res.status(400).json({ error: 'Invalid contact ID format' });
-    }
-    
-    // Get unified contact ID
-    const unifiedContactId = await scopedStorage.getUnifiedContactByLegacyId(actualId, contactType);
-    
+    // Resolve the unified contacts UUID (handles UUID + legacy ids)
+    const unifiedContactId = await resolveContactUuid(scopedStorage, req.params.id);
+
     if (!unifiedContactId) {
       return res.status(404).json({ error: 'Contact not found' });
     }
@@ -572,42 +584,16 @@ router.get('/:id/notes', async (req: Request, res: Response) => {
 router.post('/:id/notes', async (req: Request, res: Response) => {
     const scopedStorage = getScopedStorage(req);
   try {
-    const rawContactId = req.params.id;
     const { content } = req.body;
     const userId = (req as any).user?.id;
-    
-    // Extract numeric ID and determine contact type
-    let actualId: number;
-    let contactType: 'lead' | 'customer';
-    
-    if (rawContactId.startsWith('lead_')) {
-      actualId = parseInt(rawContactId.replace('lead_', ''));
-      contactType = 'lead';
-    } else if (rawContactId.startsWith('customer_')) {
-      actualId = parseInt(rawContactId.replace('customer_', ''));
-      contactType = 'customer';
-    } else {
-      const numericId = parseInt(rawContactId);
-      if (numericId > 10000) {
-        actualId = numericId - 10000;
-        contactType = 'lead';
-      } else {
-        actualId = numericId;
-        contactType = 'customer';
-      }
-    }
-    
-    if (isNaN(actualId)) {
-      return res.status(400).json({ error: 'Invalid contact ID format' });
-    }
-    
+
     if (!content || !content.trim()) {
       return res.status(400).json({ error: 'Note content is required' });
     }
-    
-    // Get unified contact ID
-    const unifiedContactId = await scopedStorage.getUnifiedContactByLegacyId(actualId, contactType);
-    
+
+    // Resolve the unified contacts UUID (handles UUID + legacy ids)
+    const unifiedContactId = await resolveContactUuid(scopedStorage, req.params.id);
+
     if (!unifiedContactId) {
       return res.status(404).json({ error: 'Contact not found' });
     }
