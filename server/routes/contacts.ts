@@ -3,12 +3,15 @@ import { Request, Response } from "express";
 import { storage } from "../storage.js";
 import type { IStorage } from '../storage';
 import { createOrganizationScopedStorage } from '../storage/scoped-storage';
+import { db } from "../db.js";
+import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
-import { insertCustomerSchema, insertLeadSchema, industryEnum, contactSourceEnum, type SelectContact } from "../../shared/schema.js";
-import { 
-  createContactWithTracking, 
+import { insertCustomerSchema, insertLeadSchema, industryEnum, contactSourceEnum, contacts, type SelectContact } from "../../shared/schema.js";
+import {
   analyzeContactSourceFromTouchpoints,
-  extractUTMFromRequest 
+  extractUTMFromRequest,
+  mapUTMToContactSource,
+  stitchAnonymousTouchpointsToContact,
 } from "../services/contact-tracking-integration.js";
 
 const router = Router();
@@ -348,60 +351,112 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
+    const organizationId = req.organization!.organizationId;
     const validatedData = createContactSchema.parse(req.body);
-    
+
     // Handle firstName/lastName logic with backward compatibility
     let firstName = validatedData.firstName || '';
     let lastName = validatedData.lastName || '';
-    let fullName = validatedData.name || '';
-    
+
     if (validatedData.firstName && validatedData.lastName) {
-      // Use provided firstName/lastName
-      fullName = `${validatedData.firstName} ${validatedData.lastName}`.trim();
+      // Use provided firstName/lastName as-is
     } else if (validatedData.name) {
       // Split name for backward compatibility
       const nameParts = validatedData.name.split(' ');
       firstName = nameParts[0] || '';
       lastName = nameParts.slice(1).join(' ') || '';
     } else if (validatedData.firstName) {
-      // Only firstName provided
-      fullName = validatedData.firstName;
       firstName = validatedData.firstName;
     }
-    
-    // Prepare contact data for enhanced tracking
-    const contactData = {
-      ...validatedData,
-      firstName,
-      lastName,
-      name: fullName,
-      initials: `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
-    };
-    
-    // Use enhanced contact creation with tracking integration
-    const result = await createContactWithTracking(contactData, req, userId);
-    
-    // Return enhanced response with tracking information
-    const response: any = {
-      ...result.contact,
-      tracking: {
-        utm: result.utm,
-        sourceIntelligence: result.sourceIntelligence,
-        stitchedTouchpoints: result.stitched || 0
-      }
-    };
-    
-    // Log the tracking integration for debugging
-    console.log('Contact created with tracking integration:', {
-      contactId: result.contact.id,
-      email: result.contact.email,
-      detectedSource: result.contact.contactSource || result.contact.source,
-      utmData: result.utm,
-      sourceConfidence: result.sourceIntelligence?.confidence,
-      stitchedTouchpoints: result.stitched
+
+    // Email-dedupe within the org. There's no DB unique constraint under
+    // multi-tenancy, so the dedupe lives here (same as the create_contact voice
+    // tool): an existing match is returned instead of writing a duplicate.
+    const [existing] = await db
+      .select()
+      .from(contacts)
+      .where(and(
+        eq(contacts.organizationId, organizationId),
+        ne(contacts.status, 'deleted'),
+        eq(contacts.email, validatedData.email),
+      ))
+      .limit(1);
+
+    if (existing) {
+      return res.status(200).json({
+        ...existing,
+        name: `${existing.firstName || ''} ${existing.lastName || ''}`.trim(),
+        alreadyExists: true,
+      });
+    }
+
+    // Source intelligence + UTM (preserve the tracking behaviour of the old path)
+    const utm = extractUTMFromRequest(req);
+    const anonymousId = req.body.anonymousId || (req.query as any).anonymousId || req.headers['x-anonymous-id'];
+    let sourceIntelligence;
+    if (anonymousId || validatedData.email) {
+      sourceIntelligence = await analyzeContactSourceFromTouchpoints(validatedData.email, anonymousId);
+    }
+    const legacySource = validatedData.source && (CONTACT_SOURCE_VALUES as readonly string[]).includes(validatedData.source)
+      ? validatedData.source
+      : undefined;
+    const resolvedSource = validatedData.contactSource
+      || legacySource
+      || (sourceIntelligence && sourceIntelligence.confidence > 70 ? sourceIntelligence.suggestedSource : mapUTMToContactSource(utm));
+
+    // Insert into the unified contacts table — the same table the list and the
+    // voice tools read/write. (Owner is intentionally not written here: it's a
+    // free-text field today but ownerId is a UUID FK; see Phase 4 dropdown work.)
+    const [inserted] = await db
+      .insert(contacts)
+      .values({
+        organizationId,
+        firstName,
+        lastName: lastName || null,
+        email: validatedData.email,
+        phone: validatedData.phone ?? null,
+        company: validatedData.company ?? null,
+        jobTitle: validatedData.jobTitle ?? null,
+        industry: (validatedData.industry as any) ?? null,
+        country: validatedData.country ?? null,
+        lifecycleStage: validatedData.lifecycleStage as any,
+        contactSource: (resolvedSource as any) ?? null,
+        leadStatus: validatedData.status || 'new',
+        trackingCode: validatedData.trackingCode ?? null,
+        referrerUrl: validatedData.referrerUrl ?? utm.referrerUrl ?? null,
+        landingPageUrl: validatedData.landingPageUrl ?? utm.landingPageUrl ?? null,
+        utmSource: validatedData.utmSource ?? utm.utmSource ?? null,
+        utmMedium: validatedData.utmMedium ?? utm.utmMedium ?? null,
+        utmCampaign: validatedData.utmCampaign ?? utm.utmCampaign ?? null,
+        utmTerm: validatedData.utmTerm ?? utm.utmTerm ?? null,
+        utmContent: validatedData.utmContent ?? utm.utmContent ?? null,
+      })
+      .returning();
+
+    // Stitch anonymous web touchpoints onto the new contact (UUID-native)
+    let stitched = 0;
+    if (anonymousId) {
+      const r = await stitchAnonymousTouchpointsToContact(inserted.id, inserted.email || '', anonymousId);
+      stitched = r.stitched;
+    }
+
+    console.log('Contact created (unified contacts table):', {
+      contactId: inserted.id,
+      email: inserted.email,
+      detectedSource: inserted.contactSource,
+      sourceConfidence: sourceIntelligence?.confidence,
+      stitchedTouchpoints: stitched,
     });
-    
-    res.status(201).json(response);
+
+    res.status(201).json({
+      ...inserted,
+      name: `${inserted.firstName || ''} ${inserted.lastName || ''}`.trim(),
+      tracking: {
+        utm,
+        sourceIntelligence,
+        stitchedTouchpoints: stitched,
+      },
+    });
 
   } catch (error) {
     console.error('Error creating contact:', error);
