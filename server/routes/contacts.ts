@@ -495,12 +495,25 @@ router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
     const rawContactId = req.params.id;
-    
+
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    // Handle prefixed IDs (customer_123, lead_456) and legacy numeric IDs
+    // Unified path: a UUID :id is a row in the contacts table. Soft-delete by
+    // setting status='deleted' (mirrors the delete_contact voice tool and the
+    // getUnifiedContacts status!='deleted' filter). NOT storage.deleteContact,
+    // which hard-deletes the row.
+    if (UUID_RE.test(rawContactId)) {
+      const contact = await scopedStorage.getContact(rawContactId);
+      if (!contact) {
+        return res.status(404).json({ error: 'Contact not found' });
+      }
+      await scopedStorage.updateContact(rawContactId, { status: 'deleted' as any, updatedAt: new Date() });
+      return res.json({ success: true, message: 'Contact deleted successfully' });
+    }
+
+    // Legacy path: handle prefixed IDs (customer_123, lead_456) and numeric IDs
     let actualId: number;
     let isLead = false;
     
